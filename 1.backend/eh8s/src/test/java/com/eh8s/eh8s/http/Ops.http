@@ -1,0 +1,21 @@
+GET http://127.0.0.1:8080/api/agents
+GET http://127.0.0.1:8080/api/owner-decisions
+
+### Approve yellow booking decision
+POST http://127.0.0.1:8080/api/owner-decisions/1/approve
+
+### Reject a pending decision
+POST http://127.0.0.1:8080/api/owner-decisions/2/reject
+Content-Type: application/json
+
+{
+  "rejectReason": "Owner rejected — needs revised budget"
+}
+
+### Set agent semaphore
+POST http://127.0.0.1:8080/api/agents/1/semaphore
+Content-Type: application/json
+
+{
+  "semaphore": "yellow"
+}

@@ -1,0 +1,141 @@
+flowchart LR
+  subgraph wallets [Three DevNet wallets]
+    Owner["Owner 7QVKJj. owner USDC ATA"]
+    Musician["Musician wallet B (+ D) + profile PDA"]
+    Venue["Venue wallet C + USDC ATA"]
+    Licensee["Any licensee wallet"]
+    AgentWallet["Agent wallet (optional): NEXUS / HARMONY / STAGE / VAULT / WAVE"]
+  end
+  subgraph ui [EH8S Vite 5173]
+    Home["Home connect"]
+    Apply["Apply role"]
+    Inbox["Owner inbox approve"]
+    Academy["Academy plan Months + Pay with wallet"]
+    BandVaultUi["Band vault activate / sync weights (owner)"]
+    StageSettle["Settle Pay with wallet (legacy venue-funded)"]
+    StageClaim["Claim Pay with wallet + Song credits"]
+    ReachUi["Catalog Region access Months + Pay with wallet"]
+    VenueUi["Venue On-chain listing and escrow: Register on-chain / Escrow with wallet"]
+    StageAgentUi["Venues and bookings: Approve venue / Confirm and pin contract"]
+    VaultAgentUi["Escrows to settle: Settle from escrow"]
+    SongPoolUi["Track Activate song pool / Deposit royalties"]
+    SyncUi["Sync licenses New sync deal / Pay with wallet"]
+    AgentPowersUi["Agent powers / Enigma levels"]
+    TreasuryUi["Owner treasury Withdraw to my wallet"]
+    GovUi["Governance (optional, last): Sign setup / proposal Approve / Execute"]
+    DigestUi["Owner AI digest Generate today's digest"]
+    DecisionsUi["Agent decisions / Answered decisions / Slack approvals"]
+    CoursesUi["Video courses: lesson player + Mark complete"]
+    OwnerCoursesUi["Owner Courses: publish, Course access, Review queue Approve"]
+    TeachUi["Teach: level 5 + instructor role -> My courses -> Submit for review"]
+  end
+  subgraph chain [Program GUY7o. v0.10.0 DevNet USDC]
+    Config["Eh8sConfig PDA eh8s,config: mint, treasury ATA, vault ATA, fee bps"]
+    AcademyIx["subscribe_academy(plan, months) 85 treasury / 15 instructor; AcademySubscription expires_at"]
+    GeoIx["subscribe_geographic(geo_code, tier, months) 100 treasury; GeographicSubscription expires_at"]
+    BandVaultIx["create_band / update_spp_weights: BandVault PDA band,id (members + weights bps)"]
+    SettleIx["settle_concert(concert_id, gross, expenses): net fee by config bps to treasury + pool to vault + split pending by weight; PDA concert,venue,id once"]
+    VenueIx["register_venue / approve_venue: VenueListing PDA venue,wallet,id"]
+    EscrowIx["propose_booking: gross to escrow of VenueAccessToken access,wallet,band,date; confirm_booking pins contract SHA-256; cancel_booking refunds"]
+    SettleBookingIx["settle_booking(gross, expenses): expenses to venue, fee to treasury, pool to vault, pending by weight"]
+    PoolIx["create_royalty_pool / deposit_royalties: RoyaltyPool royalty,track splits bps"]
+    SyncIx["pay_sync_license: 20 treasury / 80 vault by song splits; SyncLicense sync,track,deal once"]
+    AgentAuth["authorize_agent: AgentAuthority PDA agent,wallet permission bits"]
+    LevelIx["update_musician_level: owner or NEXUS agent"]
+    Treasury["Treasury PDA treasury: USDC ATA 9ptwWx."]
+    Vault["Vault ATA"]
+    ClaimIx["claim_royalties vault to musician ATA (ATA created idempotent)"]
+    WithdrawIx["withdraw_treasury(amount): config.owner only, treasury PDA signs; refused once governance exists"]
+    GovIx["init_governance / propose / approve_proposal / execute_withdraw_proposal: Governance PDA 3ZH4ig."]
+  end
+  subgraph backend [Spring 8080]
+    Verifier["SolanaRpcClient verifies program, accounts, amounts"]
+    Digest["OwnerDigestService: MariaDB metrics + treasury balance -> Claude -> owner_digest"]
+    AgentsLive["NEXUS Score Enigma (Claude) / HARMONY match / ATLAS tour route -> agent_event_log"]
+    SlackBridge["Slack Block Kit Approve / Reject -> POST /api/slack/interactions (signed) -> owner_decision once"]
+    CourseAccess["CourseService: free preview, owner grant, or active academy plan + course min level; locked = no video link"]
+  end
+  Home --> Apply
+  Apply --> Inbox
+  Inbox --> Academy
+  Musician --> Academy
+  Academy --> AcademyIx
+  AcademyIx -->|"85%"| Treasury
+  Musician --> ReachUi
+  ReachUi --> GeoIx
+  GeoIx -->|"zone fee"| Treasury
+  GeoIx -.->|"paid zones"| AgentsLive
+  Owner --> BandVaultUi
+  BandVaultUi --> BandVaultIx
+  BandVaultIx -.->|"members + weights"| SettleIx
+  BandVaultIx -.->|"members + weights"| SettleBookingIx
+  Venue --> StageSettle
+  StageSettle --> SettleIx
+  Venue --> VenueUi
+  VenueUi --> VenueIx
+  VenueUi --> EscrowIx
+  Owner --> StageAgentUi
+  StageAgentUi --> VenueIx
+  StageAgentUi --> EscrowIx
+  Owner --> VaultAgentUi
+  VaultAgentUi --> SettleBookingIx
+  EscrowIx -->|"escrowed gross"| SettleBookingIx
+  SettleBookingIx -->|"fee"| Treasury
+  SettleBookingIx -->|"pool"| Vault
+  SettleBookingIx -->|"expenses"| Venue
+  Config -.->|"pins accounts"| AcademyIx
+  Config -.->|"pins accounts"| SettleIx
+  Config -.->|"pins accounts"| SettleBookingIx
+  Config -.->|"pins accounts"| ClaimIx
+  Config -.->|"pins accounts"| PoolIx
+  Config -.->|"pins accounts"| SyncIx
+  Config -.->|"pins accounts"| WithdrawIx
+  SettleIx -->|"eh8s_fee_usdc"| Treasury
+  SettleIx -->|"band_pool_usdc"| Vault
+  SettleIx -->|"pending_claims_usdc += pool x weight (each member)"| Musician
+  Musician --> StageClaim
+  StageClaim --> ClaimIx
+  Vault --> ClaimIx
+  ClaimIx --> Musician
+  Owner --> SongPoolUi
+  SongPoolUi --> PoolIx
+  PoolIx -->|"deposit"| Vault
+  PoolIx -->|"pending += amount x split"| Musician
+  Licensee --> SyncUi
+  SyncUi --> SyncIx
+  SyncIx -->|"20%"| Treasury
+  SyncIx -->|"80% by splits"| Vault
+  Owner --> AgentPowersUi
+  AgentPowersUi --> AgentAuth
+  AgentAuth -.->|"powers"| AgentWallet
+  AgentWallet -.->|"STAGE / VAULT / WAVE / HARMONY"| EscrowIx
+  AgentPowersUi --> LevelIx
+  AgentsLive -.->|"recommended level"| LevelIx
+  Owner --> TreasuryUi
+  TreasuryUi --> WithdrawIx
+  Treasury --> WithdrawIx
+  WithdrawIx --> Owner
+  Owner --> GovUi
+  GovUi --> GovIx
+  Treasury --> GovIx
+  GovIx -->|"to a signer USDC ATA"| Owner
+  AcademyIx -.->|"signature"| Verifier
+  SettleIx -.->|"signature"| Verifier
+  SettleBookingIx -.->|"signature"| Verifier
+  SyncIx -.->|"signature"| Verifier
+  WithdrawIx -.->|"signature"| Verifier
+  Owner --> DigestUi
+  DigestUi --> Digest
+  Treasury -.->|"on-chain balance"| Digest
+  AgentsLive -.->|"yellow / red decision"| SlackBridge
+  Owner --> DecisionsUi
+  DecisionsUi --> SlackBridge
+  AcademyIx -.->|"active plan"| CourseAccess
+  LevelIx -.->|"Enigma level"| CourseAccess
+  Musician --> CoursesUi
+  CoursesUi --> CourseAccess
+  Owner --> OwnerCoursesUi
+  OwnerCoursesUi -->|"publish / approve"| CoursesUi
+  Musician -->|"level 5 + instructor role"| TeachUi
+  TeachUi -->|"submitted course"| OwnerCoursesUi
+  CoursesUi -.->|"lesson practice"| AgentsLive

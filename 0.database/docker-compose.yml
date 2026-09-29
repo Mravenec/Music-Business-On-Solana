@@ -1,0 +1,26 @@
+# Project MariaDB — create/start: python scripts/ensure_db.py
+# Load SQL: python scripts/setup_db.py
+# Names/port: .env (from .env.example)
+
+name: app-mariadb
+
+services:
+  mariadb:
+    image: ${MARIADB_IMAGE:-mariadb:10.11}
+    container_name: ${CONTAINER_NAME:-app-mariadb}
+    ports:
+      - "${HOST_PORT:-3306}:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-123456}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-app}
+    volumes:
+      - app_mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+
+volumes:
+  app_mariadb_data:

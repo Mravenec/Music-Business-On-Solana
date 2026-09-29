@@ -1,0 +1,61 @@
+### Ensure applicant wallet session exists
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sRoleApplyTest1111111111111111111111111",
+  "displayName": "Role Applicant",
+  "role": "musician"
+}
+
+### Apply for venue role (pending)
+POST http://127.0.0.1:8080/api/role-applications
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sRoleApplyTest1111111111111111111111111",
+  "role": "venue"
+}
+
+### List pending applications (owner queue)
+GET http://127.0.0.1:8080/api/role-applications?status=pending
+
+### Forbid self-assign owner
+POST http://127.0.0.1:8080/api/role-applications
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sRoleApplyTest1111111111111111111111111",
+  "role": "owner"
+}
+
+### Approve pending venue application (replace {{appId}} after list)
+# @name approve
+POST http://127.0.0.1:8080/api/role-applications/1/approve
+Content-Type: application/json
+
+{
+  "reviewedByWallet": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "reason": "Smoke approve venue"
+}
+
+### List memberships for applicant
+GET http://127.0.0.1:8080/api/roles/memberships?walletPubkey=Eh8sRoleApplyTest1111111111111111111111111
+
+### Reject a fresh instructor application setup
+POST http://127.0.0.1:8080/api/role-applications
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sRoleApplyTest1111111111111111111111111",
+  "role": "instructor"
+}
+
+### Reject instructor (replace id after apply — default next id may vary)
+POST http://127.0.0.1:8080/api/role-applications/2/reject
+Content-Type: application/json
+
+{
+  "reviewedByWallet": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "reason": "Smoke reject instructor"
+}

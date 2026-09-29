@@ -1,0 +1,54 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Band vault without Bearer must be 401
+GET http://127.0.0.1:8080/api/bands/1/vault
+
+### Band vault state (bandVaultPda / sppWeightsJson null until activated)
+GET http://127.0.0.1:8080/api/bands/1/vault
+Authorization: Bearer {{token}}
+
+### Build create_band — only the chain_config owner wallet (403 for any other wallet)
+POST http://127.0.0.1:8080/api/bands/1/vault/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"
+}
+
+### Build create_band with a non-owner wallet must be 403
+POST http://127.0.0.1:8080/api/bands/1/vault/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU"
+}
+
+### Confirm create_band without txSignature must be 400
+POST http://127.0.0.1:8080/api/bands/1/vault/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "bandVaultPda": "BandVaultPda1111111111111111111111111111111"
+}
+
+### Build update_spp_weights before activation must be 409
+POST http://127.0.0.1:8080/api/bands/1/vault/weights/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"
+}

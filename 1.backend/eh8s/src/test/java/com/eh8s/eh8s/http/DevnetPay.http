@@ -1,0 +1,40 @@
+### List DevNet pay/claim markers
+GET http://127.0.0.1:8080/api/devnet-pay-markers
+
+### Refuse intended pay marker without txSignature (expect 400)
+POST http://127.0.0.1:8080/api/devnet-pay-markers
+Content-Type: application/json
+
+{
+  "kind": "pay",
+  "walletPubkey": "DevNetWallet1111111111111111111111111111111",
+  "amountUsdc": 25.00,
+  "status": "intended",
+  "intendedInstruction": "subscribe_academy",
+  "note": "must be refused"
+}
+
+### Reject academy subscription paid without txSignature
+POST http://127.0.0.1:8080/api/academy-subscriptions/1/devnet-pay
+Content-Type: application/json
+
+{
+  "walletPubkey": "DevNetWallet1111111111111111111111111111111"
+}
+
+### Reject pending claim DevNet marker on an unconfirmed/fake signature (must not mark claimed)
+POST http://127.0.0.1:8080/api/pending-claims/1/devnet-claim
+Content-Type: application/json
+
+{
+  "walletPubkey": "DevNetWallet1111111111111111111111111111111",
+  "txSignature": "intended-sig-claim-smoke"
+}
+
+### Reject pending claim DevNet marker without txSignature
+POST http://127.0.0.1:8080/api/pending-claims/1/devnet-claim
+Content-Type: application/json
+
+{
+  "walletPubkey": "DevNetWallet1111111111111111111111111111111"
+}

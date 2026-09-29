@@ -1,0 +1,145 @@
+### Teaching path. Instructor A and B are level-5 accounts with an approved instructor role;
+### Jorge (YmTY...ozJU) is level 4. Owner = platform owner wallet. The first wallet session creates the probe accounts;
+### seed them before the teaching calls (musician_profile at level 5 + eh8s_role.account_role 'instructor') and delete them after.
+
+### Owner session
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC" }
+
+> {% client.global.set("owner", response.body.accessToken); %}
+
+### Level-4 musician session (Jorge)
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU" }
+
+> {% client.global.set("musician", response.body.accessToken); %}
+
+### Instructor A session (level 5 + instructor role)
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "TeachAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
+
+> {% client.global.set("teacherA", response.body.accessToken); %}
+
+### Instructor B session (level 5 + instructor role)
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "TeachBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
+
+> {% client.global.set("teacherB", response.body.accessToken); %}
+
+### Eligibility without Bearer must be 401
+GET http://127.0.0.1:8080/api/teach/eligibility
+
+### Level-4 musician: canTeach false, level requirement not met
+GET http://127.0.0.1:8080/api/teach/eligibility
+Authorization: Bearer {{musician}}
+
+### Level-4 musician cannot author (403)
+POST http://127.0.0.1:8080/api/teach/courses
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "title": "Should not exist" }
+
+### Instructor A: canTeach true
+GET http://127.0.0.1:8080/api/teach/eligibility
+Authorization: Bearer {{teacherA}}
+
+### Instructor A drafts a course
+POST http://127.0.0.1:8080/api/teach/courses
+Authorization: Bearer {{teacherA}}
+Content-Type: application/json
+
+{ "title": "Walking bass lines", "summary": "Roots, fifths and chromatic approach notes.", "minLevel": 2 }
+
+> {% client.global.set("courseId", response.body.id); %}
+
+### Instructor A adds a section
+POST http://127.0.0.1:8080/api/teach/courses/{{courseId}}/sections
+Authorization: Bearer {{teacherA}}
+Content-Type: application/json
+
+{ "title": "Basics" }
+
+> {% client.global.set("sectionId", response.body.id); %}
+
+### Instructor A adds a lesson with a practice prompt
+POST http://127.0.0.1:8080/api/teach/sections/{{sectionId}}/lessons
+Authorization: Bearer {{teacherA}}
+Content-Type: application/json
+
+{
+  "title": "Roots and fifths",
+  "videoUrl": "https://youtu.be/dQw4w9WgXcQ",
+  "durationSec": 300,
+  "practicePrompt": "Record 16 bars of roots and fifths over a blues in F at 90 bpm."
+}
+
+> {% client.global.set("lessonId", response.body.id); %}
+
+### Instructor B cannot edit A's course (403)
+PUT http://127.0.0.1:8080/api/teach/courses/{{courseId}}
+Authorization: Bearer {{teacherB}}
+Content-Type: application/json
+
+{ "title": "Taken over" }
+
+### Instructor A cannot publish directly (403)
+POST http://127.0.0.1:8080/api/owner/courses/{{courseId}}/publish
+Authorization: Bearer {{teacherA}}
+
+### Instructor A submits for review
+POST http://127.0.0.1:8080/api/teach/courses/{{courseId}}/submit
+Authorization: Bearer {{teacherA}}
+
+### Submitted course is frozen for the author (409)
+PUT http://127.0.0.1:8080/api/teach/courses/{{courseId}}
+Authorization: Bearer {{teacherA}}
+Content-Type: application/json
+
+{ "title": "Late edit" }
+
+### Owner review queue
+GET http://127.0.0.1:8080/api/owner/course-reviews
+Authorization: Bearer {{owner}}
+
+### Owner rejects with a note
+POST http://127.0.0.1:8080/api/owner/courses/{{courseId}}/reject
+Authorization: Bearer {{owner}}
+Content-Type: application/json
+
+{ "reviewNote": "Add a slower demo take before the full tempo." }
+
+### Instructor A edits again (PUT sends the whole form) and resubmits
+PUT http://127.0.0.1:8080/api/teach/courses/{{courseId}}
+Authorization: Bearer {{teacherA}}
+Content-Type: application/json
+
+{ "title": "Walking bass lines", "summary": "Roots, fifths and chromatic approach notes, slow and full tempo.", "minLevel": 2 }
+
+### Resubmit
+POST http://127.0.0.1:8080/api/teach/courses/{{courseId}}/submit
+Authorization: Bearer {{teacherA}}
+
+### Owner approves (publishes)
+POST http://127.0.0.1:8080/api/owner/courses/{{courseId}}/approve
+Authorization: Bearer {{owner}}
+
+### Practice to NEXUS linked to the lesson (503 without ANTHROPIC_API_KEY, 400 for a lesson without a prompt)
+POST http://127.0.0.1:8080/api/nexus/evaluations
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{
+  "musicianProfileId": 1,
+  "lessonId": {{lessonId}},
+  "rubricJson": "{\"technique\": 7, \"timing\": 8, \"tone\": 7, \"expression\": 6, \"theory\": 6}",
+  "notes": "Blues in F, 90 bpm."
+}

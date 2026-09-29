@@ -1,0 +1,87 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Song pool status without Bearer must be 401
+GET http://127.0.0.1:8080/api/tracks/1/royalty-pool
+
+### Song pool status: proposed splits (royalty_split rows normalized to 10000 bps) + on-chain read
+GET http://127.0.0.1:8080/api/tracks/1/royalty-pool
+Authorization: Bearer {{token}}
+
+### Build create_royalty_pool as the owner (wallet signs next; 409 if a member has no on-chain profile)
+POST http://127.0.0.1:8080/api/tracks/1/royalty-pool/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC" }
+
+### A wallet that is neither owner nor WAVE agent is 403
+POST http://127.0.0.1:8080/api/tracks/1/royalty-pool/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "walletPubkey": "9ptwWxWj5YQKP3pD5b4UEDksARBzkSQPtS3Kyvjnff4Z" }
+
+### Explicit splits must sum to 10000 bps (400)
+POST http://127.0.0.1:8080/api/tracks/1/royalty-pool/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "splits": [{ "musicianProfileId": 1, "bps": 9000 }]
+}
+
+### Confirm with a signature that is not on DevNet is rejected (400/502, pool stays inactive)
+POST http://127.0.0.1:8080/api/tracks/1/royalty-pool/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "txSignature": "5VERYfakeSignature1111111111111111111111111111111111111111111111111111111111111111"
+}
+
+### Propose a sync license deal: 10.03 USDC -> artist 8.03 / EH8S 2.00
+POST http://127.0.0.1:8080/api/sync-deals
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "trackId": 1,
+  "licenseeName": "Netflix Mexico",
+  "useDescription": "Series trailer, 30 seconds, LATAM",
+  "amountUsdc": 10.03
+}
+
+> {% client.global.set("dealId", response.body.id); %}
+
+### Amount with more than 2 decimals is 400
+POST http://127.0.0.1:8080/api/sync-deals
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "trackId": 1, "licenseeName": "Bad amount", "amountUsdc": 1.005 }
+
+### Sync deals for the song (newest first)
+GET http://127.0.0.1:8080/api/sync-deals?trackId=1
+Authorization: Bearer {{token}}
+
+### Pay build before the song pool is activated is 409
+POST http://127.0.0.1:8080/api/sync-deals/{{dealId}}/pay/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "walletPubkey": "9ptwWxWj5YQKP3pD5b4UEDksARBzkSQPtS3Kyvjnff4Z" }
+
+### Per-song credits for a musician wallet (empty until a pool is funded)
+GET http://127.0.0.1:8080/api/song-credits?walletPubkey=YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU
+Authorization: Bearer {{token}}

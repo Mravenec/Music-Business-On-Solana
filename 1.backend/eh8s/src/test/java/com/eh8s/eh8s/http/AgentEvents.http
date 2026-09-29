@@ -1,0 +1,24 @@
+### List agent events
+GET http://127.0.0.1:8080/api/agent-events
+
+### Green tick — event only (no owner decision)
+POST http://127.0.0.1:8080/api/agents/1/tick
+Content-Type: application/json
+
+{
+  "eventType": "routine_digest",
+  "summary": "NEXUS routine pedagogical digest",
+  "detail": "No owner action required.",
+  "semaphore": "green"
+}
+
+### Yellow tick — creates pending owner decision
+POST http://127.0.0.1:8080/api/agents/4/tick
+Content-Type: application/json
+
+{
+  "eventType": "venue_booking_wait",
+  "summary": "STAGE asks owner to approve venue assignment",
+  "detail": "Show estimate below 1500 USDC for Foro Disponible.",
+  "semaphore": "yellow"
+}

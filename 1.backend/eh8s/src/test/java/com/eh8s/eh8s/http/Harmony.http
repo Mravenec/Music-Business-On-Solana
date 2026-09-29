@@ -1,0 +1,44 @@
+### Musician session (Jorge, profile 1, bands 1 and 3) - JWT for the calls below
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU" }
+
+> {% client.global.set("musician", response.body.accessToken); %}
+
+### Account outside the band (jwt.gate)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### HARMONY without Bearer must be 401
+GET http://127.0.0.1:8080/api/bands/3/match-suggestions
+
+### Rank candidates for band 3 (Jorge on guitar): instrument gap 40 + level 30 + country 15 + genre 15.
+### withAi adds a Claude rationale for the top 5 when ANTHROPIC_API_KEY is set (aiUsed false otherwise).
+POST http://127.0.0.1:8080/api/bands/3/match-suggestions
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "withAi": true }
+
+### Stored ranking, best first
+GET http://127.0.0.1:8080/api/bands/3/match-suggestions
+Authorization: Bearer {{musician}}
+
+### Not a band member is 403
+GET http://127.0.0.1:8080/api/bands/3/match-suggestions
+Authorization: Bearer {{token}}
+
+### Unknown band is 404
+POST http://127.0.0.1:8080/api/bands/999/match-suggestions
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{}

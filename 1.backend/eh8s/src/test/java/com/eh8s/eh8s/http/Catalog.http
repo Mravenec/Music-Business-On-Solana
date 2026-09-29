@@ -1,0 +1,60 @@
+### Catalog geo
+GET http://127.0.0.1:8080/api/tracks
+
+### Create track (JOOQ POJO — no mocks)
+POST http://127.0.0.1:8080/api/tracks
+Content-Type: application/json
+
+{
+  "title": "Judge smoke track",
+  "provider": "eh8s",
+  "bandId": 1
+}
+GET http://127.0.0.1:8080/api/royalty-types
+GET http://127.0.0.1:8080/api/channel-pieces
+GET http://127.0.0.1:8080/api/geo-tiers
+GET http://127.0.0.1:8080/api/geo-subscriptions
+GET http://127.0.0.1:8080/api/tour-plans
+GET http://127.0.0.1:8080/api/royalty-deposits
+
+###
+POST http://127.0.0.1:8080/api/royalty-deposits
+Content-Type: application/json
+
+{
+  "trackId": 1,
+  "royaltyTypeId": 1,
+  "amountUsdc": 50.00
+}
+
+###
+POST http://127.0.0.1:8080/api/geo-subscriptions
+Content-Type: application/json
+
+{
+  "bandId": 1,
+  "geoTierId": 1,
+  "geoRegionId": 1
+}
+
+###
+POST http://127.0.0.1:8080/api/tour-plans
+Content-Type: application/json
+
+{
+  "bandId": 1,
+  "geoRegionId": 1,
+  "title": "Wave A ATLAS route",
+  "routeNote": "CDMX → GDL → MTY"
+}
+
+###
+POST http://127.0.0.1:8080/api/channel-pieces
+Content-Type: application/json
+
+{
+  "channelFormatId": 1,
+  "title": "Wave A drop",
+  "artistShareBps": 8000,
+  "eh8sShareBps": 2000
+}

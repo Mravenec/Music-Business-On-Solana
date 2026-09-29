@@ -1,0 +1,20 @@
+[package]
+name = "eh8s_devnet_tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Integration tests for eh8s_devnet: loads target/deploy/eh8s_devnet.so into solana-program-test"
+
+[workspace]
+
+[dependencies]
+
+[dev-dependencies]
+eh8s_devnet = { path = "../programs/eh8s_devnet", features = ["no-entrypoint"] }
+anchor-lang = "0.30.1"
+anchor-spl = "0.30.1"
+solana-program-test = "~1.18.26"
+solana-sdk = "~1.18.26"
+solana-client = "~1.18.26"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+bincode = "1"

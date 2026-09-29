@@ -1,0 +1,68 @@
+### Musician session (Jorge, profile 1) - JWT for the calls below
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU" }
+
+> {% client.global.set("musician", response.body.accessToken); %}
+
+### Non-musician login (jwt.gate has no musician profile)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Pins without Bearer must be 401
+GET http://127.0.0.1:8080/api/stage-map/pins
+
+### Pins for a month: purple partner > yellow upcoming confirmed show > green open dates > red
+GET http://127.0.0.1:8080/api/stage-map/pins?month=2026-10
+Authorization: Bearer {{token}}
+
+### Bad month format is 400
+GET http://127.0.0.1:8080/api/stage-map/pins?month=october
+Authorization: Bearer {{token}}
+
+### Publish an open date for Foro Disponible (venue 2, no venue wallet) - 409 if already open
+POST http://127.0.0.1:8080/api/stage-map/venues/2/availability
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "availableDate": "2026-10-16" }
+
+### Pin popup for venue 2 (capacity, contract type, genres, rating, available days)
+GET http://127.0.0.1:8080/api/stage-map/venues/2?month=2026-10
+Authorization: Bearer {{token}}
+
+### Jorge plays in two bands, so bandId is required (400 without it)
+POST http://127.0.0.1:8080/api/stage-map/venues/2/slot-requests
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "showDate": "2026-10-16" }
+
+### Request slot for band 1 on an open date - booking status requested (409 on repeat)
+POST http://127.0.0.1:8080/api/stage-map/venues/2/slot-requests
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "showDate": "2026-10-16", "bandId": 1 }
+
+### A date that is not open is 409
+POST http://127.0.0.1:8080/api/stage-map/venues/2/slot-requests
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "showDate": "2026-10-17", "bandId": 1 }
+
+### An account without a musician profile is 403
+POST http://127.0.0.1:8080/api/stage-map/venues/2/slot-requests
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "showDate": "2026-10-16", "bandId": 1 }

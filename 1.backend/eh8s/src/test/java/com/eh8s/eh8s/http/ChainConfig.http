@@ -1,0 +1,7 @@
+GET http://127.0.0.1:8080/api/chain-config
+
+### Anchor DevNet scaffold metadata
+GET http://127.0.0.1:8080/api/anchor/metadata
+
+### Platform owner + protocol fee
+GET http://127.0.0.1:8080/api/platform/config

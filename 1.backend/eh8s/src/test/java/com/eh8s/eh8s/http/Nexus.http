@@ -1,0 +1,73 @@
+### Musician session (Jorge, profile 1) - JWT for the calls below
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU" }
+
+> {% client.global.set("musician", response.body.accessToken); %}
+
+### Account that is not the musician, a teacher or the owner (jwt.gate)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### NEXUS without Bearer must be 401
+GET http://127.0.0.1:8080/api/nexus/status
+
+### NEXUS status: aiConfigured, rubric keys, Enigma ladder, audio note
+GET http://127.0.0.1:8080/api/nexus/status
+Authorization: Bearer {{musician}}
+
+### Request a Score Enigma for my own profile.
+### 200 with ANTHROPIC_API_KEY set (score, strengths, errors, exercises, recommendedLevel);
+### 503 "NEXUS unavailable: ANTHROPIC_API_KEY not set" without it.
+POST http://127.0.0.1:8080/api/nexus/evaluations
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{
+  "musicianProfileId": 1,
+  "recordingUrl": "https://example.com/jorge-take-3.mp3",
+  "rubricJson": "{\"technique\": 8, \"timing\": 7, \"tone\": 8, \"expression\": 7, \"theory\": 6}",
+  "notes": "Clean riffs; bends drift sharp in the bridge."
+}
+
+### Rubric outside 0..10 is 400
+POST http://127.0.0.1:8080/api/nexus/evaluations
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{
+  "musicianProfileId": 1,
+  "rubricJson": "{\"technique\": 11, \"timing\": 7, \"tone\": 8, \"expression\": 7, \"theory\": 6}"
+}
+
+### Someone else's profile without teacher/owner rights is 403
+POST http://127.0.0.1:8080/api/nexus/evaluations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "musicianProfileId": 1,
+  "rubricJson": "{\"technique\": 8, \"timing\": 7, \"tone\": 8, \"expression\": 7, \"theory\": 6}"
+}
+
+### Unknown musician is 404
+POST http://127.0.0.1:8080/api/nexus/evaluations
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{
+  "musicianProfileId": 999,
+  "rubricJson": "{\"technique\": 8, \"timing\": 7, \"tone\": 8, \"expression\": 7, \"theory\": 6}"
+}
+
+### My evaluations, newest first (applied marks a verified on-chain level change)
+GET http://127.0.0.1:8080/api/nexus/evaluations
+Authorization: Bearer {{musician}}

@@ -1,0 +1,5 @@
+### Active chain config
+GET http://127.0.0.1:8080/api/chain-config
+
+### Anchor DevNet program metadata (live instructions + program id)
+GET http://127.0.0.1:8080/api/anchor/metadata

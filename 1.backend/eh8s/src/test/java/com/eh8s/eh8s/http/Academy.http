@@ -1,0 +1,59 @@
+### Catalog
+GET http://127.0.0.1:8080/api/instruments
+GET http://127.0.0.1:8080/api/enigma-levels
+GET http://127.0.0.1:8080/api/academy-plans
+
+### Enrollment
+POST http://127.0.0.1:8080/api/accounts
+Content-Type: application/json
+
+{
+  "email": "jorge@eh8s.test",
+  "displayName": "Jorge",
+  "role": "musician",
+  "countryCode": "MEX",
+  "walletPubkey": null
+}
+
+###
+POST http://127.0.0.1:8080/api/musicians
+Content-Type: application/json
+
+{
+  "accountId": 1,
+  "instrumentId": 1,
+  "enigmaLevelId": 4,
+  "enigmaScore": 88,
+  "musicianProfilePda": null
+}
+
+###
+GET http://127.0.0.1:8080/api/musicians
+
+###
+POST http://127.0.0.1:8080/api/academy-subscriptions
+Content-Type: application/json
+
+{
+  "musicianProfileId": 1,
+  "academyPlanId": 2
+}
+
+###
+GET http://127.0.0.1:8080/api/academy-subscriptions
+
+###
+GET http://127.0.0.1:8080/api/accounts
+
+###
+POST http://127.0.0.1:8080/api/enigma-evaluations
+Content-Type: application/json
+
+{
+  "musicianProfileId": 1,
+  "score": 90,
+  "notes": "Product console evaluation"
+}
+
+###
+GET http://127.0.0.1:8080/api/enigma-evaluations

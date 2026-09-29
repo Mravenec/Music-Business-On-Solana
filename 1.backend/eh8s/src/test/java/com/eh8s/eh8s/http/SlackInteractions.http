@@ -1,0 +1,63 @@
+### Slack Interactivity. Public endpoint: authenticated by the Slack request signature,
+### not by a Bearer token. Point the Slack app's Interactivity Request URL at
+### https://<public tunnel>/api/slack/interactions and set SLACK_SIGNING_SECRET in the Spring env.
+
+### Unsigned request must be 401
+POST http://127.0.0.1:8080/api/slack/interactions
+Content-Type: application/x-www-form-urlencoded
+
+payload=%7B%22type%22%3A%22block_actions%22%7D
+
+### Signed but stale timestamp (older than 5 minutes) must be 401
+POST http://127.0.0.1:8080/api/slack/interactions
+Content-Type: application/x-www-form-urlencoded
+X-Slack-Request-Timestamp: 1500000000
+X-Slack-Signature: v0=0000000000000000000000000000000000000000000000000000000000000000
+
+payload=%7B%22type%22%3A%22block_actions%22%7D
+
+### Signed Approve click for owner decision 1 (IntelliJ 2023.3+ computes the real v0 HMAC).
+### Put slackSigningSecret in a private http-client.private.env.json - never commit it.
+### First call: 200 outcome approved (answered_via = slack). Second call: 200 outcome already_decided.
+### Without SLACK_SIGNING_SECRET in the Spring env this answers 503.
+< {%
+  const ts = Math.floor(Date.now() / 1000).toString();
+  const payload = JSON.stringify({
+    type: "block_actions",
+    user: { id: "U0HTTP", username: "http-client" },
+    response_url: "https://hooks.slack.com/actions/T0/0/http-client",
+    actions: [{ action_id: "owner_decision_approve", value: "1" }]
+  });
+  const body = "payload=" + encodeURIComponent(payload);
+  const secret = request.environment.get("slackSigningSecret");
+  const sig = crypto.hmac.sha256().withTextSecret(secret).updateWithText("v0:" + ts + ":" + body).digest().toHex();
+  request.variables.set("slackTs", ts);
+  request.variables.set("slackBody", body);
+  request.variables.set("slackSig", "v0=" + sig);
+%}
+POST http://127.0.0.1:8080/api/slack/interactions
+Content-Type: application/x-www-form-urlencoded
+X-Slack-Request-Timestamp: {{slackTs}}
+X-Slack-Signature: {{slackSig}}
+
+{{slackBody}}
+
+### Owner inbox now shows answeredVia / answeredBy on each decision (JWT)
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC" }
+
+> {% client.global.set("owner", response.body.accessToken); %}
+
+###
+GET http://127.0.0.1:8080/api/owner-decisions
+Authorization: Bearer {{owner}}
+
+### Answering a decided row again from the web is 409
+POST http://127.0.0.1:8080/api/owner-decisions/1/approve
+Authorization: Bearer {{owner}}
+
+### Slack bridge status reports interactive (signing secret set) and the interactions path
+GET http://127.0.0.1:8080/api/slack/status?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+Authorization: Bearer {{owner}}

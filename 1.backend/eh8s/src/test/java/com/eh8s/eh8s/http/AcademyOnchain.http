@@ -1,0 +1,76 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Build without Bearer must be 401
+POST http://127.0.0.1:8080/api/academy-subscriptions/1/subscribe-academy/build
+Content-Type: application/json
+
+{ "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC" }
+
+### Create a Band plan subscription for 3 months: treasury 140.25 + instructor 24.75, expires +3 months
+POST http://127.0.0.1:8080/api/academy-subscriptions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "musicianProfileId": 1, "academyPlanId": 2, "months": 3 }
+
+> {% client.global.set("subId", response.body.id); %}
+
+### 13 months must be 400 (months 1..12)
+POST http://127.0.0.1:8080/api/academy-subscriptions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "musicianProfileId": 1, "academyPlanId": 2, "months": 13 }
+
+### Build subscribe_academy(plan_type=2, months=3): amount 165 from the plan (client amount ignored), PDA ["academy_sub", wallet] = HV3EZV71BKqoeeYn5C4fJJyMMzL8UrqGwm89NPs63Qm9
+POST http://127.0.0.1:8080/api/academy-subscriptions/{{subId}}/subscribe-academy/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "amountUsdc": 1.00
+}
+
+### Confirm with an old ["academy", wallet] PDA must be 400
+POST http://127.0.0.1:8080/api/academy-subscriptions/{{subId}}/subscribe-academy/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "txSignature": "5xNotARealSignature111111111111111111111111111111111111111111111111111111111111111",
+  "academySubscriptionPda": "A5YXuDVPUmbBbMnTL8avZbnU8xT8Na54Qv5nV8mbySBg"
+}
+
+### Reject confirm without txSignature (must not mark paid)
+POST http://127.0.0.1:8080/api/academy-subscriptions/{{subId}}/subscribe-academy/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "academySubscriptionPda": "AcademySubPda11111111111111111111111111111"
+}
+
+### On-chain status of an unconfirmed subscription must be 409
+GET http://127.0.0.1:8080/api/academy-subscriptions/{{subId}}/onchain
+Authorization: Bearer {{token}}
+
+### Reject legacy paid marker without txSignature
+POST http://127.0.0.1:8080/api/academy-subscriptions/1/devnet-pay
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"
+}

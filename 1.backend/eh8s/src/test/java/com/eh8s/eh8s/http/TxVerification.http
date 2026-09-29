@@ -1,0 +1,58 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Confirm without Bearer must be 401
+POST http://127.0.0.1:8080/api/bands/3/vault/confirm
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "txSignature": "2PRRmV4ZAFxvp646AvX9ibemeifXpGzUeXS743z6SCESxQucVE9rMpLKjZUYrTYuW57Fh5i7YGgzYhRM3bWon5Nq",
+  "bandVaultPda": "6HYhgrjpMZ3C6AS2FYnQv8ofSTqXVyWzRAVq5FoWgYg"
+}
+
+### Forged record: a real DevNet upsert_musician_profile signature replayed as create_band must be 400
+# The verifier decodes the tx: wrong signer / instruction, so band 3 stays without a vault
+POST http://127.0.0.1:8080/api/bands/3/vault/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "txSignature": "2PRRmV4ZAFxvp646AvX9ibemeifXpGzUeXS743z6SCESxQucVE9rMpLKjZUYrTYuW57Fh5i7YGgzYhRM3bWon5Nq",
+  "bandVaultPda": "6HYhgrjpMZ3C6AS2FYnQv8ofSTqXVyWzRAVq5FoWgYg"
+}
+
+### Vault PDA of another band must be 400 before any RPC call
+POST http://127.0.0.1:8080/api/bands/3/vault/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "txSignature": "2PRRmV4ZAFxvp646AvX9ibemeifXpGzUeXS743z6SCESxQucVE9rMpLKjZUYrTYuW57Fh5i7YGgzYhRM3bWon5Nq",
+  "bandVaultPda": "GgpAKj9FZppC8gckF6SzevirNbgkfhpEbqiz1GE6oKLF"
+}
+
+### Unknown signature must be 400 (not found / not confirmed)
+POST http://127.0.0.1:8080/api/bands/3/vault/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "txSignature": "1111111111111111111111111111111111111111111111111111111111111111",
+  "bandVaultPda": "6HYhgrjpMZ3C6AS2FYnQv8ofSTqXVyWzRAVq5FoWgYg"
+}
+
+### Band 3 vault is still inactive after the rejected confirms
+GET http://127.0.0.1:8080/api/bands/3/vault
+Authorization: Bearer {{token}}

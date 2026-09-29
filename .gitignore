@@ -1,0 +1,19 @@
+# Dependencies and build output
+node_modules/
+dist/
+target/
+.anchor/
+test-ledger/
+
+# Local configuration and secrets (copy the .env.example files)
+.env
+*.local
+**/*-keypair.json
+**/deploy/*.json
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

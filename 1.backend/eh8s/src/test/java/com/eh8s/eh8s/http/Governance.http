@@ -1,0 +1,98 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Governance without Bearer must be 401
+GET http://127.0.0.1:8080/api/governance?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+
+### Governance for a wallet that is neither owner nor signer must be 403
+GET http://127.0.0.1:8080/api/governance?walletPubkey=U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq
+Authorization: Bearer {{token}}
+
+### Governance for the owner: initialized=false, maxSigners=5, governancePda 3ZH4ig...
+GET http://127.0.0.1:8080/api/governance?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+Authorization: Bearer {{token}}
+
+### Build init_governance: 2 of 2 (owner signs next in the wallet)
+POST http://127.0.0.1:8080/api/governance/init/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "signers": ["7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC", "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU"],
+  "threshold": 2
+}
+
+### Non-owner init build must be 403
+POST http://127.0.0.1:8080/api/governance/init/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU",
+  "signers": ["YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU"],
+  "threshold": 1
+}
+
+### Duplicate signers must be 400
+POST http://127.0.0.1:8080/api/governance/init/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "signers": ["YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU", "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU"],
+  "threshold": 1
+}
+
+### Threshold above the signer count must be 400
+POST http://127.0.0.1:8080/api/governance/init/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "signers": ["YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU"],
+  "threshold": 2
+}
+
+### Forged init confirm must be 400 (verifier rejects an unknown signature)
+POST http://127.0.0.1:8080/api/governance/init/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "signers": ["7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"],
+  "threshold": 1,
+  "txSignature": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW"
+}
+
+### Propose before init must be 409
+POST http://127.0.0.1:8080/api/governance/proposals/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "kind": "withdraw",
+  "amountUsdc": "1"
+}
+
+### Direct treasury withdraw build still works while governance is not initialized
+POST http://127.0.0.1:8080/api/owner/treasury/withdraw/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "amountUsdc": "0.01"
+}

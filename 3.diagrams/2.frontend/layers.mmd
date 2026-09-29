@@ -1,0 +1,355 @@
+%% AppShell brand: public/eh8s-mark.png (circular EH, #1d6fd8) left of the wordmark
+flowchart TD
+  App --> SolanaProviders
+  SolanaProviders --> SessionProvider
+  SessionProvider --> RolesProvider
+  RolesProvider --> AppShell
+  AppShell -->|public hub / role home| HomePage
+  AppShell -->|apply one role| ApplyPage
+  AppShell -->|role destinations| MorePage
+  AppShell -->|role-gated| AcademyPage
+  AcademyPage -->|one plan| AcademyPlanPage
+  AcademyPage -->|enroll| AcademyEnrollPage
+  AcademyPage -->|score| AcademyEvaluatePage
+  AppShell -->|role-gated| BandsPage
+  BandsPage -->|one band| BandDetailPage
+  BandsPage -->|create| BandNewPage
+  BandDetailPage -->|add member| BandAddMemberPage
+  BandDetailPage -->|schedule| BandRehearsalNewPage
+  BandDetailPage -->|check in| BandCheckInPage
+  BandCheckInPage -->|rate bandmates| BandRatePage
+  BandDetailPage -->|rate bandmates| BandRatePage
+  BandDetailPage -->|SPP cycle| BandCyclePage
+  BandDetailPage -->|activate vault| BandVaultActivatePage
+  BandDetailPage -->|on-chain weights| BandVaultSyncPage
+  BandVaultActivatePage -->|next| BandVaultSyncPage
+  BandVaultSyncPage -->|settle| StageSettlePage
+  AppShell -->|role-gated| StageMapPage
+  StageMapPage -->|venue| StageVenuePage
+  StageMapPage -->|list venue| StageVenueNewPage
+  StageMapPage -->|book| StageBookPage
+  StageMapPage -->|settle wallet| StageSettlePage
+  StageMapPage -->|claim wallet| StageClaimPage
+  StageMapPage -->|pin popup: request slot| StageSlotRequestPage
+  StageVenuePage -->|request slot| StageSlotRequestPage
+  StageVenuePage -->|open dates| StageVenueDatesPage
+  StageMapPage -->|concert check-in| StageConcertsPage
+  StageConcertsPage -->|my set| StageConcertSetPage
+  AppShell -->|role-gated| CatalogPage
+  CatalogPage -->|new track| CatalogNewPage
+  CatalogPage -->|track| CatalogTrackPage
+  CatalogTrackPage -->|activate pool| CatalogSongPoolPage
+  CatalogTrackPage -->|deposit wallet| CatalogDepositPage
+  CatalogSongPoolPage -->|deposit| CatalogDepositPage
+  CatalogTrackPage -->|sync licenses| CatalogSyncPage
+  CatalogSyncPage -->|new deal| CatalogSyncNewPage
+  CatalogSyncNewPage -->|pay| CatalogSyncDealPage
+  CatalogSyncPage -->|open deal| CatalogSyncDealPage
+  StageClaimPage -->|song credits| SongCreditsPage
+  CatalogPage -->|reach wallet| CatalogReachPage
+  AppShell -->|owner inbox| OwnerPage
+  OwnerPage -->|roles| OwnerRolesPage
+  OwnerRolesPage -->|granted| OwnerRolesGrantedPage
+  OwnerPage -->|decisions| OwnerDecisionsPage
+  OwnerPage -->|treasury| OwnerTreasuryPage
+  OwnerTreasuryPage -->|activity| OwnerTreasuryActivityPage
+  OwnerPage -->|AI digest| OwnerDigestPage
+  OwnerPage -->|agent powers| OwnerAgentsPage
+  OwnerAgentsPage -->|one agent| OwnerAgentAuthorizePage
+  OwnerPage -->|governance| GovernancePage
+  GovernancePage -->|before init| GovernanceSetupPage
+  GovernancePage -->|open| GovernanceProposalPage
+  GovernancePage -->|new proposal| GovernanceNewPage
+  GovernanceNewPage -->|one kind| GovernanceProposePage
+  OwnerTreasuryPage -->|governance on| GovernanceProposePage
+  OwnerAgentsPage -->|governance on| GovernanceProposePage
+  OwnerPage -->|Enigma levels| AgentLevelsPage
+  MorePage -->|NEXUS wallet| AgentLevelsPage
+  AgentLevelsPage -->|one musician| AgentLevelSetPage
+  AcademyPage -->|Score Enigma NEXUS| NexusPage
+  NexusPage -->|request| NexusRequestPage
+  NexusRequestPage -->|stored result| NexusEvaluationPage
+  NexusPage -->|one evaluation| NexusEvaluationPage
+  NexusEvaluationPage -->|apply level on-chain| AgentLevelSetPage
+  AgentLevelSetPage -->|Score Enigma history| NexusPage
+  BandDetailPage -->|find musicians HARMONY| BandMatchPage
+  BandMatchPage -->|add member| BandAddMemberPage
+  BandDetailPage -->|tour routes ATLAS| BandToursPage
+  BandToursPage -->|plan a route| BandTourNewPage
+  BandTourNewPage -->|stored plan| BandTourPage
+  BandToursPage -->|one plan| BandTourPage
+  BandTourPage -->|open venue| StageVenuePage
+  StageVenuePage -->|on-chain listing| VenueOnchainPage
+  VenueOnchainPage -->|one booking| VenueBookingEscrowPage
+  OwnerPage -->|venues and bookings| StageQueuePage
+  StageQueuePage -->|approve venue| StageVenueApprovePage
+  StageQueuePage -->|confirm contract| StageBookingConfirmPage
+  OwnerPage -->|escrows to settle| VaultQueuePage
+  VaultQueuePage -->|one escrow| VaultSettlePage
+  AppShell -->|role-gated| DevnetPayPage
+  DevnetPayPage -->|real pay destinations| PaymentNewPage
+  PaymentNewPage -->|redirect| StageClaimPage
+  AppShell -->|owner only| AgentEventsPage
+  AppShell -->|owner only| SolanaPage
+  AppShell -->|owner only| AnchorDocsPage
+  AnchorDocsPage -->|live DevNet ix registry| useAnchorMetadata
+  AppShell --> HealthPage
+  SessionProvider --> sessionService
+  sessionService --> httpClient["apiClient Bearer interceptor / sessionStorage eh8s.jwt<br/>POST session/wallet/:w/location (lastLat, lastLng)"]
+  httpClient --> API["POST /api/session/challenge public<br/>POST /api/session/wallet with signature<br/>POST /api/auth/login|register public<br/>other /api/** with Authorization Bearer"]
+  academyService --> httpClient
+  bandService --> httpClient
+  catalogService --> httpClient
+  venueService --> httpClient
+  opsService --> httpClient
+  chainConfigService --> httpClient
+  roleApplicationService --> httpClient
+  slackService --> httpClient
+  agentEventService --> httpClient
+  anchorService --> httpClient
+  academyOnchainService --> httpClient
+  royaltyGeoOnchainService --> httpClient
+  settleClaimOnchainService --> httpClient
+  bandVaultService --> httpClient
+  devnetPayService --> httpClient
+  healthService --> httpClient
+  AcademyPage --> useAcademy
+  AcademyPlanPage --> useAcademy
+  AcademyEnrollPage --> useAcademy
+  AcademyEvaluatePage --> useAcademy
+  AcademyPlanPage -->|useAcademySubscribeTx| useOnchainPayments["useOnchainPayments (pages never call on-chain services)<br/>wallet adapter + build / sign / confirm per instruction"]
+  useOnchainPayments -->|sendSubscribeAcademyTx seeds academy_sub + payer| academyOnchainService
+  AcademyPlanPage -->|months 1-12 + Active until| useSubscriptionExpiry
+  CatalogReachPage -->|region + tier + months| useSubscriptionExpiry
+  useSubscriptionExpiry --> academyOnchainService
+  useSubscriptionExpiry --> royaltyGeoOnchainService
+  AcademyPage --> useChainConfig
+  useAcademy --> academyService
+  AcademyPage --> academyOnchainService
+  academyService --> AcadAPI["/api/instruments levels plans musicians<br/>academy-subscriptions enigma-evaluations"]
+  academyOnchainService --> AcadOnchainAPI["POST .../subscribe-academy/build<br/>POST .../subscribe-academy/confirm<br/>GET academy-subscriptions/:id/onchain"]
+  useWallet --> DevNet["Solana DevNet RPC + Phantom/Solflare"]
+  useChainConfig --> chainConfigService
+  chainConfigService --> ChainAPI["GET /api/platform/config or chain-config"]
+  BandsPage --> useBands
+  BandDetailPage --> useBands
+  BandNewPage --> useBands
+  BandAddMemberPage --> useBands
+  useBands --> bandService
+  bandService --> BandAPI["POST /api/bands members sessions checkins<br/>spp-cycles close (5 variables computed)"]
+  StageMapPage --> useStagePins
+  useStagePins --> stageMapService
+  StageSlotRequestPage --> useVenueSlot
+  StageVenueDatesPage --> useVenueSlot
+  useVenueSlot --> stageMapService
+  useVenueSlot --> bandService
+  stageMapService --> httpClient
+  stageMapService --> StageMapAPI["GET /api/stage-map/pins?month · GET stage-map/venues/:id<br/>POST venues/:id/availability · POST venues/:id/slot-requests (requested)<br/>Leaflet CircleMarker: purple partner > yellow confirmed > green open > red"]
+  BandRatePage --> useCreativeRatings
+  useCreativeRatings --> sppInputsService
+  useCreativeRatings --> bandService
+  StageConcertsPage --> useStageMap
+  StageConcertSetPage --> useSetCheckin
+  useSetCheckin --> sppInputsService
+  BandCyclePage --> useBands
+  sppInputsService --> httpClient
+  sppInputsService --> SppInputsAPI["GET|POST rehearsal-sessions/:id/creative-ratings (rater = JWT)<br/>GET concerts/:id/set-checkins · POST set-checkins/start|end"]
+  useStageMap --> venueService
+  venueService --> VenueAPI["POST bookings concerts settle<br/>GET settlements/:id/claims"]
+  StageMapPage --> settleClaimOnchainService
+  StageSettlePage -->|useSettleConcertTx| useOnchainPayments
+  StageClaimPage -->|useClaimRoyaltiesTx| useOnchainPayments
+  useOnchainPayments --> settleClaimOnchainService
+  settleClaimOnchainService --> ClaimBuildAPI["POST pending-claims/:id/claim-royalties/build|confirm<br/>POST concert-settlements/:id/settle-concert/build|confirm"]
+  useOnchainPayments --> settleClaimOnchainTx
+  settleClaimOnchainTx -->|wallet signs, RPC confirms| DevNetProgram["DevNet settle_concert (bandVault + member profiles) + claim_royalties"]
+  settleClaimOnchainTx --> bandVaultTx
+  BandVaultActivatePage --> useBandVault
+  BandVaultSyncPage --> useBandVault
+  useBandVault --> bandVaultService
+  useBandVault --> bandVaultTx
+  bandVaultService --> BandVaultAPI["GET /api/bands/:id/vault<br/>POST vault/build|confirm · vault/weights/build|confirm"]
+  bandVaultTx -->|owner wallet signs, RPC confirms| DevNetProgram
+  treasuryService --> httpClient
+  OwnerTreasuryPage --> useOwnerTreasury
+  OwnerTreasuryActivityPage --> useOwnerTreasury
+  useOwnerTreasury --> treasuryService
+  useOwnerTreasury --> withdrawTreasuryTx
+  treasuryService --> TreasuryAPI["GET /api/owner/treasury?walletPubkey (owner only)<br/>POST withdraw/build|confirm"]
+  withdrawTreasuryTx -->|owner wallet signs withdraw_treasury, RPC confirms| DevNetProgram
+  ownerDigestService --> httpClient
+  OwnerDigestPage --> useOwnerDigest
+  useOwnerDigest --> ownerDigestService
+  agentAuthorityService --> httpClient
+  OwnerAgentsPage --> useAgentAuthority
+  OwnerAgentAuthorizePage --> useAgentAuthority
+  AgentLevelsPage --> useMusicianLevels
+  AgentLevelSetPage --> useMusicianLevels
+  useAgentAuthority --> agentAuthorityService
+  useMusicianLevels --> agentAuthorityService
+  useAgentAuthority --> sendBuiltIx
+  useMusicianLevels --> sendBuiltIx
+  agentAuthorityService --> AgentAuthAPI["GET /api/owner/agents (owner only)<br/>POST owner/agents/authorize/build|confirm<br/>GET /api/agents/level/musicians (owner or NEXUS 0x01)<br/>POST agents/level/build|confirm"]
+  sendBuiltIx -->|owner signs authorize_agent · owner/NEXUS signs update_musician_level| DevNetProgram
+  VenueOnchainPage --> useVenueEscrow
+  VenueBookingEscrowPage --> useVenueEscrow
+  StageQueuePage --> useStageQueue
+  StageVenueApprovePage --> useStageQueue
+  StageBookingConfirmPage --> useStageQueue
+  VaultQueuePage --> useVaultQueue
+  VaultSettlePage --> useVaultQueue
+  useVenueEscrow --> useWalletStep
+  useStageQueue --> useWalletStep
+  useVaultQueue --> useWalletStep
+  GovernancePage --> useGovernance
+  GovernanceSetupPage --> useGovernance
+  GovernanceProposePage --> useGovernance
+  GovernanceProposalPage --> useGovernance
+  useGovernance --> useWalletStep
+  useGovernance --> governanceService
+  governanceService --> httpClient
+  governanceService --> GovernanceAPI["GET /api/governance?walletPubkey (owner or signer)<br/>POST governance/init build|confirm · proposals build|confirm<br/>POST proposals/:id/approve|execute build|confirm"]
+  useWalletStep --> sendBuiltIx
+  CatalogSongPoolPage --> useSongPool
+  CatalogTrackPage --> useSongPool
+  CatalogDepositPage --> useSongPool
+  CatalogSyncPage --> useSyncDeals
+  CatalogSyncNewPage --> useSyncDeals
+  CatalogSyncDealPage --> useSyncDeals
+  SongCreditsPage --> useSongCredits
+  useSongPool --> useWalletStep
+  useSyncDeals --> useWalletStep
+  useSongPool --> songRoyaltyService
+  useSongPool -->|payDeposit: deposit_royalties build / confirm| royaltyGeoOnchainService
+  useSyncDeals --> songRoyaltyService
+  useSongCredits --> songRoyaltyService
+  songRoyaltyService --> httpClient
+  songRoyaltyService --> SongRoyaltyAPI["GET tracks/:id/royalty-pool · POST royalty-pool/build|confirm<br/>GET|POST sync-deals · POST sync-deals/:id/pay/build|confirm<br/>GET song-credits"]
+  useVenueEscrow --> venueBookingService
+  useStageQueue --> venueBookingService
+  useVaultQueue --> venueBookingService
+  venueBookingService --> httpClient
+  venueBookingService --> VenueBookingAPI["GET /api/venues/:id/onchain · POST venues/:id/register|approve build|confirm<br/>POST bookings/:id/propose|confirm-contract|cancel|settle build|confirm<br/>GET stage/queue (owner or STAGE 0x04) · vault/settle-queue (owner or VAULT 0x08)"]
+  sendBuiltIx -->|venue signs register/propose/cancel · STAGE approve/confirm · VAULT settle_booking| DevNetProgram
+  sendBuiltIx -->|owner signs init_governance · signers propose/approve · anyone execute_*_proposal| DevNetProgram
+  AcademyEnrollPage -->|useMusicianProfileTx: musician signs upsert_musician_profile instrument + country; level 0| useOnchainPayments
+  CatalogReachPage -->|useGeoSubscribeTx| useOnchainPayments
+  useOnchainPayments -->|subscribe_geographic + claim_royalties| royaltyGeoTx
+  ownerDigestService --> DigestAPI["GET /api/owner/digest/latest?walletPubkey (owner only)<br/>POST /api/owner/digest/run (Claude; 503 without key)"]
+  CatalogPage --> useCatalog
+  CatalogPage --> useChainConfig
+  CatalogPage --> useWallet["useWallet / useConnection"]
+  useCatalog --> catalogService
+  catalogService --> CatAPI["POST royalty-deposits geo-subscriptions<br/>tour-plans channel-pieces<br/>GET geo-regions"]
+  CatalogPage --> royaltyGeoOnchainService
+  CatalogPage --> royaltyGeoTx
+  royaltyGeoOnchainService --> GeoOnchainAPI["POST deposit-royalties|subscribe-geographic build/confirm<br/>GET geo-subscriptions/:id/onchain<br/>POST pending-claims/:id/claim-royalties/confirm"]
+  royaltyGeoTx --> DevNet["wallet-signed subscribe_geographic seeds geo_sub + payer + geo_code<br/>claim_royalties<br/>(per-song deposit_royalties, create_royalty_pool, pay_sync_license via sendBuiltIx)"]
+  useChainConfig --> chainConfigService
+  OwnerPage --> useOps
+  useOps --> opsService
+  opsService --> OpsAPI["GET agents decisions (answeredVia web|slack, answeredBy)<br/>POST approve reject (409 once answered)<br/>POST agents/:id/semaphore"]
+  OwnerDecisionsPage --> useOps
+  OwnerDecisionsPage -->|Answered decisions| OwnerDecisionsAnsweredPage
+  OwnerDecisionsAnsweredPage --> useOps
+  OwnerDecisionsPage -->|Slack approvals| OwnerSlackPage
+  OwnerSlackPage --> useSlackStatus
+  useSlackStatus --> slackService
+  slackService --> SlackAPI["GET /api/slack/status (interactive, interactionsPath)|deliveries (owner wallet)<br/>POST /api/slack/notify owner-only dirigent<br/>Slack clicks: POST /api/slack/interactions (signed, server-side)"]
+  DevnetPayPage --> useDevnetPay
+  useDevnetPay --> devnetPayService
+  DevnetPayPage -->|academy paid only via Academy| AcademyPage
+  DevnetPayPage -->|claims via StageClaimPage| StageClaimPage
+  devnetPayService --> PayAPI["GET /devnet-pay-markers confirmed signatures only"]
+  AgentEventsPage --> useAgentEvents
+  useAgentEvents --> agentEventService
+  agentEventService --> EvtAPI["GET /agent-events<br/>POST /agents/:id/tick"]
+  SolanaPage --> chainConfigService
+  AnchorDocsPage --> useAnchorMetadata
+  useAnchorMetadata --> anchorService
+  anchorService --> AnchorAPI["GET /api/anchor/metadata"]
+  HealthPage --> healthService
+  HomePage --> useRoles
+  HomePage -->|feature flags, refetch on session change| usePlatformConfig
+  usePlatformConfig --> sessionService
+  ApplyPage --> useRoles
+  MorePage --> useRoles
+  OwnerPage --> useRoles
+  AppShell --> useRoles
+  useRoles --> roleApplicationService
+  roleApplicationService --> RoleAPI["POST/GET /api/role-applications<br/>POST approve|reject|revoke (reviewedByWallet, reason)<br/>GET /api/roles/memberships"]
+  NexusPage --> useNexus
+  NexusRequestPage --> useNexus
+  NexusEvaluationPage --> useNexus
+  useNexus --> nexusService
+  nexusService --> httpClient
+  nexusService --> NexusAPI["GET /api/nexus/status · POST /api/nexus/evaluations (enigma_evaluation keys, rubricJson; 503 without ANTHROPIC_API_KEY)<br/>GET /api/nexus/evaluations?musicianProfileId · GET evaluations/:id"]
+  BandMatchPage --> useBandMatch
+  useBandMatch --> harmonyService
+  harmonyService --> httpClient
+  harmonyService --> HarmonyAPI["GET|POST /api/bands/:id/match-suggestions {withAi}<br/>instrument 40 · level 30 · country 15 · genre 15"]
+  BandToursPage --> useTourRoutes
+  BandTourNewPage --> useTourRoutes
+  BandTourPage --> useTourRoutes
+  useTourRoutes --> atlasService
+  atlasService --> httpClient
+  atlasService --> AtlasAPI["GET|POST /api/bands/:id/tour-routes (409 without active zone)<br/>GET /api/tour-routes/:planId (stops + venue)"]
+  AcademyPage -->|video courses| AcademyCoursesPage
+  AcademyCoursesPage -->|open course| AcademyCoursePage
+  AcademyCoursePage -->|continue / one lesson| AcademyLessonPage
+  AcademyLessonPage -->|mark complete and continue| AcademyLessonPage
+  AcademyLessonPage -->|last lesson| AcademyCoursePage
+  AcademyCoursePage -->|locked: plan| AcademyPage
+  AcademyCoursePage -->|locked: level| NexusPage
+  AcademyCoursesPage --> useCourses
+  AcademyCoursePage --> useCourses
+  AcademyLessonPage --> useCourses
+  useCourses --> courseService
+  courseService --> httpClient
+  courseService --> CourseAPI["GET /api/courses · GET /api/courses/:id (no video links)<br/>GET /api/lessons/:id (embedUrl only when unlocked)<br/>PUT /api/lessons/:id/progress"]
+  AcademyLessonPage --> Player["iframe: youtube-nocookie · player.vimeo · Bunny Stream · Cloudflare Stream<br/>(isSafeEmbed allow-list)"]
+  OwnerPage -->|courses| OwnerCoursesPage
+  OwnerCoursesPage -->|new course| OwnerCourseFormPage
+  OwnerCoursesPage -->|edit course| OwnerCoursePage
+  OwnerCourseFormPage -->|saved| OwnerCoursePage
+  OwnerCoursePage -->|course details| OwnerCourseFormPage
+  OwnerCoursePage -->|one section| OwnerSectionPage
+  OwnerCoursePage -->|add / edit lesson| OwnerLessonFormPage
+  OwnerCoursePage -->|preview as student| AcademyCoursePage
+  OwnerCoursesPage -->|course access| OwnerCourseAccessPage
+  OwnerCourseAccessPage -->|grant access| OwnerCourseGrantPage
+  OwnerCoursesPage --> useCourseAuthoring
+  OwnerCourseFormPage --> useCourseAuthoring
+  OwnerCoursePage --> useCourseAuthoring
+  OwnerSectionPage --> useCourseAuthoring
+  OwnerLessonFormPage --> useCourseAuthoring
+  OwnerCourseAccessPage --> useCourseAuthoring
+  OwnerCourseGrantPage --> useCourseAuthoring
+  useCourseAuthoring --> courseAuthoringService
+  courseAuthoringService --> httpClient
+  courseAuthoringService --> OwnerCourseAPI["GET|POST /api/owner/courses - GET|PUT /api/owner/courses/:id<br/>POST courses/:id/move|publish|draft|archive (publish 409 without a visible lesson)<br/>POST courses/:id/sections - PUT|move sections/:id - POST sections/:id/lessons - PUT|move lessons/:id<br/>GET|POST /api/owner/course-grants - POST course-grants/:id/revoke<br/>bodies use POJO keys: lesson isFreePreview|isActive 0/1, section isActive 0/1, grant expiresAt LocalDateTime"]
+  AcademyPage -->|teach| TeachPage
+  AppShell -->|instructor workspace: Teach| TeachPage
+  TeachPage -->|can teach: my courses| TeachCoursesPage["OwnerCoursesPage at /academy/teach/courses<br/>(useAuthoringScope: scope teach)"]
+  TeachPage -->|missing level| NexusPage
+  TeachPage -->|missing role| ApplyPage
+  TeachPage -->|owner| OwnerCoursesPage
+  TeachCoursesPage -->|open / new| TeachCoursePage["OwnerCoursePage · OwnerCourseFormPage · OwnerSectionPage · OwnerLessonFormPage<br/>at /academy/teach/courses/* - Submit for review; locked while in review or published"]
+  TeachPage --> useTeaching
+  TeachCoursePage --> useCourseAuthoring
+  TeachCoursePage -->|submit for review: actions.submit| useCourseAuthoring
+  OwnerCoursesPage -->|review queue| OwnerCourseReviewsPage
+  OwnerCourseReviewsPage -->|review| OwnerCourseReviewPage
+  OwnerCoursePage -->|submitted: review| OwnerCourseReviewPage
+  OwnerCourseReviewPage -->|approve / send back with note| OwnerCourseReviewsPage
+  OwnerCourseReviewsPage --> useTeaching
+  OwnerCourseReviewPage --> useCourseAuthoring
+  useTeaching --> teachingService
+  useCourseAuthoring -->|actions submit / approve / reject| teachingService
+  useCourseAuthoring -->|course form: instruments + levels| academyService
+  teachingService --> httpClient
+  courseAuthoringService -->|scope teach| TeachAPI["GET /api/teach/eligibility - GET|POST /api/teach/courses - GET|PUT courses/:id<br/>POST courses/:id/submit|sections - PUT|move sections/:id - POST sections/:id/lessons - PUT|move lessons/:id<br/>(403 below level 5 or without instructor role; 409 while in review or published)"]
+  teachingService --> TeachAPI
+  teachingService --> ReviewAPI["GET /api/owner/course-reviews - POST /api/owner/courses/:id/approve<br/>POST /api/owner/courses/:id/reject (reviewNote required)"]
+  AcademyLessonPage -->|send practice to NEXUS| NexusRequestPage
+  NexusRequestPage -->|lessonId + practice prompt| nexusService

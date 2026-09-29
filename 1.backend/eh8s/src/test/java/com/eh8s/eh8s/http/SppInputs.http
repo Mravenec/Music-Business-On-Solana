@@ -1,0 +1,75 @@
+### Musician session (Jorge, profile 1, band 1) - JWT for the calls below
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU" }
+
+> {% client.global.set("musician", response.body.accessToken); %}
+
+### Non-musician login (jwt.gate has no musician profile)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Creative ratings without Bearer must be 401
+GET http://127.0.0.1:8080/api/rehearsal-sessions/1/creative-ratings
+
+### Creative ratings for rehearsal 1
+GET http://127.0.0.1:8080/api/rehearsal-sessions/1/creative-ratings
+Authorization: Bearer {{musician}}
+
+### Rate a bandmate (Marco, profile 3) 1..5 - rater comes from the JWT; 409 on a second rating
+POST http://127.0.0.1:8080/api/rehearsal-sessions/1/creative-ratings
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "rateeProfileId": 3, "score": 4 }
+
+### Rating yourself is 400
+POST http://127.0.0.1:8080/api/rehearsal-sessions/1/creative-ratings
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "rateeProfileId": 1, "score": 5 }
+
+### Score outside 1..5 is 400
+POST http://127.0.0.1:8080/api/rehearsal-sessions/1/creative-ratings
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "rateeProfileId": 2, "score": 9 }
+
+### An account without a musician profile is 403
+POST http://127.0.0.1:8080/api/rehearsal-sessions/1/creative-ratings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "rateeProfileId": 3, "score": 4 }
+
+### Start my set at concert 1 (409 if already started)
+POST http://127.0.0.1:8080/api/concerts/1/set-checkins/start
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "setStartedAt": "2026-06-14T21:00:00" }
+
+### End my set - minutes played are capped at concert.show_minutes (409 if already ended)
+POST http://127.0.0.1:8080/api/concerts/1/set-checkins/end
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "setEndedAt": "2026-06-14T21:50:00" }
+
+### Set check-ins for concert 1
+GET http://127.0.0.1:8080/api/concerts/1/set-checkins
+Authorization: Bearer {{musician}}
+
+### Closing an already closed cycle returns the stored snapshot (200, unchanged)
+POST http://127.0.0.1:8080/api/spp-cycles/1/close
+Authorization: Bearer {{musician}}

@@ -1,0 +1,48 @@
+### Ensure off-chain settlement exists (seed concert 1) then build settle_concert
+POST http://127.0.0.1:8080/api/concerts/1/settle
+Content-Type: application/json
+
+{
+  "grossUsdc": 875.00
+}
+
+### Build settle_concert DevNet instruction (wallet signs next)
+# 409 until the concert's band vault is active (BandVault.http); then 200 with
+# bandVault + member profile remaining accounts and per-member pendingUsdc
+POST http://127.0.0.1:8080/api/concert-settlements/1/settle-concert/build
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"
+}
+
+### Reject settle confirm without txSignature
+POST http://127.0.0.1:8080/api/concert-settlements/1/settle-concert/confirm
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "concertSettlementPda": "ConcertSettlePda111111111111111111111111111"
+}
+
+### Build claim_royalties DevNet instruction
+POST http://127.0.0.1:8080/api/pending-claims/1/claim-royalties/build
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "vaultUsdcAta": "VaultUsdcAta1111111111111111111111111111111",
+  "musicianUsdcAta": "MusicianUsdcAta11111111111111111111111111"
+}
+
+### Reject claim confirm without txSignature (must not mark claimed)
+POST http://127.0.0.1:8080/api/pending-claims/1/claim-royalties/confirm
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "claimPda": "MusicianProfilePda1111111111111111111111111"
+}
+
+### Legacy Mark claimed must return 400
+POST http://127.0.0.1:8080/api/pending-claims/1/claim

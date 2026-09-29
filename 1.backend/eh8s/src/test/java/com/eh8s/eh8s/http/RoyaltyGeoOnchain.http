@@ -1,0 +1,100 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Geo build without Bearer must be 401
+POST http://127.0.0.1:8080/api/geo-subscriptions/1/subscribe-geographic/build
+Content-Type: application/json
+
+{ "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC" }
+
+### Build per-song deposit_royalties (409 until the song pool is activated; see SongRoyalty.http)
+POST http://127.0.0.1:8080/api/royalty-deposits/1/deposit-royalties/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC" }
+
+### Reject deposit confirm without txSignature (400, or 409 while the song pool is inactive)
+POST http://127.0.0.1:8080/api/royalty-deposits/1/deposit-royalties/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC" }
+
+### Geo regions with their on-chain zone codes (MEX, MEX_CDMX)
+GET http://127.0.0.1:8080/api/geo-regions
+Authorization: Bearer {{token}}
+
+### Create a Global tier geo subscription in MEX-CDMX for 2 months (geoCode defaults to MEX_CDMX)
+POST http://127.0.0.1:8080/api/geo-subscriptions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "bandId": 1, "geoTierId": 5, "geoRegionId": 2, "months": 2 }
+
+> {% client.global.set("geoId", response.body.id); %}
+
+### A finer zone under the region is accepted (MEX_CDMX_CENTRO)
+POST http://127.0.0.1:8080/api/geo-subscriptions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "bandId": 1, "geoTierId": 2, "geoRegionId": 2, "geoCode": "MEX_CDMX_CENTRO", "months": 1 }
+
+### A zone outside the region must be 400
+POST http://127.0.0.1:8080/api/geo-subscriptions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "bandId": 1, "geoTierId": 2, "geoRegionId": 2, "geoCode": "USA_NYC", "months": 1 }
+
+### Build subscribe_geographic("MEX_CDMX", tier=5, months=2): amount 198, PDA ["geo_sub", wallet, geo_code] = Hq6qFviJPdrRsA6rvxXBBALw13cqTsa5zeaU2KLyzKQp
+POST http://127.0.0.1:8080/api/geo-subscriptions/{{geoId}}/subscribe-geographic/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "amountUsdc": 1.00
+}
+
+### Confirm with the pre-v0.9.0 ["geo_sub", wallet] PDA must be 400
+POST http://127.0.0.1:8080/api/geo-subscriptions/{{geoId}}/subscribe-geographic/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "txSignature": "5xNotARealSignature111111111111111111111111111111111111111111111111111111111111111",
+  "geographicSubscriptionPda": "6nL9F7b7vc7568C2VDeSXsqwmGZdC5tQyxHnemRDkA9S"
+}
+
+### Reject geo confirm without txSignature (must not mark paid)
+POST http://127.0.0.1:8080/api/geo-subscriptions/{{geoId}}/subscribe-geographic/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "geographicSubscriptionPda": "Hq6qFviJPdrRsA6rvxXBBALw13cqTsa5zeaU2KLyzKQp"
+}
+
+### Zone status read live from DevNet (ATLAS gate): exists=false until the wallet subscribes
+GET http://127.0.0.1:8080/api/geo-zones/MEX_CDMX/status?wallet=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+Authorization: Bearer {{token}}
+
+### Invalid zone code must be 400
+GET http://127.0.0.1:8080/api/geo-zones/mex-cdmx/status?wallet=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+Authorization: Bearer {{token}}
+
+### On-chain status of an unconfirmed geo subscription must be 409
+GET http://127.0.0.1:8080/api/geo-subscriptions/{{geoId}}/onchain
+Authorization: Bearer {{token}}

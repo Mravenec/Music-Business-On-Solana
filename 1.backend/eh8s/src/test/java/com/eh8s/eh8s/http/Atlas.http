@@ -1,0 +1,61 @@
+### Musician session (Jorge, profile 1, band 1) - JWT for the calls below
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU" }
+
+> {% client.global.set("musician", response.body.accessToken); %}
+
+### Account outside the band (jwt.gate)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### ATLAS without Bearer must be 401
+GET http://127.0.0.1:8080/api/bands/1/tour-routes
+
+### Band 1 tour plans + active zones (confirmed geographic subscriptions not yet expired)
+GET http://127.0.0.1:8080/api/bands/1/tour-routes
+Authorization: Bearer {{musician}}
+
+### Generate a route for October. 409 until the band holds a confirmed, unexpired geographic
+### subscription (Catalog > Geo); 200 afterwards: nearest-neighbour stops across approved
+### venues in the zone, starting at the highest projected income (capacity x ticket x 60% x share).
+POST http://127.0.0.1:8080/api/bands/1/tour-routes
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "windowStart": "2026-10-01", "windowEnd": "2026-10-31", "maxStops": 6 }
+
+> {% if (response.status === 200) client.global.set("planId", response.body.plan.id); %}
+
+### One plan with its stops (use the id returned above)
+GET http://127.0.0.1:8080/api/tour-routes/{{planId}}
+Authorization: Bearer {{musician}}
+
+### Window in the past is 400
+POST http://127.0.0.1:8080/api/bands/1/tour-routes
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "windowStart": "2026-01-01", "windowEnd": "2026-01-31" }
+
+### maxStops outside 1..10 is 400
+POST http://127.0.0.1:8080/api/bands/1/tour-routes
+Authorization: Bearer {{musician}}
+Content-Type: application/json
+
+{ "windowStart": "2026-10-01", "windowEnd": "2026-10-31", "maxStops": 20 }
+
+### Not a band member is 403
+POST http://127.0.0.1:8080/api/bands/1/tour-routes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "windowStart": "2026-10-01", "windowEnd": "2026-10-31" }

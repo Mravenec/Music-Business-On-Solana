@@ -1,0 +1,27 @@
+### Slack / der-dirigent status (no secrets; authorized=false without owner wallet)
+GET http://127.0.0.1:8080/api/slack/status
+
+### Status for platform owner wallet
+GET http://127.0.0.1:8080/api/slack/status?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+
+### Delivery log — owner only (2xx)
+GET http://127.0.0.1:8080/api/slack/deliveries?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+
+### Notify — owner wallet; skipped when Slack secrets unset (still 2xx + log row)
+POST http://127.0.0.1:8080/api/slack/notify
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "text": "STAGE yellow decision needs owner review",
+  "ownerDecisionId": 1
+}
+
+### Notify — non-owner must be 403
+POST http://127.0.0.1:8080/api/slack/notify
+Content-Type: application/json
+
+{
+  "walletPubkey": "NonOwner1111111111111111111111111111111111",
+  "text": "should be forbidden"
+}

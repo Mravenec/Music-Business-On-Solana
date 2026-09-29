@@ -1,0 +1,28 @@
+### Health stays public
+GET http://127.0.0.1:8080/health
+
+### Protected without Bearer → 401
+GET http://127.0.0.1:8080/api/platform/config
+
+### Register (public) → 2xx + accessToken
+POST http://127.0.0.1:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1",
+  "displayName": "JWT Gate"
+}
+
+### Login (public) → 2xx + accessToken
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+### Protected with Bearer → 2xx (paste accessToken from login)
+GET http://127.0.0.1:8080/api/platform/config
+Authorization: Bearer {{accessToken}}

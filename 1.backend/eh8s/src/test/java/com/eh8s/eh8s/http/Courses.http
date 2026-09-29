@@ -1,0 +1,167 @@
+### Owner session (platform owner wallet) - JWT for the authoring calls below
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{ "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC" }
+
+> {% client.global.set("owner", response.body.accessToken); %}
+
+### Account with no plan and no grant (jwt.gate)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Courses without Bearer must be 401
+GET http://127.0.0.1:8080/api/courses
+
+### Authoring without Bearer must be 401
+GET http://127.0.0.1:8080/api/owner/courses
+
+### Non-owner authoring is 403
+POST http://127.0.0.1:8080/api/owner/courses
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "title": "Should not exist" }
+
+### Owner creates a draft course (minimum Enigma level 1)
+POST http://127.0.0.1:8080/api/owner/courses
+Authorization: Bearer {{owner}}
+Content-Type: application/json
+
+{
+  "title": "Groove foundations",
+  "summary": "Pocket, subdivisions and locking in with the drummer.",
+  "minLevel": 1
+}
+
+> {% client.global.set("courseId", response.body.id); %}
+
+### Publishing a course without lessons is 409
+POST http://127.0.0.1:8080/api/owner/courses/{{courseId}}/publish
+Authorization: Bearer {{owner}}
+
+### Owner adds a section
+POST http://127.0.0.1:8080/api/owner/courses/{{courseId}}/sections
+Authorization: Bearer {{owner}}
+Content-Type: application/json
+
+{ "title": "Warm-up" }
+
+> {% client.global.set("sectionId", response.body.id); %}
+
+### Free preview lesson from a YouTube link (embedUrl uses youtube-nocookie)
+POST http://127.0.0.1:8080/api/owner/sections/{{sectionId}}/lessons
+Authorization: Bearer {{owner}}
+Content-Type: application/json
+
+{
+  "title": "Welcome to the pocket",
+  "videoUrl": "https://youtu.be/dQw4w9WgXcQ",
+  "durationSec": 212,
+  "isFreePreview": 1
+}
+
+> {% client.global.set("previewId", response.body.id); %}
+
+### Paid lesson from a Vimeo link
+POST http://127.0.0.1:8080/api/owner/sections/{{sectionId}}/lessons
+Authorization: Bearer {{owner}}
+Content-Type: application/json
+
+{
+  "title": "Sixteenth-note ghost notes",
+  "description": "Play along at 80 bpm, then 96 bpm.",
+  "videoUrl": "https://vimeo.com/76979871",
+  "durationSec": 480,
+  "resources": "Metronome at 80 bpm; chart in the lesson notes."
+}
+
+> {% client.global.set("paidId", response.body.id); %}
+
+### A link from an unsupported host is 400
+POST http://127.0.0.1:8080/api/owner/sections/{{sectionId}}/lessons
+Authorization: Bearer {{owner}}
+Content-Type: application/json
+
+{ "title": "Bad link", "videoUrl": "https://example.com/video.mp4" }
+
+### Move the paid lesson to the top (returns 1..n order)
+POST http://127.0.0.1:8080/api/owner/lessons/{{paidId}}/move
+Authorization: Bearer {{owner}}
+Content-Type: application/json
+
+{ "sortOrder": 1 }
+
+### Publish the course
+POST http://127.0.0.1:8080/api/owner/courses/{{courseId}}/publish
+Authorization: Bearer {{owner}}
+
+### Student catalog shows the published course with lessonCount and access.lockReason
+GET http://127.0.0.1:8080/api/courses
+Authorization: Bearer {{token}}
+
+### Student outline: lessons listed, locked flags, no video links
+GET http://127.0.0.1:8080/api/courses/{{courseId}}
+Authorization: Bearer {{token}}
+
+### Locked lesson: locked=true, lesson.embedUrl and lesson.videoUrl are null
+GET http://127.0.0.1:8080/api/lessons/{{paidId}}
+Authorization: Bearer {{token}}
+
+### Saving progress on a locked lesson is 403
+PUT http://127.0.0.1:8080/api/lessons/{{paidId}}/progress
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "positionSec": 10 }
+
+### Free preview plays for anyone signed in
+GET http://127.0.0.1:8080/api/lessons/{{previewId}}
+Authorization: Bearer {{token}}
+
+### Save progress on the preview and mark it completed
+PUT http://127.0.0.1:8080/api/lessons/{{previewId}}/progress
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "positionSec": 212, "completed": true }
+
+### Non-owner cannot list grants (403)
+GET http://127.0.0.1:8080/api/owner/course-grants
+Authorization: Bearer {{token}}
+
+### Owner grants the Jorge wallet access to this course
+POST http://127.0.0.1:8080/api/owner/course-grants
+Authorization: Bearer {{owner}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU",
+  "courseId": {{courseId}},
+  "note": "Gate check"
+}
+
+> {% client.global.set("grantId", response.body.id); %}
+
+### Owner lists grants
+GET http://127.0.0.1:8080/api/owner/course-grants
+Authorization: Bearer {{owner}}
+
+### Owner revokes the grant
+POST http://127.0.0.1:8080/api/owner/course-grants/{{grantId}}/revoke
+Authorization: Bearer {{owner}}
+
+### Owner authoring outline shows every lesson with its embedUrl
+GET http://127.0.0.1:8080/api/owner/courses/{{courseId}}
+Authorization: Bearer {{owner}}
+
+### Archive the gate course so it leaves the student catalog
+POST http://127.0.0.1:8080/api/owner/courses/{{courseId}}/archive
+Authorization: Bearer {{owner}}

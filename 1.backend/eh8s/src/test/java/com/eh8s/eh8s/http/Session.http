@@ -1,0 +1,28 @@
+### Challenge (public)
+POST http://127.0.0.1:8080/api/session/challenge
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sSessionTest11111111111111111111111111111"
+}
+
+### Unsigned session is rejected
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sSessionTest11111111111111111111111111111",
+  "displayName": "Session Tester",
+  "role": "musician"
+}
+
+### Signed session (replace signature with the wallet signature of the challenge message)
+POST http://127.0.0.1:8080/api/session/wallet
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sSessionTest11111111111111111111111111111",
+  "signature": "<base58 signature of the challenge message>",
+  "displayName": "Session Tester",
+  "role": "musician"
+}

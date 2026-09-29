@@ -1,0 +1,56 @@
+### Create band
+POST http://127.0.0.1:8080/api/bands
+Content-Type: application/json
+
+{
+  "code": "wave-a-demo",
+  "name": "Wave A Demo Band",
+  "bandType": "product",
+  "sppEnabled": 1,
+  "geoCode": "MEX"
+}
+
+### Add member
+POST http://127.0.0.1:8080/api/band-members
+Content-Type: application/json
+
+{
+  "bandId": 1,
+  "musicianProfileId": 1,
+  "roleInBand": "guitar"
+}
+
+### Create rehearsal session
+POST http://127.0.0.1:8080/api/rehearsal-sessions
+Content-Type: application/json
+
+{
+  "bandId": 1,
+  "notes": "Product console rehearsal"
+}
+
+### List rehearsals (product path)
+GET http://127.0.0.1:8080/api/bands/1/rehearsals
+
+### Check-in
+POST http://127.0.0.1:8080/api/rehearsal-checkins
+Content-Type: application/json
+
+{
+  "rehearsalSessionId": 1,
+  "musicianProfileId": 1,
+  "lateMinutes": 0
+}
+
+### Open SPP cycle
+POST http://127.0.0.1:8080/api/spp-cycles
+Content-Type: application/json
+
+{
+  "bandId": 1,
+  "code": "WAVE-A-PRODUCT-1",
+  "status": "open"
+}
+
+### Close cycle
+POST http://127.0.0.1:8080/api/spp-cycles/1/close

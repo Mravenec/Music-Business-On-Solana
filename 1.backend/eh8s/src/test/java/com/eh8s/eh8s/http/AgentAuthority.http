@@ -1,0 +1,100 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Agent roster without Bearer must be 401
+GET http://127.0.0.1:8080/api/owner/agents?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+
+### Agent roster for a non-owner wallet must be 403
+GET http://127.0.0.1:8080/api/owner/agents?walletPubkey=YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU
+Authorization: Bearer {{token}}
+
+### Agent roster for the owner: NEXUS = Pedagogical (bits 1), GENESIS = Onboarding, 5 permission bits
+GET http://127.0.0.1:8080/api/owner/agents?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+Authorization: Bearer {{token}}
+
+### Build authorize_agent: NEXUS wallet gets 0x01 (owner signs next in the wallet)
+POST http://127.0.0.1:8080/api/owner/agents/authorize/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "agentCode": "NEXUS",
+  "agentWalletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU",
+  "permissions": 1
+}
+
+### Unknown permission bit 0x20 must be 400
+POST http://127.0.0.1:8080/api/owner/agents/authorize/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "agentCode": "NEXUS",
+  "agentWalletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU",
+  "permissions": 32
+}
+
+### Forged confirm: the init_treasury signature (not authorize_agent) must be 400
+POST http://127.0.0.1:8080/api/owner/agents/authorize/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "agentCode": "NEXUS",
+  "agentWalletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU",
+  "permissions": 1,
+  "txSignature": "57HQdQXw5KakRBWEqa9kSStuEZant4dqNdTMX4toHLJQUW9QdpfWZYTgiDioNNSgppkRndG8Lzx4j7p2UnEZrjoi"
+}
+
+### Level console for a wallet without a live 0x01 authorization must be 403
+GET http://127.0.0.1:8080/api/agents/level/musicians?walletPubkey=U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq
+Authorization: Bearer {{token}}
+
+### Level console for the owner (owner keeps every agent power): musicians with wallets
+GET http://127.0.0.1:8080/api/agents/level/musicians?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+Authorization: Bearer {{token}}
+
+### Build update_musician_level as owner: agentAuthority account = program id (Anchor None)
+POST http://127.0.0.1:8080/api/agents/level/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "musicianProfileId": 1,
+  "newLevel": 3
+}
+
+### Level 6 is out of range: 400
+POST http://127.0.0.1:8080/api/agents/level/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "musicianProfileId": 1,
+  "newLevel": 6
+}
+
+### Enroll ignores any client level (stored at level 0); lowercase country must be 400
+POST http://127.0.0.1:8080/api/musicians
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "accountId": 1,
+  "instrumentId": 1,
+  "enigmaLevelId": 6,
+  "countryCode": "mex"
+}

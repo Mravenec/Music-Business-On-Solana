@@ -1,0 +1,37 @@
+flowchart LR
+  subgraph pages
+    CatalogPage
+  end
+  subgraph hooks
+    useCatalog
+    useChainConfig
+    useWallet["useWallet + useConnection"]
+  end
+  subgraph services
+    catalogService
+    royaltyGeoOnchainService
+    royaltyGeoTx
+    chainConfigService
+  end
+  subgraph api
+    CMS["POST /api/royalty-deposits<br/>POST /api/geo-subscriptions"]
+    BuildConfirm["POST .../deposit-royalties/build|confirm<br/>POST .../subscribe-geographic/build|confirm"]
+    ClaimAPI["POST /api/pending-claims/:id/claim-royalties/confirm"]
+    ChainAPI["GET /api/chain-config"]
+  end
+  subgraph chain
+    DevNet["Solana DevNet program<br/>deposit_royalties<br/>subscribe_geographic<br/>claim_royalties"]
+  end
+  CatalogPage --> useCatalog
+  CatalogPage --> useChainConfig
+  CatalogPage --> useWallet
+  useCatalog --> catalogService
+  catalogService --> CMS
+  CatalogPage --> royaltyGeoOnchainService
+  CatalogPage --> royaltyGeoTx
+  useChainConfig --> chainConfigService
+  chainConfigService --> ChainAPI
+  royaltyGeoOnchainService --> BuildConfirm
+  royaltyGeoOnchainService --> ClaimAPI
+  royaltyGeoTx --> DevNet
+  royaltyGeoTx -->|signature + PDA| royaltyGeoOnchainService

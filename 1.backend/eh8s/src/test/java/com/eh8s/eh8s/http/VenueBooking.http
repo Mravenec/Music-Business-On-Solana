@@ -1,0 +1,107 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Stage queue without Bearer must be 401
+GET http://127.0.0.1:8080/api/stage/queue?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+
+### Stage queue for a wallet without the STAGE (0x04) bit must be 403
+GET http://127.0.0.1:8080/api/stage/queue?walletPubkey=U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq
+Authorization: Bearer {{token}}
+
+### Stage queue for the owner (owner keeps every agent power): pending venues + proposed bookings
+GET http://127.0.0.1:8080/api/stage/queue?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+Authorization: Bearer {{token}}
+
+### Venue console: listing state + bookings
+GET http://127.0.0.1:8080/api/venues/2/onchain
+Authorization: Bearer {{token}}
+
+### Build register_venue for venue 2 (venue wallet signs next; listing PDA [venue, wallet, 2 LE])
+POST http://127.0.0.1:8080/api/venues/2/register/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq"
+}
+
+### register_venue with a non-base58 wallet must be 400
+POST http://127.0.0.1:8080/api/venues/2/register/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "not-a-wallet"
+}
+
+### Forged register confirm: the init_treasury signature (not register_venue) must be 400
+POST http://127.0.0.1:8080/api/venues/2/register/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq",
+  "txSignature": "57HQdQXw5KakRBWEqa9kSStuEZant4dqNdTMX4toHLJQUW9QdpfWZYTgiDioNNSgppkRndG8Lzx4j7p2UnEZrjoi"
+}
+
+### approve_venue on a venue that is not pending must be 409
+POST http://127.0.0.1:8080/api/venues/2/approve/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"
+}
+
+### approve_venue by a wallet without STAGE must be 403
+POST http://127.0.0.1:8080/api/venues/2/approve/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq"
+}
+
+### propose_booking from a wallet that is not the venue wallet must be 403
+POST http://127.0.0.1:8080/api/bookings/1/propose/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq",
+  "grossUsdc": "1000"
+}
+
+### confirm_booking on a booking without escrow must be 409
+POST http://127.0.0.1:8080/api/bookings/1/confirm-contract/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"
+}
+
+### Settle queue for a wallet without VAULT (0x08) must be 403
+GET http://127.0.0.1:8080/api/vault/settle-queue?walletPubkey=U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq
+Authorization: Bearer {{token}}
+
+### Settle queue for the owner: confirmed escrows waiting for settle_booking
+GET http://127.0.0.1:8080/api/vault/settle-queue?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+Authorization: Bearer {{token}}
+
+### settle_booking on a booking that is not confirmed must be 409
+POST http://127.0.0.1:8080/api/bookings/1/settle/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"
+}

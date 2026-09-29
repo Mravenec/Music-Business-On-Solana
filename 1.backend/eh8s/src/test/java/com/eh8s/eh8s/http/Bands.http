@@ -1,0 +1,61 @@
+### Catalog
+GET http://127.0.0.1:8080/api/bands
+GET http://127.0.0.1:8080/api/spp-variables
+GET http://127.0.0.1:8080/api/bands/1/members
+GET http://127.0.0.1:8080/api/bands/1/cycles
+GET http://127.0.0.1:8080/api/bands/1/rehearsal-sessions
+GET http://127.0.0.1:8080/api/spp-cycles/1/scores
+
+### Create band
+POST http://127.0.0.1:8080/api/bands
+Content-Type: application/json
+
+{
+  "code": "wave-a-demo",
+  "name": "Wave A Demo Band",
+  "bandType": "product",
+  "sppEnabled": 1,
+  "geoCode": "MEX"
+}
+
+###
+POST http://127.0.0.1:8080/api/band-members
+Content-Type: application/json
+
+{
+  "bandId": 1,
+  "musicianProfileId": 1,
+  "roleInBand": "guitar"
+}
+
+###
+POST http://127.0.0.1:8080/api/rehearsal-sessions
+Content-Type: application/json
+
+{
+  "bandId": 1,
+  "notes": "Product console rehearsal"
+}
+
+###
+POST http://127.0.0.1:8080/api/rehearsal-checkins
+Content-Type: application/json
+
+{
+  "rehearsalSessionId": 1,
+  "musicianProfileId": 1,
+  "lateMinutes": 0
+}
+
+###
+POST http://127.0.0.1:8080/api/spp-cycles
+Content-Type: application/json
+
+{
+  "bandId": 1,
+  "code": "WAVE-A-1",
+  "status": "open"
+}
+
+### Close Q2 (recompute share_bps; expected 3800/3520/2000/680 on seed)
+POST http://127.0.0.1:8080/api/spp-cycles/1/close

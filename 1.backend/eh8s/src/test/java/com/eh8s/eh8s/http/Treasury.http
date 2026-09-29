@@ -1,0 +1,52 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Treasury without Bearer must be 401
+GET http://127.0.0.1:8080/api/owner/treasury?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+
+### Treasury for a non-owner wallet must be 403
+GET http://127.0.0.1:8080/api/owner/treasury?walletPubkey=YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU
+Authorization: Bearer {{token}}
+
+### Treasury for the owner wallet: PDA DxGjk32d..., ATA 9ptwWxWj..., live DevNet balance, inflows, withdrawals
+GET http://127.0.0.1:8080/api/owner/treasury?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+Authorization: Bearer {{token}}
+
+### Build withdraw_treasury for 1 USDC (owner signs next in the wallet)
+POST http://127.0.0.1:8080/api/owner/treasury/withdraw/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "amountUsdc": 1.00
+}
+
+### Build more than the treasury holds must be 409
+POST http://127.0.0.1:8080/api/owner/treasury/withdraw/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "amountUsdc": 1000000
+}
+
+### Forged confirm: the init_treasury signature (upgrade authority, not withdraw) must be 400
+POST http://127.0.0.1:8080/api/owner/treasury/withdraw/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "amountUsdc": 1.00,
+  "txSignature": "57HQdQXw5KakRBWEqa9kSStuEZant4dqNdTMX4toHLJQUW9QdpfWZYTgiDioNNSgppkRndG8Lzx4j7p2UnEZrjoi"
+}

@@ -1,0 +1,762 @@
+@startuml eh8s-backend-layers
+title EH8S — 1.backend/eh8s layers (PlantUML)
+
+package "1.backend/eh8s" {
+  [CorsConfig] as CORS
+  [SecurityConfig] as SEC
+  [JwtAuthFilter] as JWTF
+  [IJwtService] as IJWT
+  [JwtService] as JWT
+  [IAuthService] as IAUTH
+  [AuthService] as AUTH
+  [IAuthController] as IAUTHC
+  [AuthController] as AUTHC
+  [HttpBody (controller.support)] as HTTPB
+  [JOOQ POJOs] as JOOQ
+  [IAppMetaRepository] as IREPO
+  [AppMetaRepository] as REPO
+  [IHealthService] as ISVC
+  [HealthService] as SVC
+  [IHealthController] as ICTRL
+  [HealthController] as CTRL
+  [ICatalogRepository] as ICAT
+  [CatalogRepository] as CAT
+  [ICatalogService] as ICATS
+  [CatalogService] as CATS
+  [ICatalogController] as ICATC
+  [CatalogController] as CATC
+  [IEnrollmentRepository] as IENR
+  [EnrollmentRepository] as ENR
+  [IEnrollmentService] as IENS
+  [EnrollmentService] as ENS
+  [IEnrollmentController] as IENC
+  [EnrollmentController] as ENC
+  [IBandRepository] as IBAND
+  [BandRepository] as BAND
+  [IBandService] as IBANDS
+  [BandService] as BANDS
+  [IBandController] as IBANDC
+  [BandController] as BANDC
+  [IVenueRepository] as IVEN
+  [VenueRepository] as VEN
+  [IVenueService] as IVENS
+  [VenueService] as VENS
+  [IVenueController] as IVENC
+  [VenueController] as VENC
+  [ICatalogGeoRepository] as IGEO
+  [CatalogGeoRepository] as GEO
+  [ICatalogGeoService] as IGEOS
+  [CatalogGeoService] as GEOS
+  [ICatalogGeoController] as IGEOC
+  [CatalogGeoController] as GEOC
+  [IOpsRepository] as IOPS
+  [OpsRepository] as OPS
+  [IOpsService] as IOPSS
+  [OpsService] as OPSS
+  [IOpsController] as IOPSC
+  [OpsController] as OPSC
+  [IAgentEventRepository] as IEVT
+  [AgentEventRepository] as EVT
+  [IAgentEventService] as IEVTS
+  [AgentEventService] as EVTS
+  [IAgentEventController] as IEVTC
+  [AgentEventController] as EVTC
+  [ISlackBridgeRepository] as ISLK
+  [SlackBridgeRepository] as SLK
+  [ISlackBridgeService] as ISLKS
+  [SlackBridgeService] as SLKS
+  [ISlackBridgeController] as ISLKC
+  [SlackBridgeController] as SLKC
+  note right of EVTC
+    injects IAgentEventService only (no repository in the controller)
+    tick binds AgentEventLog · tick-by-code calls record(code, eventType, semaphore, summary, detail)
+    Ops reject passes OwnerDecision.rejectReason · semaphore passes OpsAgent.semaphore
+    Slack notify(walletPubkey, text, ownerDecisionId, agentEventId) · digest run(walletPubkey)
+    ATLAS generate(windowStart, windowEnd, maxStops) · settle binds ConcertSettlement.grossUsdc
+  end note
+  [ISlackInteractionService] as ISLKI
+  [SlackInteractionService] as SLKI
+  [ISlackInteractionController] as ISLKIC
+  [SlackInteractionController] as SLKIC
+  [IDevnetPayRepository] as IPAY
+  [DevnetPayRepository] as PAY
+  [IDevnetPayService] as IPAYS
+  [DevnetPayService] as PAYS
+  [IDevnetPayController] as IPAYC
+  [DevnetPayController] as PAYC
+  [IAgentEventRepository] as IEVT
+  [AgentEventRepository] as EVT
+  [IAgentEventService] as IEVTS
+  [AgentEventService] as EVTS
+  [IAgentEventController] as IEVTC
+  [AgentEventController] as EVTC
+  [IChainConfigRepository] as ICHAIN
+  [ChainConfigRepository] as CHAIN
+  [IChainConfigService] as ICHAINS
+  [ChainConfigService] as CHAINS
+  [IChainConfigController] as ICHAINC
+  [ChainConfigController] as CHAINC
+  note right of CHAINC
+    GET /api/platform/config
+    owner wallet + protocol_fee_bps
+    GET /api/anchor/metadata
+    DevNet program id + instruction list
+  end note
+  [IRoleApplicationRepository] as IROLE
+  [RoleApplicationRepository] as ROLE
+  [IRoleApplicationService] as IROLES
+  [RoleApplicationService] as ROLES
+  [IRoleApplicationController] as IROLEC
+  [RoleApplicationController] as ROLEC
+  note right of ROLEC
+    POST /api/role-applications
+    GET /api/role-applications
+    POST .../approve|reject|revoke (owner wallet)
+    body = AccountRoleApplication POJO
+    (walletPubkey+role | reviewedByWallet+reason)
+    GET /api/roles/memberships
+  end note
+  [IAcademyOnchainRepository] as IACADON
+  [AcademyOnchainRepository] as ACADON
+  [IAcademyOnchainService] as IACADONS
+  [AcademyOnchainService] as ACADONS
+  [IAcademyOnchainController] as IACADONC
+  [AcademyOnchainController] as ACADONC
+  [ISubscribeAcademyIxBuilder / SubscribeAcademyIxBuilder] as IXBUILD
+  [ISolanaRpcClient / SolanaRpcClient] as SOLRPC
+  [ISolanaTxVerifier] as ITXV
+  [SolanaTxVerifier] as TXV
+  [SolanaPda] as SOLPDA
+  note right of ACADONC
+    POST .../subscribe-academy/build
+    POST .../subscribe-academy/confirm
+    GET .../academy-subscriptions/{id}/onchain (expiry)
+    v0.9.0: plan_type + months, PDA [academy_sub, wallet]
+    RPC confirm required before paid
+    confirm = decoded tx must match record (ix data, signer, PDAs)
+    ISolanaTxVerifier: expected PDAs = List<String> by ix account index (null = unchecked)
+  end note
+  [ISettleClaimOnchainRepository] as ISETTLE
+  [SettleClaimOnchainRepository] as SETTLE
+  [ISettleClaimOnchainService] as ISETTLES
+  [SettleClaimOnchainService] as SETTLES
+  [ISettleConcertIxBuilder / SettleConcertIxBuilder] as SETTLEIX
+  [IClaimRoyaltiesIxBuilder / ClaimRoyaltiesIxBuilder] as CLAIMIX
+  [ISettleClaimOnchainController] as ISETTLEC
+  [SettleClaimOnchainController] as SETTLEC
+  note right of SETTLEC
+    POST .../settle-concert/build|confirm
+    POST .../claim-royalties/build|confirm
+    RPC confirm required; Mark claimed returns 400
+    settle_concert(concert_id, gross, expenses) — fee from on-chain config bps
+    BandVault [band, band_id] + member MusicianProfile remaining accounts
+    409 until the band vault is active
+    every builder passes the config PDA [eh8s, config]
+  end note
+  [IBandVaultRepository] as IBVAULT
+  [BandVaultRepository] as BVAULT
+  [IBandVaultService] as IBVAULTS
+  [BandVaultService] as BVAULTS
+  [IBandVaultIxBuilder / BandVaultIxBuilder] as BVAULTIX
+  [IBandVaultController] as IBVAULTC
+  [BandVaultController] as BVAULTC
+  note right of BVAULTC
+    GET  /api/bands/{id}/vault
+    POST .../vault/build|confirm (create_band, owner only)
+    POST .../vault/weights/build|confirm (update_spp_weights)
+    weights = latest closed SPP cycle, normalized to 10000 bps
+  end note
+  [ITreasuryRepository] as ITREAS
+  [TreasuryRepository] as TREAS
+  [ITreasuryService] as ITREASS
+  [TreasuryService] as TREASS
+  [IWithdrawTreasuryIxBuilder / WithdrawTreasuryIxBuilder] as WTREASIX
+  [ITreasuryController] as ITREASC
+  [TreasuryController] as TREASC
+  note right of TREASC
+    GET  /api/owner/treasury?walletPubkey= (owner only, 403 otherwise)
+    live getTokenAccountBalance of the [treasury] PDA USDC ATA + fee inflows + withdrawals
+    POST .../withdraw/build (409 above live balance)
+    POST .../withdraw/confirm (verifier: withdraw_treasury, owner signer, config + treasury PDA)
+  end note
+  [IAgentAuthorityRepository] as IAGAUTH
+  [AgentAuthorityRepository] as AGAUTH
+  [IAgentAuthorityService] as IAGAUTHS
+  [AgentAuthorityService] as AGAUTHS
+  [IAgentAuthorityIxBuilder / AgentAuthorityIxBuilder] as AGAUTHIX
+  [IAgentAuthorityController] as IAGAUTHC
+  [AgentAuthorityController] as AGAUTHC
+  note right of AGAUTHC
+    Program v0.6.0:
+    GET  /api/owner/agents?walletPubkey= (owner only) roster + bits + agent_authority rows
+    POST /api/owner/agents/authorize/build|confirm (authorize_agent; 0 bits revokes)
+    GET  /api/agents/level/musicians?walletPubkey= (owner or live 0x01 NEXUS agent)
+    POST /api/agents/level/build|confirm (update_musician_level; agent PDA or program id = None)
+    confirm: verifier (ix data, signer, config/agent/musician PDAs); replay -> 409
+  end note
+  [IGovernanceRepository] as IGOV
+  [GovernanceRepository] as GOV
+  [IGovernanceService] as IGOVS
+  [GovernanceService] as GOVS
+  [IGovernanceIxBuilder / GovernanceIxBuilder] as GOVIX
+  [IGovernanceController] as IGOVC
+  [GovernanceController] as GOVC
+  note right of GOVC
+    Program v0.8.0, native owner multisig (1..5 signers, threshold, epoch):
+    GET  /api/governance?walletPubkey= (owner or signer) signers + proposals + approvals
+    POST /api/governance/init/build|confirm (owner; init_governance)
+    POST /api/governance/proposals/build|confirm (signer; propose withdraw | authorize_agent | update_signers)
+    POST /api/governance/proposals/{id}/approve/build|confirm (signer, once, current epoch)
+    POST /api/governance/proposals/{id}/execute/build|confirm (anyone at threshold)
+    Once governance exists: direct withdraw / authorize build -> 409
+  end note
+  [IVenueBookingOnchainRepository] as IVBOOK
+  [VenueBookingOnchainRepository] as VBOOK
+  [IVenueBookingOnchainService] as IVBOOKS
+  [VenueBookingOnchainService] as VBOOKS
+  [IVenueBookingIxBuilder / VenueBookingIxBuilder] as VBOOKIX
+  [IVenueBookingOnchainController] as IVBOOKC
+  [VenueBookingOnchainController] as VBOOKC
+  note right of VBOOKC
+    Program v0.7.0, every step build + confirm (verifier before any write):
+    GET  /api/venues/{id}/onchain · POST /api/venues/{id}/register/* (venue wallet; pending)
+    GET  /api/stage/queue?walletPubkey= (owner or STAGE 0x04)
+    POST /api/venues/{id}/approve/* (approve_venue) · /api/bookings/{id}/confirm-contract/*
+         (confirm_booking pins SHA-256 of the canonical contract text)
+    POST /api/bookings/{id}/propose/* (venue escrows gross; creates concert once)
+    POST /api/bookings/{id}/cancel/* (venue, while proposed; refund)
+    GET  /api/vault/settle-queue · POST /api/bookings/{id}/settle/* (owner or VAULT 0x08)
+  end note
+  [IOwnerDigestRepository] as IDIG
+  [OwnerDigestRepository] as DIG
+  [IOwnerDigestService] as IDIGS
+  [OwnerDigestService] as DIGS
+  [IClaudeClient / ClaudeClient] as CLAUDE
+  [IOwnerDigestController] as IDIGC
+  [OwnerDigestController] as DIGC
+  note right of DIGC
+    GET  /api/owner/digest/latest?walletPubkey= (owner only) -> aiConfigured, model, latest
+    POST /api/owner/digest/run -> metrics + treasury balance -> Claude -> owner_digest row -> Slack
+    503 without ANTHROPIC_API_KEY (no fake text)
+  end note
+  note right of CLAUDE
+    RestClient POST {base-url}/v1/messages
+    x-api-key (env only) + anthropic-version 2023-06-01
+  end note
+  [IRoyaltyGeoOnchainRepository] as IRGEOON
+  [RoyaltyGeoOnchainRepository] as RGEOON
+  [IRoyaltyGeoOnchainService] as IRGEOONS
+  [RoyaltyGeoOnchainService] as RGEOONS
+  [IRoyaltyGeoOnchainController] as IRGEOONC
+  [RoyaltyGeoOnchainController] as RGEOONC
+  [ISubscribeGeographicIxBuilder / SubscribeGeographicIxBuilder] as GEOIX
+  [ISongRoyaltyRepository] as ISONGR
+  [SongRoyaltyRepository] as SONGR
+  [ISongRoyaltyService] as ISONGRS
+  [SongRoyaltyService] as SONGRS
+  [ISongRoyaltyController] as ISONGRC
+  [SongRoyaltyController] as SONGRC
+  [ISongRoyaltyIxBuilder / SongRoyaltyIxBuilder] as SONGIX
+  note right of SONGRC
+    GET /tracks/{id}/royalty-pool · POST .../royalty-pool/build|confirm
+    GET|POST /sync-deals · POST /sync-deals/{id}/pay/build|confirm
+    GET /song-credits?walletPubkey=
+    v0.10.0: RoyaltyPool [royalty, track_id] · SyncLicense [sync, track_id, deal_id]
+    splits: body.splits, else royalty_split rows, else band equal
+    create_royalty_pool + deposit_royalties: owner or WAVE agent
+    pay_sync_license: 20% treasury / 80% credited per song split
+  end note
+  note right of RGEOONC
+    POST .../deposit-royalties/build|confirm (delegates to SongRoyaltyService)
+    POST .../subscribe-geographic/build|confirm
+    GET .../geo-subscriptions/{id}/onchain · GET /geo-zones/{code}/status
+    v0.9.0: geo_code + tier + months, PDA [geo_sub, wallet, geo_code]
+    RPC confirm required before paid
+    confirm = decoded tx must match record (ix data, signer, PDAs)
+  end note
+  [ISppInputsRepository] as ISPPIN
+  [SppInputsRepository] as SPPIN
+  [ISppInputsService] as ISPPINS
+  [SppInputsService] as SPPINS
+  [ISppInputsController] as ISPPINC
+  [SppInputsController] as SPPINC
+  [IStageMapRepository] as ISTGMAP
+  [StageMapRepository] as STGMAP
+  [IStageMapService] as ISTGMAPS
+  [StageMapService] as STGMAPS
+  [IStageMapController] as ISTGMAPC
+  [StageMapController] as STGMAPC
+  note right of SPPINC
+    GET|POST /rehearsal-sessions/{id}/creative-ratings (rater = JWT musician, 1..5)
+    GET /concerts/{id}/set-checkins · POST .../set-checkins/start|end
+    close_cycle: attendance 40 · punctuality 15 · creative 20 · skill 15 · concert 10
+    skill = Enigma level delta (captured at open, read at close)
+  end note
+  note right of STGMAPC
+    GET /stage-map/pins?month=YYYY-MM · GET /stage-map/venues/{id}
+    POST /stage-map/venues/{id}/availability (venue wallet when set)
+    POST /stage-map/venues/{id}/slot-requests -> booking status requested
+    pin: purple partner > yellow confirmed show > green open dates > red
+  end note
+  [INexusRepository] as INEX
+  [NexusRepository] as NEX
+  [INexusService] as INEXS
+  [NexusService] as NEXS
+  [INexusController] as INEXC
+  [NexusController] as NEXC
+  [IHarmonyRepository] as IHARM
+  [HarmonyRepository] as HARM
+  [IHarmonyService] as IHARMS
+  [HarmonyService] as HARMS
+  [IHarmonyController] as IHARMC
+  [HarmonyController] as HARMC
+  [IAtlasRepository] as IATL
+  [AtlasRepository] as ATL
+  [IAtlasService] as IATLS
+  [AtlasService] as ATLS
+  [IAtlasController] as IATLC
+  [AtlasController] as ATLC
+  note right of NEXC
+    GET /nexus/status · POST /nexus/evaluations (musician, teacher or owner)
+    rubric 0..10 x5 + notes + recording link -> Claude -> Score Enigma 0..100,
+    strengths, errors, exercises, recommendedLevel (max one step); 503 without key
+    GET /nexus/evaluations[?musicianProfileId] · GET /nexus/evaluations/{id}
+    level applies only on-chain via update_musician_level
+  end note
+  note right of HARMC
+    GET|POST /bands/{id}/match-suggestions (members or owner)
+    score = instrument gap 40 + level proximity 30 + country 15 + genre 15
+    withAi: optional Claude rationale for the top 5
+  end note
+  note right of ATLC
+    GET|POST /bands/{id}/tour-routes · GET /tour-routes/{id}
+    zones = confirmed unexpired geographic_subscription
+    nearest-neighbour from best income; income = capacity x ticket x 60% x contract share
+  end note
+  [ICourseRepository] as ICRS
+  [CourseRepository] as CRS
+  [ICourseService] as ICRSS
+  [CourseService] as CRSS
+  [ICourseAuthoringService] as ICRSA
+  [CourseAuthoringService] as CRSA
+  [CourseRules · VideoLinks] as CRSRULE
+  [ICourseController] as ICRSC
+  [CourseController] as CRSC
+  [ICourseAuthoringController] as ICRSAC
+  [CourseAuthoringController] as CRSAC
+  [ICourseTeachingController] as ICRST
+  [CourseTeachingController] as CRST
+  note right of CRST
+    Teaching path (/api/teach, same CourseAuthoringService):
+    GET /eligibility (Enigma level 5 + approved instructor, or owner; each requirement met / not met)
+    own courses only: CRUD, sections, lessons (+ practicePrompt), move
+    POST /courses/{id}/submit (needs 1 visible lesson) -> review_status submitted, frozen
+    no publish / archive / order / grants here (403 on /owner routes)
+    owner: GET /owner/course-reviews · POST /owner/courses/{id}/approve (publishes) | reject {reviewNote}
+  end note
+  note left of CRSA
+    bodies bind the JOOQ POJOs (Course · CourseSection · Lesson · CourseAccessGrant)
+    PUT replaces the whole form; flags isActive / isFreePreview are 0/1; expiresAt is a date-time
+    move passes sortOrder (Integer) · reject passes Course.reviewNote (String)
+    NEXUS evaluate binds EnigmaEvaluation (rubricJson string) · progress passes positionSec + completed
+  end note
+  note right of CRSC
+    Academy video library (student):
+    GET /courses (published, lessonCount, percent, access)
+    GET /courses/{id} outline (locked / completed flags, never video links)
+    GET /lessons/{id} (embedUrl only when allowed; prev / next)
+    PUT /lessons/{id}/progress {positionSec, completed} (403 when locked)
+    watch = free preview | owner/author | owner grant | active plan + Enigma level >= minLevel
+  end note
+  note right of CRSAC
+    Authoring (owner JWT: role owner or chain_config owner wallet):
+    /owner/courses CRUD + move + publish (needs 1 active lesson) | archive | draft
+    /owner/courses/{id}/sections · /owner/sections/{id} (+ move, + lessons)
+    /owner/lessons/{id} (+ move) · /owner/course-grants (+ revoke)
+    videoUrl: YouTube / Vimeo / Bunny Stream / Cloudflare Stream -> embedUrl, else 400
+  end note
+  [".http contract tests"] as HTTP
+}
+
+JOOQ --> IREPO
+IJWT --> JWT
+IAUTH --> AUTH
+AUTH --> IENR
+AUTH --> IJWT
+IAUTHC --> AUTH
+AUTHC --> IAUTHC
+JWTF --> IJWT
+SEC --> JWTF
+CORS --> SEC
+IREPO --> REPO
+REPO --> ISVC
+ISVC --> SVC
+SVC --> ICTRL
+ICTRL --> CTRL
+CTRL --> HTTP
+JOOQ --> ICAT
+ICAT --> CAT
+CAT --> ICATS
+ICATS --> CATS
+CATS --> ICATC
+ICATC --> CATC
+CATC --> HTTP
+JOOQ --> IENR
+IENR --> ENR
+ENR --> IENS
+IENS --> ENS
+ENS --> IENC
+IENC --> ENC
+ENC --> HTTP
+JOOQ --> IBAND
+IBAND --> BAND
+BAND --> IBANDS
+IBANDS --> BANDS
+BANDS --> IBANDC
+IBANDC --> BANDC
+BANDC --> HTTP
+JOOQ --> IVEN
+IVEN --> VEN
+VEN --> IVENS
+IVENS --> VENS
+VENS --> IVENC
+IVENC --> VENC
+VENC --> HTTP
+JOOQ --> IGEO
+IGEO --> GEO
+GEO --> IGEOS
+IGEOS --> GEOS
+GEOS --> IGEOC
+IGEOC --> GEOC
+GEOC --> HTTP
+JOOQ --> IOPS
+IOPS --> OPS
+OPS --> IOPSS
+IOPSS --> OPSS
+OPSS --> IOPSC
+IOPSC --> OPSC
+OPSC --> HTTP
+JOOQ --> IEVT
+IEVT --> EVT
+EVT --> IEVTS
+IEVTS --> EVTS
+EVTS --> IEVTC
+IEVTC --> EVTC
+EVTC --> HTTP
+JOOQ --> IPAY
+IPAY --> PAY
+PAY --> IPAYS
+IPAYS --> PAYS
+PAYS --> IPAYC
+IPAYC --> PAYC
+PAYC --> HTTP
+JOOQ --> ISLK
+ISLK --> SLK
+SLK --> ISLKS
+ISLKS --> SLKS
+SLKS --> ISLKC
+ISLKC --> SLKC
+SLKC --> HTTP
+JOOQ --> ICHAIN
+ICHAIN --> CHAIN
+CHAIN --> ICHAINS
+ICHAINS --> CHAINS
+CHAINS --> ICHAINC
+ICHAINC --> CHAINC
+CHAINC --> HTTP
+JOOQ --> IROLE
+IROLE --> ROLE
+ROLE --> IROLES
+IROLES --> ROLES
+ROLES --> IROLEC
+IROLEC --> ROLEC
+ROLEC --> HTTP
+JOOQ --> IACADON
+IACADON --> ACADON
+ACADON --> IACADONS
+IACADONS --> ACADONS
+IXBUILD --> ACADONS
+SOLRPC --> TXV : getTransaction
+TXV ..|> ITXV
+SOLPDA --> TXV : base58 + PDAs
+ITXV --> ACADONS
+SOLRPC --> ACADONS : AcademySubscription expires_at
+ACADONS --> IACADONC
+IACADONC --> ACADONC
+ACADONC --> HTTP
+JOOQ --> ISETTLE
+ISETTLE --> SETTLE
+SETTLE --> ISETTLES
+ISETTLES --> SETTLES
+SETTLEIX --> SETTLES
+CLAIMIX --> SETTLES
+ITXV --> SETTLES
+SETTLES --> ISETTLEC
+ISETTLEC --> SETTLEC
+SETTLEC --> HTTP
+JOOQ --> IBVAULT
+IBVAULT --> BVAULT
+BVAULT --> IBVAULTS
+IBVAULTS --> BVAULTS
+BVAULTIX --> BVAULTS
+ITXV --> BVAULTS
+BVAULTS --> IBVAULTC
+IBVAULTC --> BVAULTC
+BVAULTC --> HTTP
+IBVAULTS ..> SETTLES : synced weights
+IBVAULTS ..> VENS : claimsFromVault
+JOOQ --> ITREAS
+ITREAS --> TREAS
+TREAS --> ITREASS
+ITREASS --> TREASS
+WTREASIX --> TREASS
+SOLRPC --> TREASS : getTokenAccountBalance
+ITXV --> TREASS
+TREASS --> ITREASC
+ITREASC --> TREASC
+TREASC --> HTTP
+JOOQ --> IAGAUTH
+IAGAUTH --> AGAUTH
+AGAUTH --> IAGAUTHS
+IAGAUTHS --> AGAUTHS
+AGAUTHIX --> AGAUTHS
+ITXV --> AGAUTHS
+AGAUTHS --> IAGAUTHC
+IAGAUTHC --> AGAUTHC
+AGAUTHC --> HTTP
+JOOQ --> IGOV
+IGOV --> GOV
+GOV --> IGOVS
+IGOVS --> GOVS
+IAGAUTH --> GOVS : agent proposals
+GOVIX --> GOVS
+SOLRPC --> GOVS : governance account
+ITXV --> GOVS
+GOVS --> IGOVC
+IGOVC --> GOVC
+GOVC --> HTTP
+JOOQ --> IVBOOK
+IVBOOK --> VBOOK
+VBOOK --> IVBOOKS
+IAGAUTH --> VBOOKS : chain config + agent bits
+IBVAULT --> VBOOKS
+IBVAULTS --> VBOOKS : synced weights
+IVENS --> VBOOKS : settlement + claims
+IVBOOKS --> VBOOKS
+VBOOKIX --> VBOOKS
+ITXV --> VBOOKS
+VBOOKS --> IVBOOKC
+IVBOOKC --> VBOOKC
+VBOOKC --> HTTP
+JOOQ --> IDIG
+IDIG --> DIG
+DIG --> IDIGS
+IDIGS --> DIGS
+CLAUDE --> DIGS
+ITREASS --> DIGS : treasury balance
+ISLKS --> DIGS : notify
+DIGS --> IDIGC
+IDIGC --> DIGC
+DIGC --> HTTP
+JOOQ --> IRGEOON
+IRGEOON --> RGEOON
+RGEOON --> IRGEOONS
+IRGEOONS --> RGEOONS
+ISONGRS --> RGEOONS : per-song deposit
+GEOIX --> RGEOONS
+ITXV --> RGEOONS
+SOLRPC --> RGEOONS : GeographicSubscription expires_at
+RGEOONS --> IRGEOONC
+IRGEOONC --> RGEOONC
+RGEOONC --> HTTP
+JOOQ --> ISONGR
+ISONGR --> SONGR
+SONGR --> ISONGRS
+IBVAULT --> SONGRS : members + wallets
+ISONGRS --> SONGRS
+SONGIX --> SONGRS
+ITXV --> SONGRS
+SOLRPC --> SONGRS : RoyaltyPool totals
+SONGRS --> ISONGRC
+ISONGRC --> SONGRC
+SONGRC --> HTTP
+JOOQ --> ISPPIN
+ISPPIN --> SPPIN
+SPPIN --> ISPPINS
+ISPPINS --> SPPINS
+ISPPINS --> BANDS : close_cycle computes 5 variables
+SPPINS --> ISPPINC
+ISPPINC --> SPPINC
+SPPINC --> HTTP
+JOOQ --> ISTGMAP
+ISTGMAP --> STGMAP
+STGMAP --> ISTGMAPS
+ISTGMAPS --> STGMAPS
+STGMAPS --> ISTGMAPC
+ISTGMAPC --> STGMAPC
+STGMAPC --> HTTP
+JOOQ --> INEX
+INEX --> NEX
+NEX --> INEXS
+INEXS --> NEXS
+CLAUDE --> NEXS
+NEXS --> INEXC
+INEXC --> NEXC
+NEXC --> HTTP
+JOOQ --> IHARM
+IHARM --> HARM
+HARM --> IHARMS
+IHARMS --> HARMS
+CLAUDE --> HARMS
+HARMS --> IHARMC
+IHARMC --> HARMC
+HARMC --> HTTP
+JOOQ --> IATL
+IATL --> ATL
+ATL --> IATLS
+IATLS --> ATLS
+ATLS --> IATLC
+IATLC --> ATLC
+ATLC --> HTTP
+JOOQ --> ICRS
+ICRS --> CRS
+CRS --> ICRSS
+CRS --> ICRSA
+ICRSS --> CRSS
+ICRSA --> CRSA
+ICHAIN --> CRSS : owner wallet
+ICHAIN --> CRSA : owner wallet
+CRSRULE --> CRSS
+CRSRULE --> CRSA
+CRSS --> ICRSC
+CRSA --> ICRSAC
+CRSA --> ICRST
+ICRSC --> CRSC
+ICRSAC --> CRSAC
+ICRST --> CRST
+CRSC --> HTTP
+CRSAC --> HTTP
+CRST --> HTTP
+INEX --> NEXS : lesson practice prompt
+IEVTS --> NEXS : NEXUS score_enigma event
+IEVTS --> HARMS : HARMONY band_match event
+IEVTS --> ATLS : ATLAS tour_route event
+IOPS --> SLKI : approve / reject once (answered_via slack)
+ISLK --> SLKI : interaction log row
+ICHAIN --> SLKI : owner wallet for log
+SLKI --> ISLKI
+ISLKI --> ISLKIC
+ISLKIC --> SLKIC
+SLKIC --> HTTP
+ISLKS --> EVTS : yellow/red decision -> Block Kit Approve / Reject
+note right of SLKI
+  POST /api/slack/interactions (public, outside JWT):
+  X-Slack-Signature v0 HMAC-SHA256 of v0:ts:body with SLACK_SIGNING_SECRET,
+  |now - ts| <= 300 s, else 401; no secret -> 503.
+  block_actions owner_decision_approve|reject (value = decision id)
+  -> UPDATE ... WHERE status = 'pending' (second click: already_decided)
+  -> POST response_url (hooks.slack.com only) replace_original with the outcome.
+end note
+CORS .. CTRL
+CORS .. CATC
+CORS .. ENC
+CORS .. BANDC
+CORS .. VENC
+CORS .. GEOC
+CORS .. OPSC
+CORS .. PAYC
+CORS .. SLKC
+JWTF .. SLKIC : permitAll (Slack signature instead of Bearer)
+CORS .. EVTC
+CORS .. CHAINC
+CORS .. ROLEC
+CORS .. ACADONC
+CORS .. SETTLEC
+CORS .. BVAULTC
+CORS .. RGEOONC
+CORS .. AUTHC
+CORS .. AGAUTHC
+CORS .. VBOOKC
+CORS .. GOVC
+CORS .. SPPINC
+CORS .. STGMAPC
+CORS .. NEXC
+CORS .. HARMC
+CORS .. ATLC
+CORS .. CRSC
+CORS .. CRSAC
+CORS .. CRST
+JWTF .. AUTHC
+ENS --> IJWT
+AUTHC ..> HTTPB : email/password -> primitives
+
+note right of HTTPB
+  no service/dto package.
+  Table-shaped bodies bind the JOOQ POJO
+  (Account session + location, AccountRoleApplication).
+  Non-table command bodies are read here and
+  passed to IService as primitives; no Map into services.
+  On-chain build/confirm (academy, agent authority, band vault,
+  governance, royalty/geo, settle/claim, song pools, treasury,
+  venue booking) take walletPubkey / txSignature / PDAs / amounts;
+  song pool splits bind List<RoyaltySplit> (bps -> shareBps).
+end note
+
+note left of SOLRPC
+  every Solana / Claude client is injected
+  through its I* interface (service.interfaces).
+  Repositories return JOOQ POJOs, lists of them, or counts;
+  services compose the JSON (treasury inflows, digest metrics,
+  level targets, member wallets) from those POJOs.
+end note
+
+note bottom of JOOQ
+  Generated from live MariaDB.
+  Never hand-write table DTOs.
+  Domain wallet/PDA columns stay nullable.
+  chain_config holds BCF-style RPC and program ids.
+  Wallet session: POST /api/session/challenge then POST /api/session/wallet with the wallet signature. GET session and location require the caller's own JWT.
+  Academy product: GET /api/accounts,
+  POST musicians / academy-subscriptions / enigma-evaluations.
+  POST /api/musicians always stores Enigma level 0 + countryCode (alpha-3); level is agent-only.
+  Bands product: POST /api/bands,
+  /band-members, /rehearsal-sessions,
+  /rehearsal-checkins, /spp-cycles,
+  GET /bands/{id}/rehearsals, close cycle.
+  Stage product: POST /api/venues bookings concerts,
+  settle (off-chain mirror), pending-claims/{id}/claim blocked.
+  Catalog product: POST royalty-deposits, geo-subscriptions, tour-plans, channel-pieces.
+  GET /geo-regions (onchainGeoCode); geo-subscriptions carry geoCode + months 1..12;
+  academy-subscriptions carry months 1..12 (amount = plan price x months).
+  Owner product: POST /owner-decisions/{id}/reject,
+  POST /agents/{id}/semaphore (green|yellow|red).
+  DevNet pay: GET/POST /devnet-pay-markers,
+  POST academy-subscriptions/{id}/devnet-pay,
+  POST pending-claims/{id}/devnet-claim (blocked — use claim-royalties/confirm).
+  Academy on-chain: POST subscribe-academy/build + confirm;
+  confirm requires DevNet RPC-confirmed signature (no intended-only paid).
+  Settle/claim on-chain: POST /concert-settlements/{id}/settle-concert/build+confirm,
+  POST /pending-claims/{id}/claim-royalties/build+confirm; confirm requires DevNet RPC-confirmed signature.
+  Royalty/geo on-chain: POST deposit-royalties/build + confirm,
+  POST subscribe-geographic/build + confirm; claim also uses claim-royalties/confirm;
+  confirm requires DevNet RPC-confirmed signature (no intended-only paid).
+  Agent events: GET /agent-events, POST /agents/{id}/tick
+  (yellow/red insert owner_decision). NEXUS / HARMONY / ATLAS record events from real actions.
+  HTTP contract tests: BandMutations.http · Venues.http · Catalog.http · Ops.http · DevnetPay.http · AgentEvents.http
+  Slack/dirigent (owner wallet only): GET /slack/status?walletPubkey,
+  GET /slack/deliveries?walletPubkey, POST /slack/notify {walletPubkey,text}.
+  Non-owner → 403. Mode skip|webhook|dirigent from env secrets.
+  decision messages carry Block Kit Approve / Reject; POST /slack/interactions (signed, public);
+  owner_decision.answered_via web|slack + answered_by; web approve/reject of a decided row -> 409.
+  HTTP contract tests include SlackBridge.http · SlackInteractions.http
+  Anchor: GET /api/anchor/metadata (scaffold; no Mainnet).
+  HTTP contract tests include Anchor.http
+  Role apply: POST /role-applications,
+  GET /role-applications?status=pending,
+  POST /role-applications/{id}/approve|reject (owner only),
+  GET /roles/memberships?walletPubkey=.
+  HTTP contract tests include RoleApplications.http · AcademyOnchain.http · SettleClaimOnchain.http · BandVault.http · RoyaltyGeoOnchain.http · SongRoyalty.http · TxVerification.http · Treasury.http · OwnerDigest.http · AgentAuthority.http · Governance.http · VenueBooking.http · SppInputs.http · StageMap.http · Nexus.http · Harmony.http · Atlas.http · Courses.http · Teaching.http · Auth.http
+  JWT: POST /api/auth/register|login public; POST /api/session/challenge public; POST /api/session/wallet requires a signed nonce before accessToken; other /api/** Bearer.
+end note
+
+@enduml

@@ -1,0 +1,967 @@
+// =============================================================================
+// dbdiagram.io — copy ALL of this file and paste into https://dbdiagram.io
+// =============================================================================
+// Keep in sync with 0.database/canonical_sql/.
+// =============================================================================
+
+Project eh8s {
+  database_type: 'MariaDB'
+  Note: '''
+    Enigma H8 Studios operational schema (MariaDB).
+    Domain wallet/PDA columns stay nullable.
+    chain_config holds BagsCreatorFund-style dual-network client settings.
+    Paste this whole file into https://dbdiagram.io.
+  '''
+}
+
+Table app_meta {
+  meta_key varchar(64) [pk]
+  meta_value varchar(255) [not null]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table instrument {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(80) [not null]
+}
+
+Table enigma_level {
+  id bigint [pk, increment]
+  level_number tinyint [not null, unique]
+  name varchar(80) [not null]
+  duration_note varchar(120) [not null]
+  milestone varchar(160) [not null]
+}
+
+Table account {
+  id bigint [pk, increment]
+  email varchar(160) [not null, unique]
+  display_name varchar(120) [not null]
+  role varchar(32) [not null]
+  country_code char(3)
+  wallet_pubkey varchar(44) [unique]
+  last_seen_at datetime
+  last_lat decimal(10,7)
+  last_lng decimal(10,7)
+  last_geo_at datetime
+  password_hash varchar(72)
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'Roles: musician, instructor, venue, owner, agent, student. wallet_pubkey is Solana session identity. last_lat/lng track signed-in wallet position. password_hash is BCrypt for JWT login (nullable for wallet-only accounts). Never store plaintext.'
+}
+
+Table musician_profile {
+  id bigint [pk, increment]
+  account_id bigint [not null, unique]
+  instrument_id bigint [not null]
+  enigma_level_id bigint [not null]
+  enigma_score tinyint [not null, default: 0]
+  country_code char(3) [note: 'ISO-3166 alpha-3 sent on-chain by upsert_musician_profile']
+  genres varchar(160) [note: 'comma list; HARMONY genre overlap']
+  musician_profile_pda varchar(44)
+}
+
+// one row per verified update_musician_level (NEXUS 0x01 agent or owner).
+Table musician_level_change {
+  id bigint [pk, increment]
+  musician_profile_id bigint [not null]
+  agent_wallet_pubkey varchar(44) [not null]
+  old_level tinyint [not null]
+  new_level tinyint [not null]
+  tx_signature varchar(128) [not null, unique]
+  created_at datetime [not null]
+
+  indexes {
+    musician_profile_id [name: 'idx_level_change_musician']
+  }
+}
+
+Ref: musician_level_change.musician_profile_id > musician_profile.id
+
+Table instructor_profile {
+  id bigint [pk, increment]
+  account_id bigint [not null, unique]
+}
+
+Table academy_plan {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(80) [not null]
+  usdc_monthly decimal(12,2) [not null]
+  onchain_plan_type tinyint [note: 'u8 priced by subscribe_academy (1 basic, 2 band, 3 pro)']
+  description varchar(400) [not null]
+}
+
+Table academy_subscription {
+  id bigint [pk, increment]
+  musician_profile_id bigint [not null]
+  academy_plan_id bigint [not null]
+  instructor_profile_id bigint
+  starts_at date [not null]
+  expires_at date [not null]
+  months tinyint [not null, default: 1, note: 'months bought by this row (1..12)']
+  treasury_usdc decimal(12,2) [not null, default: 0]
+  instructor_usdc decimal(12,2) [not null, default: 0]
+  academy_subscription_pda varchar(44) [note: '[academy_sub, wallet] - renewals share one PDA (indexed, not unique)']
+  intended_instruction varchar(64)
+  pay_tx_signature varchar(128) [unique]
+  paid_at datetime
+  payer_wallet_pubkey varchar(44)
+  on_chain_status varchar(16)
+  onchain_expires_at datetime [note: 'expires_at read from the PDA after confirm']
+
+  Note: 'pay_tx_signature + academy_subscription_pda link confirmed DevNet subscribe_academy. on_chain_status confirmed only after RPC verify.'
+}
+
+Table enigma_evaluation {
+  id bigint [pk, increment]
+  musician_profile_id bigint [not null]
+  lesson_id bigint [note: 'practice recording sent to NEXUS from this lesson']
+  evaluator_account_id bigint [note: 'teacher or musician who submitted it']
+  week_start date [not null]
+  score tinyint [not null, note: 'Score Enigma 0..100']
+  notes varchar(500)
+  recording_url varchar(400)
+  rubric_json varchar(1000) [note: '{technique, timing, tone, expression, theory} 0..10 each']
+  strengths varchar(1000)
+  errors_found varchar(1000)
+  exercises varchar(1000)
+  recommended_level tinyint
+  source varchar(16) [not null, default: 'manual', note: 'manual | nexus_ai']
+  ai_model varchar(64)
+  applied_at datetime [note: 'level applied on-chain via the NEXUS level page']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'NEXUS Score Enigma via Claude. Claude reads rubric, notes and recording metadata only (no audio).'
+}
+
+Ref: musician_profile.account_id > account.id
+Ref: musician_profile.instrument_id > instrument.id
+Ref: musician_profile.enigma_level_id > enigma_level.id
+Ref: instructor_profile.account_id > account.id
+Ref: academy_subscription.musician_profile_id > musician_profile.id
+Ref: academy_subscription.academy_plan_id > academy_plan.id
+Ref: academy_subscription.instructor_profile_id > instructor_profile.id
+Ref: enigma_evaluation.musician_profile_id > musician_profile.id
+Ref: enigma_evaluation.evaluator_account_id > account.id
+
+Table course {
+  id bigint [pk, increment]
+  title varchar(160) [not null]
+  summary varchar(1000)
+  instrument_id bigint [note: 'NULL = every instrument']
+  min_level tinyint [not null, default: 0, note: 'Enigma level 0..5 needed to watch paid lessons']
+  status varchar(16) [not null, default: 'draft', note: 'draft | published | archived']
+  review_status varchar(16) [not null, default: 'draft', note: 'draft | submitted | approved | rejected (owner review of instructor courses)']
+  review_note varchar(500) [note: 'owner note, required on reject']
+  reviewed_by_account_id bigint
+  submitted_at datetime
+  reviewed_at datetime
+  author_account_id bigint [not null, note: 'owner or a level-5 instructor']
+  sort_order int [not null, default: 0]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  published_at datetime
+
+  indexes {
+    (status, sort_order) [name: 'idx_course_status_sort']
+    (review_status, submitted_at) [name: 'idx_course_review']
+  }
+
+  Note: 'academy video library (eh8s_academy). The owner publishes courses; students watch lessons in order. level-5 instructors draft and submit; only the owner approves (publishes).'
+}
+
+Table course_section {
+  id bigint [pk, increment]
+  course_id bigint [not null]
+  title varchar(160) [not null]
+  sort_order int [not null, note: 'gap-free 1..n inside the course']
+  is_active tinyint [not null, default: 1]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (course_id, sort_order) [name: 'idx_course_section_order']
+  }
+}
+
+Table lesson {
+  id bigint [pk, increment]
+  section_id bigint [not null]
+  title varchar(160) [not null]
+  description varchar(2000)
+  video_provider varchar(16) [not null, note: 'youtube | vimeo | bunny | cloudflare']
+  video_url varchar(600) [not null, note: 'link as pasted by the author']
+  embed_url varchar(600) [not null, note: 'normalized player URL; returned only when the caller may watch']
+  duration_sec int
+  sort_order int [not null, note: 'gap-free 1..n inside the section']
+  is_free_preview tinyint [not null, default: 0]
+  resources varchar(2000) [note: 'sheet music / backing track links']
+  practice_prompt varchar(1000) [note: 'exercise the student records and sends to NEXUS']
+  is_active tinyint [not null, default: 1]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (section_id, sort_order) [name: 'idx_lesson_order']
+  }
+}
+
+Table lesson_progress {
+  id bigint [pk, increment]
+  account_id bigint [not null]
+  lesson_id bigint [not null]
+  last_position_sec int [not null, default: 0]
+  completed_at datetime
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (account_id, lesson_id) [unique, name: 'uk_lesson_progress']
+  }
+}
+
+Table course_access_grant {
+  id bigint [pk, increment]
+  course_id bigint [note: 'NULL = every course']
+  course_scope bigint [note: 'generated: IFNULL(course_id, 0)']
+  wallet_pubkey varchar(44) [not null]
+  granted_by_account_id bigint [not null]
+  note varchar(200)
+  expires_at datetime [note: 'NULL = no expiry']
+  is_active tinyint [not null, default: 1]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (wallet_pubkey, course_scope) [unique, name: 'uk_course_access_grant']
+  }
+
+  Note: 'owner-granted access by wallet (comped students, in-person payers).'
+}
+
+Ref: course.instrument_id > instrument.id
+Ref: course.author_account_id > account.id
+Ref: course.reviewed_by_account_id > account.id
+Ref: enigma_evaluation.lesson_id > lesson.id
+Ref: course_section.course_id > course.id
+Ref: lesson.section_id > course_section.id
+Ref: lesson_progress.account_id > account.id
+Ref: lesson_progress.lesson_id > lesson.id
+Ref: course_access_grant.course_id > course.id
+Ref: course_access_grant.granted_by_account_id > account.id
+
+Table spp_variable {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(80) [not null]
+  weight_bps int [not null]
+
+  Note: 'Attendance 4000, punctuality 1500, creative 2000, skill 1500, concert 1000.'
+}
+
+Table band {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(120) [not null]
+  band_type varchar(16) [not null]
+  spp_enabled tinyint [not null, default: 0]
+  geo_code varchar(16)
+  genres varchar(160) [note: 'comma list; HARMONY genre overlap']
+  band_vault_pda varchar(44) [unique]
+  vault_tx_signature varchar(100) [unique]
+  vault_activated_at datetime
+  spp_weights_json varchar(2048)
+  weights_tx_signature varchar(100)
+  weights_synced_at datetime
+
+  Note: 'Types: seed (SPP off), active, elite. band_vault_pda = on-chain BandVault ["band", band_id LE] (create_band). spp_weights_json = synced update_spp_weights [{musicianProfileId, wallet, bps}] in vault member order.'
+}
+
+Table band_member {
+  id bigint [pk, increment]
+  band_id bigint [not null]
+  musician_profile_id bigint [not null]
+  role_in_band varchar(80) [not null]
+  joined_at date [not null]
+}
+
+Table rehearsal_session {
+  id bigint [pk, increment]
+  band_id bigint [not null]
+  scheduled_at datetime [not null]
+  notes varchar(240)
+}
+
+Table rehearsal_checkin {
+  id bigint [pk, increment]
+  rehearsal_session_id bigint [not null]
+  musician_profile_id bigint [not null]
+  arrived_at datetime [not null]
+  late_minutes int [not null, default: 0]
+  attendance_points int [not null, default: 0]
+  punctuality_points int [not null, default: 0]
+
+  Note: 'Late over 15 minutes sets punctuality_points to 0 for that session.'
+}
+
+Table spp_cycle {
+  id bigint [pk, increment]
+  band_id bigint [not null]
+  code varchar(32) [not null]
+  status varchar(16) [not null]
+  started_at date [not null]
+  closed_at date
+  intended_instruction varchar(64) [not null, default: 'update_spp_weights']
+
+  Note: 'SPP is per cycle, not lifetime. On-chain weights are set by update_spp_weights.'
+}
+
+Table spp_member_score {
+  id bigint [pk, increment]
+  spp_cycle_id bigint [not null]
+  musician_profile_id bigint [not null]
+  attendance_points int [not null, default: 0]
+  punctuality_points int [not null, default: 0]
+  creative_points int [not null, default: 0]
+  skill_points int [not null, default: 0]
+  concert_points int [not null, default: 0]
+  total_points int [not null, default: 0]
+  share_bps int [not null, default: 0]
+  enigma_level_start tinyint
+  enigma_level_end tinyint
+
+  Note: 'close_cycle computes all five variables (attendance 40, punctuality 15, creative 20, skill 15, concert 10). Skill = Enigma level delta between start and end.'
+}
+
+Table creative_rating {
+  id bigint [pk, increment]
+  rehearsal_session_id bigint [not null]
+  rater_profile_id bigint [not null]
+  ratee_profile_id bigint [not null]
+  score tinyint [not null, note: '1..5, rater <> ratee']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (rehearsal_session_id, rater_profile_id, ratee_profile_id) [unique]
+  }
+
+  Note: 'members rate each other after a rehearsal; cycle average -> creative points.'
+}
+
+Table band_match_suggestion {
+  id bigint [pk, increment]
+  band_id bigint [not null]
+  musician_profile_id bigint [not null]
+  score tinyint [not null, note: '0..100 = instrument + level + country + genre points']
+  instrument_points tinyint [not null, default: 0]
+  level_points tinyint [not null, default: 0]
+  country_points tinyint [not null, default: 0]
+  genre_points tinyint [not null, default: 0]
+  reason varchar(400) [not null]
+  ai_rationale varchar(1000)
+  status varchar(16) [not null, default: 'suggested']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (band_id, musician_profile_id) [unique]
+  }
+
+  Note: 'HARMONY deterministic band match; optional Claude rationale when ANTHROPIC_API_KEY is set.'
+}
+
+Ref: band_match_suggestion.band_id > band.id
+Ref: band_match_suggestion.musician_profile_id > musician_profile.id
+
+Ref: band_member.band_id > band.id
+Ref: band_member.musician_profile_id > musician_profile.id
+Ref: rehearsal_session.band_id > band.id
+Ref: rehearsal_checkin.rehearsal_session_id > rehearsal_session.id
+Ref: rehearsal_checkin.musician_profile_id > musician_profile.id
+Ref: spp_cycle.band_id > band.id
+Ref: spp_member_score.spp_cycle_id > spp_cycle.id
+Ref: spp_member_score.musician_profile_id > musician_profile.id
+Ref: creative_rating.rehearsal_session_id > rehearsal_session.id
+Ref: creative_rating.rater_profile_id > musician_profile.id
+Ref: creative_rating.ratee_profile_id > musician_profile.id
+
+Table contract_type {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(80) [not null]
+  description varchar(400) [not null]
+  band_share_bps int [note: 'band share of projected gross for ATLAS income (5000 / 7500 / 8000 / 6000)']
+
+  Note: 'fixed_guarantee, door, versus, eh8s_promoter'
+}
+
+Table venue {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(120) [not null]
+  city varchar(80) [not null]
+  country_code char(3) [not null]
+  capacity int [not null]
+  suggested_ticket_usdc decimal(12,2) [not null]
+  latitude decimal(10,7) [not null]
+  longitude decimal(10,7) [not null]
+  pin_status varchar(16) [not null]
+  is_partner tinyint [not null, default: 0]
+  eh8s_rating tinyint [not null, default: 5]
+  sound_included tinyint [not null, default: 1]
+  preferred_genres varchar(160)
+  contract_type_id bigint [not null]
+  venue_listing_pda varchar(44)
+  wallet_pubkey varchar(44)
+  listing_status varchar(16)
+  register_tx_signature varchar(128) [unique]
+  approve_tx_signature varchar(128) [unique]
+  approved_by_wallet varchar(44)
+
+  Note: 'Pins: available, pending, busy, partner. Google Maps is not required in v1. register_venue (venue wallet) -> listing_status pending; approve_venue (STAGE agent) -> approved. map pin is derived from real data (purple is_partner > yellow upcoming confirmed booking > green approved with open dates > red).'
+}
+
+Table venue_availability {
+  id bigint [pk, increment]
+  venue_id bigint [not null]
+  available_date date [not null]
+
+  indexes {
+    (venue_id, available_date) [unique]
+  }
+
+  Note: 'open dates for Stage Map green pins and Request slot.'
+}
+
+Table booking {
+  id bigint [pk, increment]
+  venue_id bigint [not null]
+  band_id bigint [not null]
+  show_date date [not null]
+  pipeline_week tinyint [not null]
+  status varchar(24) [not null]
+  venue_access_token_pda varchar(44) [unique]
+  contract_hash varchar(64)
+  onchain_concert_id bigint
+  gross_usdc decimal(12,2)
+  escrow_pda varchar(44)
+  contract_text text
+  onchain_status varchar(16)
+  propose_tx_signature varchar(128) [unique]
+  confirm_tx_signature varchar(128) [unique]
+  cancel_tx_signature varchar(128) [unique]
+
+  indexes {
+    (venue_id, onchain_concert_id) [unique]
+  }
+
+  Note: 'propose_booking escrows gross_usdc -> onchain_status proposed; confirm_booking (STAGE) stores SHA-256 contract_hash; settle_booking (VAULT) or cancel_booking (venue).'
+}
+
+Table concert {
+  id bigint [pk, increment]
+  booking_id bigint [not null, unique]
+  venue_id bigint [not null]
+  band_id bigint [not null]
+  spp_cycle_id bigint [not null]
+  status varchar(16) [not null]
+  show_minutes int [not null, default: 60]
+  concert_settlement_pda varchar(44)
+}
+
+Table concert_set_checkin {
+  id bigint [pk, increment]
+  concert_id bigint [not null]
+  musician_profile_id bigint [not null]
+  set_started_at datetime [not null]
+  set_ended_at datetime
+  minutes_played int
+
+  indexes {
+    (concert_id, musician_profile_id) [unique]
+  }
+
+  Note: 'set start/end check-in; minutes_played / concert.show_minutes -> concert points.'
+}
+
+Table concert_expense {
+  id bigint [pk, increment]
+  concert_id bigint [not null]
+  label varchar(80) [not null]
+  amount_usdc decimal(12,2) [not null]
+}
+
+Table concert_settlement {
+  id bigint [pk, increment]
+  concert_id bigint [not null, unique]
+  gross_usdc decimal(12,2) [not null]
+  expenses_usdc decimal(12,2) [not null]
+  net_usdc decimal(12,2) [not null]
+  eh8s_fee_usdc decimal(12,2) [not null]
+  band_pool_usdc decimal(12,2) [not null]
+  status varchar(16) [not null]
+  settle_tx_signature varchar(128) [unique]
+  settled_at datetime
+  on_chain_status varchar(16)
+  settled_via varchar(24)
+  settled_by_wallet varchar(44)
+
+  Note: 'settle_concert DevNet tx required before settlement is confirmed. settled_via settle_booking (VAULT agent, escrow) or settle_concert (legacy).'
+}
+
+Table pending_claim {
+  id bigint [pk, increment]
+  concert_settlement_id bigint [not null]
+  musician_profile_id bigint [not null]
+  share_bps int [not null]
+  amount_usdc decimal(12,2) [not null]
+  status varchar(16) [not null]
+  claim_pda varchar(44) [unique]
+  tx_signature varchar(128) [unique]
+  claimed_at datetime
+  claimer_wallet_pubkey varchar(44)
+  on_chain_status varchar(16)
+
+  Note: 'claim_royalties DevNet tx replaces Mark claimed. on_chain_status confirmed only after RPC verify.'
+}
+
+Ref: venue.contract_type_id > contract_type.id
+Ref: booking.venue_id > venue.id
+Ref: booking.band_id > band.id
+Ref: concert.booking_id > booking.id
+Ref: concert.venue_id > venue.id
+Ref: concert.band_id > band.id
+Ref: concert.spp_cycle_id > spp_cycle.id
+Ref: concert_expense.concert_id > concert.id
+Ref: concert_set_checkin.concert_id > concert.id
+Ref: concert_set_checkin.musician_profile_id > musician_profile.id
+Ref: venue_availability.venue_id > venue.id
+Ref: concert_settlement.concert_id > concert.id
+Ref: pending_claim.concert_settlement_id > concert_settlement.id
+Ref: pending_claim.musician_profile_id > musician_profile.id
+
+Table royalty_type {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(80) [not null]
+}
+
+Table track {
+  id bigint [pk, increment]
+  band_id bigint [not null]
+  title varchar(160) [not null]
+  isrc varchar(16)
+  provider varchar(32) [not null, default: 'distrokid']
+  royalty_pool_pda varchar(44)
+  pool_splits_json text
+  pool_tx_signature varchar(128) [unique]
+  pool_activated_at datetime
+
+  Note: 'royalty_pool_pda = on-chain RoyaltyPool ["royalty", track_id LE] (create_royalty_pool). pool_splits_json = members + splits_bps activated on-chain [{musicianProfileId, wallet, bps}] in pool order.'
+}
+
+Table royalty_split {
+  id bigint [pk, increment]
+  track_id bigint [not null]
+  royalty_type_id bigint [not null]
+  musician_profile_id bigint
+  party varchar(16) [not null]
+  share_bps int [not null]
+}
+
+Table royalty_deposit {
+  id bigint [pk, increment]
+  track_id bigint [not null]
+  royalty_type_id bigint [not null]
+  amount_usdc decimal(12,2) [not null]
+  intended_instruction varchar(64) [not null, default: 'deposit_royalties']
+  royalty_pool_pda varchar(44)
+  deposit_tx_signature varchar(128) [unique]
+  deposited_at datetime
+  payer_wallet_pubkey varchar(44)
+  on_chain_status varchar(16)
+
+  Note: 'deposit_royalties DevNet tx + RoyaltyPool PDA. per-song deposit_royalties(track_id, amount) by owner or WAVE; deposits of one song share its pool PDA (non-unique).'
+}
+
+Table sync_license_deal {
+  id bigint [pk, increment]
+  track_id bigint [not null]
+  licensee_name varchar(120) [not null]
+  use_description varchar(255) [not null]
+  amount_usdc decimal(12,2) [not null]
+  artist_usdc decimal(12,2) [not null]
+  eh8s_usdc decimal(12,2) [not null]
+  status varchar(16) [not null, default: 'proposed']
+  licensee_wallet_pubkey varchar(44)
+  sync_license_pda varchar(44) [unique]
+  pay_tx_signature varchar(128) [unique]
+  paid_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'sync licensing deal; pay_sync_license(track_id, deal_id=id, amount) 80% artist splits / 20% EH8S; SyncLicense PDA ["sync", track_id LE, deal_id LE]. Status proposed -> paid.'
+}
+
+Table channel_format {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(80) [not null]
+}
+
+Table channel_piece {
+  id bigint [pk, increment]
+  channel_format_id bigint [not null]
+  title varchar(160) [not null]
+  artist_share_bps int [not null]
+  eh8s_share_bps int [not null]
+}
+
+Table geo_tier {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(80) [not null]
+  usdc_monthly decimal(12,2) [not null]
+  onchain_tier tinyint [note: 'u8 priced by subscribe_geographic (1 local .. 5 global)']
+}
+
+Table geo_region {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(80) [not null]
+  onchain_geo_code varchar(24) [note: 'zone seed (A-Z 0-9 _), e.g. MEX_CDMX']
+  country_code char(3) [note: 'venues in this zone match venue.country_code']
+  city varchar(80) [note: 'when set, venue.city must match too']
+}
+
+Table geographic_subscription {
+  id bigint [pk, increment]
+  band_id bigint [not null]
+  geo_tier_id bigint [not null]
+  geo_region_id bigint [not null]
+  starts_at date [not null]
+  expires_at date [not null]
+  months tinyint [not null, default: 1]
+  geo_code varchar(24) [note: 'zone seed copied from geo_region.onchain_geo_code']
+  geographic_subscription_pda varchar(44) [note: '[geo_sub, wallet, geo_code] - renewals share one PDA']
+  intended_instruction varchar(64) [not null, default: 'subscribe_geographic']
+  pay_tx_signature varchar(128) [unique]
+  paid_at datetime
+  payer_wallet_pubkey varchar(44)
+  on_chain_status varchar(16)
+  onchain_expires_at datetime
+
+  Note: 'subscribe_geographic DevNet USDC; confirmed only after RPC verify.'
+}
+
+Table tour_plan {
+  id bigint [pk, increment]
+  band_id bigint [not null]
+  geo_region_id bigint [not null]
+  title varchar(160) [not null]
+  route_note varchar(400) [not null]
+  window_start date
+  window_end date
+  total_km decimal(10,1)
+  projected_income_usdc decimal(12,2)
+  generated_by varchar(16) [not null, default: 'manual', note: 'manual | atlas']
+  created_at datetime
+}
+
+Table tour_plan_stop {
+  id bigint [pk, increment]
+  tour_plan_id bigint [not null]
+  stop_order tinyint [not null]
+  venue_id bigint [not null]
+  show_date date
+  leg_km decimal(8,1) [not null, default: 0]
+  projected_income_usdc decimal(12,2) [not null, default: 0]
+
+  indexes {
+    (tour_plan_id, stop_order) [unique]
+  }
+
+  Note: 'ATLAS nearest-neighbour route across approved venues inside the band active geographic subscriptions.'
+}
+
+Ref: track.band_id > band.id
+Ref: royalty_split.track_id > track.id
+Ref: royalty_split.royalty_type_id > royalty_type.id
+Ref: royalty_split.musician_profile_id > musician_profile.id
+Ref: royalty_deposit.track_id > track.id
+Ref: royalty_deposit.royalty_type_id > royalty_type.id
+Ref: sync_license_deal.track_id > track.id
+Ref: channel_piece.channel_format_id > channel_format.id
+Ref: geographic_subscription.band_id > band.id
+Ref: geographic_subscription.geo_tier_id > geo_tier.id
+Ref: geographic_subscription.geo_region_id > geo_region.id
+Ref: tour_plan.band_id > band.id
+Ref: tour_plan.geo_region_id > geo_region.id
+Ref: tour_plan_stop.tour_plan_id > tour_plan.id
+Ref: tour_plan_stop.venue_id > venue.id
+
+Table ops_agent {
+  id bigint [pk, increment]
+  code varchar(32) [not null, unique]
+  name varchar(80) [not null]
+  role_summary varchar(240) [not null]
+  semaphore varchar(8) [not null]
+  task_status varchar(32) [not null, default: 'idle']
+  on_chain_permission tinyint [not null, default: 0]
+  permission_bits tinyint [not null, default: 0, note: '0x01 pedagogical (NEXUS) / 0x02 HARMONY / 0x04 STAGE / 0x08 VAULT / 0x10 WAVE']
+  wallet_pubkey varchar(44)
+
+  Note: 'Twelve named agents. AGT-01 NEXUS = Pedagogical, AGT-02 GENESIS = Onboarding. Wallets remain nullable; chain_config holds RPC and program ids.'
+}
+
+// (eh8s_ops): one row per verified authorize_agent tx; the latest row per wallet is live.
+Table agent_authority {
+  id bigint [pk, increment]
+  ops_agent_id bigint [not null]
+  agent_wallet_pubkey varchar(44) [not null]
+  permissions tinyint [not null]
+  agent_authority_pda varchar(44) [not null, note: 'PDA ["agent", agent_wallet]']
+  owner_wallet_pubkey varchar(44) [not null]
+  tx_signature varchar(128) [not null, unique]
+  created_at datetime [not null]
+
+  indexes {
+    agent_wallet_pubkey [name: 'idx_agent_authority_wallet']
+  }
+}
+
+Ref: agent_authority.ops_agent_id > ops_agent.id
+
+Table owner_decision {
+  id bigint [pk, increment]
+  ops_agent_id bigint [not null]
+  title varchar(160) [not null]
+  semaphore varchar(8) [not null]
+  payload varchar(500) [not null]
+  status varchar(16) [not null]
+  reject_note varchar(500)
+  decided_at datetime
+  reject_reason varchar(500)
+  resolved_at datetime
+  answered_via varchar(16) [note: 'web | slack']
+  answered_by varchar(80) [note: 'Slack user or owner wallet']
+  related_booking_id bigint
+}
+
+Ref: owner_decision.ops_agent_id > ops_agent.id
+Ref: owner_decision.related_booking_id > booking.id
+
+Table chain_config {
+  id bigint [pk, increment]
+  network varchar(32) [not null, unique]
+  rpc_url varchar(512) [not null]
+  program_id_devnet varchar(64) [not null]
+  program_id_mainnet varchar(64)
+  anchor_program_name varchar(80)
+  anchor_scaffold_path varchar(240)
+  anchor_idl_version varchar(32)
+  anchor_idl_hash varchar(128)
+  instruction_registry_json text
+  program_deployed_at datetime
+  usdc_mint varchar(64) [not null]
+  env_network_key varchar(64) [not null, default: 'VITE_NETWORK']
+  env_rpc_key varchar(64) [not null, default: 'VITE_SOLANA_RPC']
+  env_program_id_devnet_key varchar(64) [not null, default: 'VITE_BCF_PROGRAM_ID_DEVNET']
+  env_program_id_mainnet_key varchar(64) [not null, default: 'VITE_BCF_PROGRAM_ID_MAINNET']
+  bags_api_base varchar(512)
+  watcher_url varchar(512)
+  squads_multisig varchar(64)
+  owner_wallet_pubkey varchar(44) [not null, default: '7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC']
+  protocol_fee_bps int [not null, default: 1500]
+  is_active tinyint [not null, default: 1]
+
+  Note: 'Singleton client config. owner_wallet_pubkey is platform owner. instruction_registry_json lists live DevNet Anchor instructions. usdc_mint must be DevNet USDC for wallet tests.'
+}
+
+// no schema gap — stage product uses existing venue booking concert settlement claim tables.
+
+
+// no schema gap for catalog geo channel CMS.
+Table devnet_pay_marker {
+  id bigint [pk, increment]
+  kind varchar(16) [not null]
+  wallet_pubkey varchar(44) [not null]
+  amount_usdc decimal(12,2)
+  related_claim_id bigint
+  related_subscription_id bigint
+  tx_signature varchar(128)
+  status varchar(16) [not null]
+  intended_instruction varchar(64) [not null]
+  note varchar(500)
+  recorded_at datetime [not null]
+
+  Note: 'DevNet pay/claim ledger markers. SQL remains operational store; RPC optional.'
+}
+
+Ref: devnet_pay_marker.related_claim_id > pending_claim.id
+Ref: devnet_pay_marker.related_subscription_id > academy_subscription.id
+
+// (eh8s_onchain): one row per verified withdraw_treasury (treasury PDA ATA -> owner ATA).
+Table treasury_withdrawal {
+  id bigint [pk, increment]
+  owner_wallet_pubkey varchar(44) [not null]
+  amount_usdc decimal(12,2) [not null]
+  tx_signature varchar(128) [not null, unique]
+  proposal_id bigint [note: 'set when the withdraw ran through an executed governance proposal']
+  created_at datetime [not null]
+
+  Note: 'Owner treasury withdrawals, recorded only after the RPC verifier decodes withdraw_treasury or execute_withdraw_proposal.'
+}
+
+Ref: treasury_withdrawal.proposal_id > governance_proposal.id
+
+// (eh8s_onchain): program v0.8.0 owner multisig. After init_governance, treasury
+// withdrawals and agent permissions only move through M-of-N proposals.
+Table governance {
+  id bigint [pk, increment]
+  program_id varchar(44) [not null]
+  governance_pda varchar(44) [not null, unique, note: 'PDA ["governance"]']
+  threshold tinyint [not null]
+  epoch int [not null, default: 0, note: 'Bumped when a signer proposal executes; older proposals go stale']
+  initialized_by_wallet varchar(44) [not null]
+  init_tx_signature varchar(128) [not null, unique]
+  created_at datetime [not null]
+  updated_at datetime [not null]
+}
+
+Table governance_signer {
+  id bigint [pk, increment]
+  governance_id bigint [not null]
+  wallet_pubkey varchar(44) [not null]
+  position tinyint [not null]
+
+  Indexes {
+    (governance_id, wallet_pubkey) [unique, name: 'uk_governance_signer']
+  }
+}
+
+Ref: governance_signer.governance_id > governance.id
+
+Table governance_proposal {
+  id bigint [pk, increment]
+  governance_id bigint [not null]
+  onchain_proposal_id bigint [not null]
+  proposal_pda varchar(44) [not null, unique, note: 'PDA ["proposal", id LE]']
+  epoch int [not null]
+  kind varchar(24) [not null, note: 'withdraw | authorize_agent | update_signers']
+  proposer_wallet varchar(44) [not null]
+  amount_usdc decimal(12,2)
+  target_pubkey varchar(44) [note: 'withdraw: destination USDC account · authorize_agent: agent wallet']
+  permissions tinyint
+  agent_code varchar(32) [note: 'authorize_agent: ops_agent.code the grant belongs to']
+  new_signers_csv varchar(240)
+  new_threshold tinyint
+  status varchar(16) [not null, note: 'open | executed | stale']
+  propose_tx_signature varchar(128) [not null, unique]
+  execute_tx_signature varchar(128) [unique]
+  executed_by_wallet varchar(44)
+  created_at datetime [not null]
+  executed_at datetime
+
+  Indexes {
+    (governance_id, onchain_proposal_id) [unique, name: 'uk_governance_proposal_onchain']
+    status [name: 'idx_governance_proposal_status']
+  }
+}
+
+Ref: governance_proposal.governance_id > governance.id
+
+Table governance_approval {
+  id bigint [pk, increment]
+  proposal_id bigint [not null]
+  signer_wallet varchar(44) [not null]
+  tx_signature varchar(128) [not null]
+  created_at datetime [not null]
+
+  Indexes {
+    (proposal_id, signer_wallet) [unique, name: 'uk_governance_approval_signer']
+    tx_signature [name: 'idx_governance_approval_tx']
+  }
+}
+
+Ref: governance_approval.proposal_id > governance_proposal.id
+Table agent_event_log {
+  id bigint [pk, increment]
+  ops_agent_id bigint [not null]
+  event_type varchar(64) [not null]
+  semaphore varchar(8) [not null]
+  summary varchar(240) [not null]
+  detail varchar(1000) [not null]
+  owner_decision_id bigint
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'Append-only agent tick log. Yellow/red ticks link owner_decision rows.'
+}
+
+Ref: agent_event_log.ops_agent_id > ops_agent.id
+Ref: agent_event_log.owner_decision_id > owner_decision.id
+Table slack_delivery_log {
+  id bigint [pk, increment]
+  owner_decision_id bigint
+  agent_event_id bigint
+  owner_wallet_pubkey varchar(44) [not null, default: '7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC', note: 'Platform owner from chain_config; deliveries scoped to this wallet only']
+  requester_wallet_pubkey varchar(44) [note: 'Wallet that requested notify; must match owner for allow']
+  bridge_mode varchar(32) [not null, default: 'webhook', note: 'webhook | dirigent | skip']
+  channel_hint varchar(80)
+  payload_preview varchar(500) [not null]
+  status varchar(32) [not null]
+  http_status int
+  error_message varchar(500)
+  delivered_at datetime [not null]
+
+  indexes {
+    owner_wallet_pubkey [name: 'idx_slack_owner_wallet']
+  }
+
+  Note: 'Owner-scoped Slack/dirigent delivery attempts. Non-owner requesters are rejected by the bridge.'
+}
+
+Ref: slack_delivery_log.owner_decision_id > owner_decision.id
+Ref: slack_delivery_log.agent_event_id > agent_event_log.id
+// Claude owner digest written from live metrics (ANTHROPIC_API_KEY env only).
+Table owner_digest {
+  id bigint [pk, increment]
+  owner_wallet_pubkey varchar(44) [not null]
+  model varchar(80) [not null, note: 'Claude model id (EH8S_CLAUDE_MODEL)']
+  metrics_json longtext [not null, note: 'Metrics map sent in the prompt']
+  body text [not null, note: 'Digest text returned by Claude']
+  input_tokens int
+  output_tokens int
+  slack_status varchar(32) [note: 'skipped | delivered | failed (slack bridge)']
+  created_at datetime [not null]
+
+  indexes {
+    created_at [name: 'idx_owner_digest_created']
+  }
+}
+// role apply/approve + multi-role membership (owner not applyable).
+Table account_role_application {
+  id bigint [pk, increment]
+  account_id bigint [not null]
+  wallet_pubkey varchar(44) [not null]
+  role varchar(32) [not null]
+  status varchar(16) [not null, default: 'pending']
+  reason varchar(500)
+  reviewed_by_wallet varchar(44)
+  created_at datetime [not null, default: CURRENT_TIMESTAMP]
+  reviewed_at datetime
+
+  Note: 'Applyable roles: student, musician, instructor, venue. Status: pending|approved|rejected. Owner never applyable. Unique (account_id, role) and (wallet_pubkey, role).'
+}
+
+Table account_role {
+  id bigint [pk, increment]
+  account_id bigint [not null]
+  role varchar(32) [not null]
+  granted_at datetime [not null, default: CURRENT_TIMESTAMP]
+  application_id bigint
+
+  Note: 'Multi-role membership for approved applyable roles. Unique (account_id, role).'
+}
+
+Ref: account_role_application.account_id > account.id
+Ref: account_role.account_id > account.id
+Ref: account_role.application_id > account_role_application.id

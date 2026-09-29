@@ -1,0 +1,60 @@
+### Stage map
+GET http://127.0.0.1:8080/api/venues
+GET http://127.0.0.1:8080/api/contract-types
+GET http://127.0.0.1:8080/api/bookings
+GET http://127.0.0.1:8080/api/concerts
+
+### Create venue
+POST http://127.0.0.1:8080/api/venues
+Content-Type: application/json
+
+{
+  "code": "wave-a-stage",
+  "name": "Wave A Stage",
+  "city": "CDMX",
+  "countryCode": "MEX",
+  "capacity": 120,
+  "suggestedTicketUsdc": 15.00,
+  "latitude": 19.4326000,
+  "longitude": -99.1332000,
+  "pinStatus": "active",
+  "contractTypeId": 1
+}
+
+###
+POST http://127.0.0.1:8080/api/bookings
+Content-Type: application/json
+
+{
+  "venueId": 1,
+  "bandId": 1,
+  "showDate": "2026-10-01",
+  "pipelineWeek": 2,
+  "status": "booked"
+}
+
+###
+POST http://127.0.0.1:8080/api/concerts
+Content-Type: application/json
+
+{
+  "bookingId": 2,
+  "venueId": 1,
+  "bandId": 1,
+  "sppCycleId": 1,
+  "status": "scheduled"
+}
+
+### Settle Bar La Cueva (gross 875, expenses 200)
+POST http://127.0.0.1:8080/api/concerts/1/settle
+Content-Type: application/json
+
+{
+  "grossUsdc": 875.00
+}
+
+###
+GET http://127.0.0.1:8080/api/settlements/1/claims
+
+###
+POST http://127.0.0.1:8080/api/pending-claims/1/claim
