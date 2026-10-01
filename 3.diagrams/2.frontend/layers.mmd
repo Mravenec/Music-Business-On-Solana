@@ -96,7 +96,7 @@ flowchart TD
   AppShell -->|no session on /owner or any other product route| HomePage
   AppShell --> HealthPage
   SessionProvider --> sessionService
-  sessionService --> httpClient["apiClient Bearer interceptor / sessionStorage eh8s.jwt and eh8s.wallet<br/>GET /api/session/current restores the studio after refresh, no new signature<br/>Signed in: the header keeps the truncated wallet address. Signed out: Select Wallet<br/>POST session/wallet/:w/location (lastLat, lastLng)"]
+  sessionService --> httpClient["apiClient Bearer interceptor / sessionStorage eh8s.jwt and eh8s.wallet<br/>GET /api/session/current restores the studio after refresh, no new signature<br/>Signed in: the header keeps the truncated wallet address. Signed out: Select Wallet, then Connect opens the chosen wallet<br/>POST session/wallet/:w/location (lastLat, lastLng)"]
   httpClient --> API["POST /api/session/challenge public<br/>POST /api/session/wallet with signature<br/>GET /api/session/current Bearer<br/>POST /api/auth/login|register public<br/>other /api/** with Authorization Bearer"]
   academyService --> httpClient
   bandService --> httpClient

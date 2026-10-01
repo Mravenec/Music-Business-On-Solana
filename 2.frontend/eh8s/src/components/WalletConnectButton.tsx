@@ -16,9 +16,12 @@ const MultiButton = WalletMultiButton as ComponentType;
  * - signed in with a wallet: the same truncated address after refresh (`7QVK..DUuC`).
  *   No "Connect Solflare", no "Wrong wallet?", no new signature.
  * - session still loading and the address is not stored yet: a quiet placeholder.
- * - no session: "Select Wallet", even if the adapter remembered a wallet name.
+ * - no session and no wallet yet: "Select Wallet" opens the picker.
+ * - no session and a wallet already chosen: "Connect <name>" calls connect()
+ *   so the extension opens and the signature can start. "Wrong wallet?" returns
+ *   to the picker. The modal itself only selects a name; it does not connect.
  *
- * A background `connect()` may still attach a trusted extension for payments.
+ * A background `connect()` may still attach a trusted extension after sign-in.
  * That attempt does not own the label.
  */
 export function WalletConnectButton() {
@@ -60,6 +63,24 @@ export function WalletConnectButton() {
       <button type="button" className="wallet-adapter-button wallet-adapter-button-trigger" disabled>
         …
       </button>
+    );
+  }
+
+  if (wallet) {
+    return (
+      <div className="eh8s-wallet-pick">
+        <button
+          type="button"
+          className="wallet-adapter-button wallet-adapter-button-trigger"
+          onClick={() => void connect().catch(() => undefined)}
+          disabled={connecting}
+        >
+          {connecting ? "Connecting…" : `Connect ${wallet.adapter.name}`}
+        </button>
+        <button type="button" className="eh8s-wallet-pick-other" onClick={() => setVisible(true)}>
+          Wrong wallet? Choose another
+        </button>
+      </div>
     );
   }
 
