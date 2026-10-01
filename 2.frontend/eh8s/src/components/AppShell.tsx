@@ -59,6 +59,14 @@ export function AppShell() {
   const links = visibleLinks(isOwner, activeWorkspace, connected);
   const approvedRoles = memberships.map((m) => m.role.toLowerCase());
 
+  const publicPath =
+    location.pathname === "/" ||
+    location.pathname === "/status" ||
+    location.pathname === "/health";
+  if (!loading && !connected && !publicPath) {
+    return <Navigate to="/" replace />;
+  }
+
   const ownerOnlyPaths = ["/owner", "/agent-events", "/solana", "/anchor"];
   if (
     connected &&
@@ -181,7 +189,11 @@ export function AppShell() {
         )}
       </div>
       <main className="eh8s-main">
-        <Outlet />
+        {publicPath || connected ? (
+          <Outlet />
+        ) : (
+          <p className="eh8s-muted-line">Opening your studio…</p>
+        )}
       </main>
       <footer className="eh8s-footer">
         <span>© EH8S · Enigma H8 Studios</span>
