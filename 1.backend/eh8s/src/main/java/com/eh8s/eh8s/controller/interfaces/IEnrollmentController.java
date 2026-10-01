@@ -4,6 +4,7 @@ import com.eh8s.eh8s.database.jooq.eh8s_academy.tables.pojos.AcademySubscription
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.Account;
 import com.eh8s.eh8s.database.jooq.eh8s_academy.tables.pojos.EnigmaEvaluation;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.MusicianProfile;
+import com.eh8s.eh8s.service.interfaces.JwtPrincipal;
 import java.util.List;
 import java.util.Map;
 
@@ -83,6 +84,14 @@ public interface IEnrollmentController {
    * @return session JSON
    */
   Map<String, Object> findWalletSession(String walletPubkey);
+
+  /**
+   * Loads the signed-in studio session from the bearer token. No wallet signature.
+   *
+   * @param principal JWT account
+   * @return session JSON
+   */
+  Map<String, Object> currentSession(JwtPrincipal principal);
 
   /**
    * Stores geolocation for a wallet session.

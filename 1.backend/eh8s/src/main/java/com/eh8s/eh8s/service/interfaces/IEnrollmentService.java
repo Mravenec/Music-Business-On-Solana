@@ -89,6 +89,14 @@ public interface IEnrollmentService {
   Map<String, Object> findWalletSession(String walletPubkey);
 
   /**
+   * Loads the caller's session from the JWT account id. Does not require a new wallet signature.
+   *
+   * @param principal authenticated account
+   * @return non-table session JSON (same shape as {@link #upsertWalletSession(Account, String)})
+   */
+  Map<String, Object> currentSession(JwtPrincipal principal);
+
+  /**
    * Stores geolocation for a signed-in wallet.
    *
    * @param walletPubkey base58 pubkey

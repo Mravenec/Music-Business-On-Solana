@@ -237,6 +237,21 @@ public class EnrollmentService implements IEnrollmentService {
    * {@inheritDoc}
    */
   @Override
+  public Map<String, Object> currentSession(JwtPrincipal principal) {
+    if (principal == null || principal.accountId() == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sign in again");
+    }
+    Account touched = enrollmentRepository.touchAccount(principal.accountId());
+    if (touched == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sign in again");
+    }
+    return toSession(touched);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public Map<String, Object> findWalletSession(String walletPubkey) {
     Account account =
         enrollmentRepository

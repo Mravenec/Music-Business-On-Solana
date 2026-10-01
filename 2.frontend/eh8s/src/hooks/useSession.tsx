@@ -2,18 +2,20 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import bs58 from "bs58";
 import {
+  fetchCurrentSession,
   postWalletLocation,
   requestWalletChallenge,
   upsertWalletSession,
   type WalletSession,
 } from "../services/sessionService";
-import { setAccessToken } from "../services/http";
+import { getAccessToken, setAccessToken } from "../services/http";
 
 type SessionState = {
   session: WalletSession | null;
@@ -61,14 +63,13 @@ function trackGeo(walletPubkey: string): Promise<WalletSession | null> {
 export function SessionProvider({ children }: { children: ReactNode }) {
   const { publicKey, connected, signMessage } = useWallet();
   const [session, setSession] = useState<WalletSession | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => Boolean(getAccessToken()));
   const [error, setError] = useState<string | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const wasConnected = useRef(false);
 
   const refresh = async () => {
-    if (!publicKey) {
-      setSession(null);
-      setAccessToken(null);
+    if (!publicKey || !signMessage) {
       return;
     }
     setLoading(true);
@@ -76,9 +77,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setGeoError(null);
     try {
       const pubkey = publicKey.toBase58();
-      if (!signMessage) {
-        throw new Error("This wallet cannot sign the login message");
-      }
       const challenge = await requestWalletChallenge(pubkey);
       const signed = await signMessage(new TextEncoder().encode(challenge.message));
       let next = await upsertWalletSession(pubkey, bs58.encode(signed));
@@ -100,14 +98,53 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (!connected || !publicKey) {
+    const token = getAccessToken();
+    if (!token) {
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    fetchCurrentSession()
+      .then((next) => {
+        if (!cancelled) setSession(next);
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        const status =
+          typeof e === "object" && e !== null && "response" in e
+            ? (e as { response?: { status?: number } }).response?.status
+            : undefined;
+        if (status === 401) {
+          setAccessToken(null);
+          setSession(null);
+          setError(null);
+          return;
+        }
+        setError(e instanceof Error ? e.message : "session failed");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (connected) {
+      wasConnected.current = true;
+      if (!getAccessToken()) {
+        void refresh();
+      }
+      return;
+    }
+    if (wasConnected.current) {
+      wasConnected.current = false;
       setSession(null);
       setAccessToken(null);
       setError(null);
       setGeoError(null);
-      return;
     }
-    void refresh();
   }, [connected, publicKey, signMessage]);
 
   return (

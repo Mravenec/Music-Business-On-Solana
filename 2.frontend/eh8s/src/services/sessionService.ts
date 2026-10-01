@@ -73,6 +73,15 @@ export async function upsertWalletSession(
 }
 
 /**
+ * Reloads the signed-in studio from the stored JWT. Does not ask the wallet to sign.
+ */
+export async function fetchCurrentSession(): Promise<WalletSession> {
+  const { data } = await apiClient.get<WalletSession>("/api/session/current");
+  if (data.accessToken) setAccessToken(data.accessToken);
+  return data;
+}
+
+/**
  * Loads an existing wallet session.
  */
 export async function fetchWalletSession(

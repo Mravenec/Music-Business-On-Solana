@@ -26,3 +26,10 @@ Content-Type: application/json
   "displayName": "Session Tester",
   "role": "musician"
 }
+
+### Current session without a token is 401
+GET http://127.0.0.1:8080/api/session/current
+
+### Current session with the bearer from a signed login is 200
+GET http://127.0.0.1:8080/api/session/current
+Authorization: Bearer {{accessToken}}

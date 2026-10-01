@@ -7,6 +7,8 @@ import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.Account;
 import com.eh8s.eh8s.database.jooq.eh8s_academy.tables.pojos.EnigmaEvaluation;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.MusicianProfile;
 import com.eh8s.eh8s.service.interfaces.IEnrollmentService;
+import com.eh8s.eh8s.service.interfaces.JwtPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -128,6 +130,15 @@ public class EnrollmentController implements IEnrollmentController {
   @GetMapping("/session/wallet/{walletPubkey}")
   public Map<String, Object> findWalletSession(@PathVariable String walletPubkey) {
     return enrollmentService.findWalletSession(walletPubkey);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @GetMapping("/session/current")
+  public Map<String, Object> currentSession(@AuthenticationPrincipal JwtPrincipal principal) {
+    return enrollmentService.currentSession(principal);
   }
 
   /**

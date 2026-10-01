@@ -95,8 +95,8 @@ flowchart TD
   AnchorDocsPage -->|live DevNet ix registry| useAnchorMetadata
   AppShell --> HealthPage
   SessionProvider --> sessionService
-  sessionService --> httpClient["apiClient Bearer interceptor / sessionStorage eh8s.jwt<br/>POST session/wallet/:w/location (lastLat, lastLng)"]
-  httpClient --> API["POST /api/session/challenge public<br/>POST /api/session/wallet with signature<br/>POST /api/auth/login|register public<br/>other /api/** with Authorization Bearer"]
+  sessionService --> httpClient["apiClient Bearer interceptor / sessionStorage eh8s.jwt<br/>GET /api/session/current restores the studio after refresh, no new signature<br/>POST session/wallet/:w/location (lastLat, lastLng)"]
+  httpClient --> API["POST /api/session/challenge public<br/>POST /api/session/wallet with signature<br/>GET /api/session/current Bearer<br/>POST /api/auth/login|register public<br/>other /api/** with Authorization Bearer"]
   academyService --> httpClient
   bandService --> httpClient
   catalogService --> httpClient
