@@ -1,63 +1,65 @@
 import { useEffect, useRef, type ComponentType } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton, useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { getAccessToken } from "../services/http";
+import { formatWalletLabel, getAccessToken, getSignedInWallet } from "../services/http";
+import { useSession } from "../hooks/useSession";
 
 const MultiButton = WalletMultiButton as ComponentType;
 
 /**
- * Wallet connect control with a real "wrong wallet" escape hatch.
+ * Header wallet control.
  *
- * `autoConnect` stays off on the provider: Phantom/Solflare's `autoConnect()` in this
- * SDK version is just `connect()` with no silent/onlyIfTrusted path, so triggering it
- * from a React effect (no user gesture) risks a popup the extension silently blocks or
- * never resolves — leaving the button stuck on the wrong wallet with no way back.
+ * Provider `autoConnect` stays off. Phantom and Solflare treat that flag as a full
+ * `connect()`, and a page-load popup does not restore the address.
  *
- * Instead:
- * - no wallet selected: "Select Wallet" opens the picker (stock behavior).
- * - a wallet is already chosen and `eh8s.jwt` is still stored: reconnect once on load.
- *   That brings the address back after F5 without a new signature. Provider
- *   `autoConnect` stays off, so a first visit does not connect by itself.
- * - a wallet is selected but not yet connected, and there is no studio token:
- *   show "Connect <Wallet>" as a real click plus a "Wrong wallet?" link.
- * - connected: hand off to stock WalletMultiButton, whose dropdown (Change wallet /
- *   Disconnect / Copy address) works correctly once actually connected.
+ * The label follows the studio session, not the adapter:
+ * - signed in with a wallet: the same truncated address after refresh (`7QVK..DUuC`).
+ *   No "Connect Solflare", no "Wrong wallet?", no new signature.
+ * - session still loading and the address is not stored yet: a quiet placeholder.
+ * - no session: "Select Wallet", even if the adapter remembered a wallet name.
+ *
+ * A background `connect()` may still attach a trusted extension for payments.
+ * That attempt does not own the label.
  */
 export function WalletConnectButton() {
   const { connected, connecting, wallet, connect } = useWallet();
   const { setVisible } = useWalletModal();
+  const { session, loading } = useSession();
   const tried = useRef(false);
+  const signedIn = Boolean(getAccessToken());
+  const signedInPubkey = session?.account?.walletPubkey || getSignedInWallet() || null;
 
   useEffect(() => {
     if (tried.current || connected || connecting || !wallet) return;
-    if (!getAccessToken()) return;
+    if (!signedIn) return;
     tried.current = true;
     void connect().catch(() => undefined);
-  }, [connected, connecting, wallet, connect]);
+  }, [connected, connecting, wallet, connect, signedIn]);
 
   if (connected) {
     return <MultiButton />;
   }
 
-  if (wallet) {
+  if (signedIn && signedInPubkey) {
     return (
-      <div className="eh8s-wallet-pick">
-        <button
-          type="button"
-          className="wallet-adapter-button wallet-adapter-button-trigger"
-          onClick={() => void connect().catch(() => undefined)}
-          disabled={connecting}
-        >
-          {connecting ? "Connecting…" : `Connect ${wallet.adapter.name}`}
-        </button>
-        <button
-          type="button"
-          className="eh8s-wallet-pick-other"
-          onClick={() => setVisible(true)}
-        >
-          Wrong wallet? Choose another
-        </button>
-      </div>
+      <button
+        type="button"
+        className="wallet-adapter-button wallet-adapter-button-trigger"
+        onClick={() => {
+          if (wallet) void connect().catch(() => undefined);
+          else setVisible(true);
+        }}
+      >
+        {formatWalletLabel(signedInPubkey)}
+      </button>
+    );
+  }
+
+  if (signedIn && loading) {
+    return (
+      <button type="button" className="wallet-adapter-button wallet-adapter-button-trigger" disabled>
+        …
+      </button>
     );
   }
 

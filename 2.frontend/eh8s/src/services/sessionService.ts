@@ -1,4 +1,4 @@
-import { apiClient, setAccessToken } from "./http";
+import { apiClient, setAccessToken, setSignedInWallet } from "./http";
 
 export type Account = {
   id: number;
@@ -68,7 +68,7 @@ export async function upsertWalletSession(
   if (displayName) body.displayName = displayName;
   if (role && role !== "owner") body.role = role;
   const { data } = await apiClient.post<WalletSession>("/api/session/wallet", body);
-  if (data.accessToken) setAccessToken(data.accessToken);
+  rememberSession(data);
   return data;
 }
 
@@ -77,7 +77,7 @@ export async function upsertWalletSession(
  */
 export async function fetchCurrentSession(): Promise<WalletSession> {
   const { data } = await apiClient.get<WalletSession>("/api/session/current");
-  if (data.accessToken) setAccessToken(data.accessToken);
+  rememberSession(data);
   return data;
 }
 
@@ -90,7 +90,7 @@ export async function fetchWalletSession(
   const { data } = await apiClient.get<WalletSession>(
     `/api/session/wallet/${encodeURIComponent(walletPubkey)}`
   );
-  if (data.accessToken) setAccessToken(data.accessToken);
+  rememberSession(data);
   return data;
 }
 
@@ -106,8 +106,18 @@ export async function postWalletLocation(
     `/api/session/wallet/${encodeURIComponent(walletPubkey)}/location`,
     { lastLat: latitude, lastLng: longitude }
   );
-  if (data.accessToken) setAccessToken(data.accessToken);
+  rememberSession(data);
   return data;
+}
+
+/**
+ * Keeps the JWT and the signed-in wallet address together in sessionStorage.
+ *
+ * @param data session payload from the API
+ */
+function rememberSession(data: WalletSession): void {
+  if (data.accessToken) setAccessToken(data.accessToken);
+  if (data.account?.walletPubkey) setSignedInWallet(data.account.walletPubkey);
 }
 
 /**
