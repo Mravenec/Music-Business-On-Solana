@@ -8,6 +8,8 @@ flowchart TD
   AppShell -->|apply one role| ApplyPage
   AppShell -->|role destinations| MorePage
   AppShell -->|role-gated| AcademyPage
+  AppShell -->|signed-in rail| WalletRail
+  WalletRail -->|studio accounting| StudioLedgerPage
   AcademyPage -->|one plan, includes listed| AcademyPlanPage
   AcademyPage -->|enroll| AcademyEnrollPage
   AcademyPage -->|score| AcademyEvaluatePage

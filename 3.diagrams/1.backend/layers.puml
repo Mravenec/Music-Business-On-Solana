@@ -31,6 +31,12 @@ package "1.backend/eh8s" {
   [EnrollmentService] as ENS
   [IEnrollmentController] as IENC
   [EnrollmentController] as ENC
+  [IStudioLedgerRepository] as ISLR
+  [StudioLedgerRepository] as SLR
+  [IStudioLedgerService] as ISLS
+  [StudioLedgerService] as SLS
+  [IStudioLedgerController] as ISLC
+  [StudioLedgerController] as SLC
   [IBandRepository] as IBAND
   [BandRepository] as BAND
   [IBandService] as IBANDS
@@ -68,7 +74,7 @@ package "1.backend/eh8s" {
   [ISlackBridgeController] as ISLKC
   [SlackBridgeController] as SLKC
   note right of EVTC
-    injects IAgentEventService only (no repository in the controller)
+    Epic 53: injects IAgentEventService only (no repository in the controller)
     tick binds AgentEventLog · tick-by-code calls record(code, eventType, semaphore, summary, detail)
     Ops reject passes OwnerDecision.rejectReason · semaphore passes OpsAgent.semaphore
     Slack notify(walletPubkey, text, ownerDecisionId, agentEventId) · digest run(walletPubkey)
@@ -187,7 +193,7 @@ package "1.backend/eh8s" {
   [IAgentAuthorityController] as IAGAUTHC
   [AgentAuthorityController] as AGAUTHC
   note right of AGAUTHC
-    Program v0.6.0:
+    Epic 40 (program v0.6.0):
     GET  /api/owner/agents?walletPubkey= (owner only) roster + bits + agent_authority rows
     POST /api/owner/agents/authorize/build|confirm (authorize_agent; 0 bits revokes)
     GET  /api/agents/level/musicians?walletPubkey= (owner or live 0x01 NEXUS agent)
@@ -202,7 +208,7 @@ package "1.backend/eh8s" {
   [IGovernanceController] as IGOVC
   [GovernanceController] as GOVC
   note right of GOVC
-    Program v0.8.0, native owner multisig (1..5 signers, threshold, epoch):
+    Epic 42 (program v0.8.0), native owner multisig (1..5 signers, threshold, epoch):
     GET  /api/governance?walletPubkey= (owner or signer) signers + proposals + approvals
     POST /api/governance/init/build|confirm (owner; init_governance)
     POST /api/governance/proposals/build|confirm (signer; propose withdraw | authorize_agent | update_signers)
@@ -218,7 +224,7 @@ package "1.backend/eh8s" {
   [IVenueBookingOnchainController] as IVBOOKC
   [VenueBookingOnchainController] as VBOOKC
   note right of VBOOKC
-    Program v0.7.0, every step build + confirm (verifier before any write):
+    Epic 41 (program v0.7.0), every step build + confirm (verifier before any write):
     GET  /api/venues/{id}/onchain · POST /api/venues/{id}/register/* (venue wallet; pending)
     GET  /api/stage/queue?walletPubkey= (owner or STAGE 0x04)
     POST /api/venues/{id}/approve/* (approve_venue) · /api/bookings/{id}/confirm-contract/*
@@ -321,7 +327,7 @@ package "1.backend/eh8s" {
     rubric 0..10 x5 + notes + recording link -> Claude -> Score Enigma 0..100,
     strengths, errors, exercises, recommendedLevel (max one step); 503 without key
     GET /nexus/evaluations[?musicianProfileId] · GET /nexus/evaluations/{id}
-    level applies only on-chain via update_musician_level
+    level applies only on-chain via update_musician_level (epic 40)
   end note
   note right of HARMC
     GET|POST /bands/{id}/match-suggestions (members or owner)
@@ -330,7 +336,7 @@ package "1.backend/eh8s" {
   end note
   note right of ATLC
     GET|POST /bands/{id}/tour-routes · GET /tour-routes/{id}
-    zones = confirmed unexpired geographic_subscription
+    zones = confirmed unexpired geographic_subscription (epic 43)
     nearest-neighbour from best income; income = capacity x ticket x 60% x contract share
   end note
   [ICourseRepository] as ICRS
@@ -347,7 +353,7 @@ package "1.backend/eh8s" {
   [ICourseTeachingController] as ICRST
   [CourseTeachingController] as CRST
   note right of CRST
-    Teaching path (/api/teach, same CourseAuthoringService):
+    Epic 51 teaching path (/api/teach, same CourseAuthoringService):
     GET /eligibility (Enigma level 5 + approved instructor, or owner; each requirement met / not met)
     own courses only: CRUD, sections, lessons (+ practicePrompt), move
     POST /courses/{id}/submit (needs 1 visible lesson) -> review_status submitted, frozen
@@ -355,13 +361,13 @@ package "1.backend/eh8s" {
     owner: GET /owner/course-reviews · POST /owner/courses/{id}/approve (publishes) | reject {reviewNote}
   end note
   note left of CRSA
-    bodies bind the JOOQ POJOs (Course · CourseSection · Lesson · CourseAccessGrant)
+    Epic 53: bodies bind the JOOQ POJOs (Course · CourseSection · Lesson · CourseAccessGrant)
     PUT replaces the whole form; flags isActive / isFreePreview are 0/1; expiresAt is a date-time
     move passes sortOrder (Integer) · reject passes Course.reviewNote (String)
     NEXUS evaluate binds EnigmaEvaluation (rubricJson string) · progress passes positionSec + completed
   end note
   note right of CRSC
-    Academy video library (student):
+    Epic 50 academy video library (student):
     GET /courses (published, lessonCount, percent, access)
     GET /courses/{id} outline (locked / completed flags, never video links)
     GET /lessons/{id} (embedUrl only when allowed; prev / next)
@@ -369,13 +375,13 @@ package "1.backend/eh8s" {
     watch = free preview | owner/author | owner grant | active plan + Enigma level >= minLevel
   end note
   note right of CRSAC
-    Authoring (owner JWT: role owner or chain_config owner wallet):
+    Epic 50 authoring (owner JWT: role owner or chain_config owner wallet):
     /owner/courses CRUD + move + publish (needs 1 active lesson) | archive | draft
     /owner/courses/{id}/sections · /owner/sections/{id} (+ move, + lessons)
     /owner/lessons/{id} (+ move) · /owner/course-grants (+ revoke)
     videoUrl: YouTube / Vimeo / Bunny Stream / Cloudflare Stream -> embedUrl, else 400
   end note
-  [".http contract tests"] as HTTP
+  [".http GATE_HTTP"] as HTTP
 }
 
 JOOQ --> IREPO
@@ -637,7 +643,7 @@ ICRST --> CRST
 CRSC --> HTTP
 CRSAC --> HTTP
 CRST --> HTTP
-INEX --> NEXS : lesson practice prompt
+INEX --> NEXS : lesson practice prompt (epic 51)
 IEVTS --> NEXS : NEXUS score_enigma event
 IEVTS --> HARMS : HARMONY band_match event
 IEVTS --> ATLS : ATLAS tour_route event
@@ -691,7 +697,7 @@ ENS --> IJWT
 AUTHC ..> HTTPB : email/password -> primitives
 
 note right of HTTPB
-  no service/dto package.
+  Epic 53: no service/dto package.
   Table-shaped bodies bind the JOOQ POJO
   (Account session + location, AccountRoleApplication).
   Non-table command bodies are read here and
@@ -703,7 +709,7 @@ note right of HTTPB
 end note
 
 note left of SOLRPC
-  every Solana / Claude client is injected
+  Epic 53: every Solana / Claude client is injected
   through its I* interface (service.interfaces).
   Repositories return JOOQ POJOs, lists of them, or counts;
   services compose the JSON (treasury inflows, digest metrics,
@@ -719,44 +725,52 @@ note bottom of JOOQ
   Academy product: GET /api/accounts,
   POST musicians / academy-subscriptions / enigma-evaluations.
   POST /api/musicians always stores Enigma level 0 + countryCode (alpha-3); level is agent-only.
-  Bands product: POST /api/bands,
+  Bands product (APP-10-2): POST /api/bands,
   /band-members, /rehearsal-sessions,
   /rehearsal-checkins, /spp-cycles,
   GET /bands/{id}/rehearsals, close cycle.
   Stage product: POST /api/venues bookings concerts,
   settle (off-chain mirror), pending-claims/{id}/claim blocked.
   Catalog product: POST royalty-deposits, geo-subscriptions, tour-plans, channel-pieces.
-  GET /geo-regions (onchainGeoCode); geo-subscriptions carry geoCode + months 1..12;
+  Epic 43: GET /geo-regions (onchainGeoCode); geo-subscriptions carry geoCode + months 1..12;
   academy-subscriptions carry months 1..12 (amount = plan price x months).
   Owner product: POST /owner-decisions/{id}/reject,
   POST /agents/{id}/semaphore (green|yellow|red).
   DevNet pay: GET/POST /devnet-pay-markers,
   POST academy-subscriptions/{id}/devnet-pay,
   POST pending-claims/{id}/devnet-claim (blocked — use claim-royalties/confirm).
-  Academy on-chain: POST subscribe-academy/build + confirm;
+  Academy on-chain (Epic 21): POST subscribe-academy/build + confirm;
   confirm requires DevNet RPC-confirmed signature (no intended-only paid).
-  Settle/claim on-chain: POST /concert-settlements/{id}/settle-concert/build+confirm,
+  Settle/claim on-chain (Epic 22): POST /concert-settlements/{id}/settle-concert/build+confirm,
   POST /pending-claims/{id}/claim-royalties/build+confirm; confirm requires DevNet RPC-confirmed signature.
-  Royalty/geo on-chain: POST deposit-royalties/build + confirm,
+  Royalty/geo on-chain (Epic 23): POST deposit-royalties/build + confirm,
   POST subscribe-geographic/build + confirm; claim also uses claim-royalties/confirm;
   confirm requires DevNet RPC-confirmed signature (no intended-only paid).
   Agent events: GET /agent-events, POST /agents/{id}/tick
-  (yellow/red insert owner_decision). NEXUS / HARMONY / ATLAS record events from real actions.
-  HTTP contract tests: BandMutations.http · Venues.http · Catalog.http · Ops.http · DevnetPay.http · AgentEvents.http
+  (yellow/red insert owner_decision). Epic 46: NEXUS / HARMONY / ATLAS record events from real actions.
+  GATE_HTTP: BandMutations.http · Venues.http · Catalog.http · Ops.http · DevnetPay.http · AgentEvents.http
   Slack/dirigent (owner wallet only): GET /slack/status?walletPubkey,
   GET /slack/deliveries?walletPubkey, POST /slack/notify {walletPubkey,text}.
   Non-owner → 403. Mode skip|webhook|dirigent from env secrets.
-  decision messages carry Block Kit Approve / Reject; POST /slack/interactions (signed, public);
+  Epic 47: decision messages carry Block Kit Approve / Reject; POST /slack/interactions (signed, public);
   owner_decision.answered_via web|slack + answered_by; web approve/reject of a decided row -> 409.
-  HTTP contract tests include SlackBridge.http · SlackInteractions.http
+  GATE_HTTP includes SlackBridge.http · SlackInteractions.http
   Anchor: GET /api/anchor/metadata (scaffold; no Mainnet).
-  HTTP contract tests include Anchor.http
-  Role apply: POST /role-applications,
+  GATE_HTTP includes Anchor.http
+  Role apply (APP-19-2): POST /role-applications,
   GET /role-applications?status=pending,
   POST /role-applications/{id}/approve|reject (owner only),
   GET /roles/memberships?walletPubkey=.
-  HTTP contract tests include RoleApplications.http · AcademyOnchain.http · SettleClaimOnchain.http · BandVault.http · RoyaltyGeoOnchain.http · SongRoyalty.http · TxVerification.http · Treasury.http · OwnerDigest.http · AgentAuthority.http · Governance.http · VenueBooking.http · SppInputs.http · StageMap.http · Nexus.http · Harmony.http · Atlas.http · Courses.http · Teaching.http · Auth.http
+  GATE_HTTP includes RoleApplications.http · AcademyOnchain.http · SettleClaimOnchain.http · BandVault.http · RoyaltyGeoOnchain.http · SongRoyalty.http · TxVerification.http · Treasury.http · OwnerDigest.http · AgentAuthority.http · Governance.http · VenueBooking.http · SppInputs.http · StageMap.http · Nexus.http · Harmony.http · Atlas.http · Courses.http · Teaching.http · Auth.http
   JWT: POST /api/auth/register|login public; POST /api/session/challenge public; POST /api/session/wallet requires a signed nonce before accessToken; GET /api/session/current is Bearer and does not ask the wallet to sign again; other /api/** Bearer.
+  Studio ledger: GET /api/studio-ledger/claims and /api/studio-ledger/instructor-shares (Bearer, year, month). Confirmed credits for the signed-in wallet only.
 end note
+
+JOOQ --> ISLR
+ISLR <|.. SLR
+SLR --> ISLS
+ISLS <|.. SLS
+SLS --> ISLC
+ISLC <|.. SLC
 
 @enduml

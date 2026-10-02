@@ -1,0 +1,10 @@
+### Studio ledger without Bearer → 401
+GET http://127.0.0.1:8080/api/studio-ledger/claims?year=2026&month=10
+
+### Studio ledger with Bearer → 2xx (paste accessToken from Auth.http login)
+GET http://127.0.0.1:8080/api/studio-ledger/claims?year=2026&month=10
+Authorization: Bearer {{accessToken}}
+
+### Instructor shares with Bearer → 2xx
+GET http://127.0.0.1:8080/api/studio-ledger/instructor-shares?year=2026&month=10
+Authorization: Bearer {{accessToken}}

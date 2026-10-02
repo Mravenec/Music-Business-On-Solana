@@ -3,6 +3,7 @@ import { useSession } from "../hooks/useSession";
 import { useRoles } from "../hooks/useRoles";
 import { useHealth } from "../hooks/useHealth";
 import { WalletConnectButton as ConnectButton } from "./WalletConnectButton";
+import { WalletRail } from "./WalletRail";
 import "./shell.css";
 
 type NavItem = {
@@ -184,13 +185,16 @@ export function AppShell() {
           <span>Connect a wallet to enter.</span>
         )}
       </div>
-      <main className="eh8s-main">
-        {publicPath || connected ? (
-          <Outlet />
-        ) : (
-          <p className="eh8s-muted-line">Opening your studio…</p>
-        )}
-      </main>
+      <div className={connected && !publicPath ? "eh8s-stage" : undefined}>
+        <main className="eh8s-main">
+          {publicPath || connected ? (
+            <Outlet />
+          ) : (
+            <p className="eh8s-muted-line">Opening your studio…</p>
+          )}
+        </main>
+        {connected && !publicPath ? <WalletRail /> : null}
+      </div>
       <footer className="eh8s-footer">
         <span>© EH8S · Enigma H8 Studios</span>
         <Link to="/status">Studio availability</Link>

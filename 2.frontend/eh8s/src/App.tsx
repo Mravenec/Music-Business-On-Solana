@@ -92,6 +92,7 @@ import { BandMatchPage } from "./pages/BandMatchPage";
 import { BandToursPage } from "./pages/BandToursPage";
 import { BandTourNewPage } from "./pages/BandTourNewPage";
 import { BandTourPage } from "./pages/BandTourPage";
+import { StudioLedgerPage } from "./pages/StudioLedgerPage";
 
 export function App() {
   return (
@@ -107,6 +108,7 @@ export function App() {
                 <Route path="/health" element={<Navigate to="/status" replace />} />
                 <Route path="/status" element={<HealthPage />} />
                 <Route path="/academy" element={<AcademyPage />} />
+                <Route path="/studio-ledger" element={<StudioLedgerPage />} />
                 <Route path="/academy/enroll" element={<AcademyEnrollPage />} />
                 <Route path="/academy/evaluate" element={<AcademyEvaluatePage />} />
                 <Route path="/academy/plans/:planId" element={<AcademyPlanPage />} />
