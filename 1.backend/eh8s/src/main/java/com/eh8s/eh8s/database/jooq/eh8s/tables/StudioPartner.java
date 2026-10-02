@@ -90,6 +90,16 @@ public class StudioPartner extends TableImpl<StudioPartnerRecord> {
      */
     public final TableField<StudioPartnerRecord, LocalDateTime> CREATED_AT = createField(DSL.name("created_at"), SQLDataType.LOCALDATETIME(0).nullable(false).defaultValue(DSL.field(DSL.raw("current_timestamp()"), SQLDataType.LOCALDATETIME)), this, "");
 
+    /**
+     * The column <code>eh8s.studio_partner.started_at</code>.
+     */
+    public final TableField<StudioPartnerRecord, LocalDateTime> STARTED_AT = createField(DSL.name("started_at"), SQLDataType.LOCALDATETIME(0).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.LOCALDATETIME)), this, "");
+
+    /**
+     * The column <code>eh8s.studio_partner.ended_at</code>.
+     */
+    public final TableField<StudioPartnerRecord, LocalDateTime> ENDED_AT = createField(DSL.name("ended_at"), SQLDataType.LOCALDATETIME(0).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.LOCALDATETIME)), this, "");
+
     private StudioPartner(Name alias, Table<StudioPartnerRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

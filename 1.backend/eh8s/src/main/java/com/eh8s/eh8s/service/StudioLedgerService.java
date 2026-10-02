@@ -16,14 +16,16 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Resolves the signed-in wallet and keeps partner allocations equal to recorded studio fees.
+ * Resolves the signed-in wallet and shares each recorded fee with partners already on the books that day.
  */
 @Service
 public class StudioLedgerService implements IStudioLedgerService {
@@ -217,49 +219,103 @@ public class StudioLedgerService implements IStudioLedgerService {
   private void refresh(int year, int month) {
     LocalDateTime start = startOfMonth(year, month);
     LocalDateTime end = start.plusMonths(1);
-    List<StudioPartner> partners = ledgerRepository.activePartners();
-    BigDecimal shows =
-        ledgerRepository.showFees(start, end).stream()
-            .map(ConcertSettlement::getEh8sFeeUsdc)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    BigDecimal academy =
-        ledgerRepository.academyFees(start, end).stream()
-            .map(AcademySubscription::getTreasuryUsdc)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    BigDecimal sync =
-        ledgerRepository.syncFees(start, end).stream()
-            .map(SyncLicenseDeal::getEh8sUsdc)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    List<StudioPartner> partners = ledgerRepository.allPartners();
     ledgerRepository.clearAllocations(year, month);
-    writeSource(partners, year, month, "show_fee", shows);
-    writeSource(partners, year, month, "academy", academy);
-    writeSource(partners, year, month, "sync", sync);
+    writeSource(
+        partners,
+        year,
+        month,
+        "show_fee",
+        ledgerRepository.showFees(start, end).stream()
+            .map(row -> new DatedFee(row.getSettledAt(), row.getEh8sFeeUsdc()))
+            .toList());
+    writeSource(
+        partners,
+        year,
+        month,
+        "academy",
+        ledgerRepository.academyFees(start, end).stream()
+            .map(row -> new DatedFee(row.getPaidAt(), row.getTreasuryUsdc()))
+            .toList());
+    writeSource(
+        partners,
+        year,
+        month,
+        "sync",
+        ledgerRepository.syncFees(start, end).stream()
+            .map(row -> new DatedFee(row.getPaidAt(), row.getEh8sUsdc()))
+            .toList());
   }
 
   private void writeSource(
-      List<StudioPartner> partners, int year, int month, String source, BigDecimal pool) {
-    if (partners.isEmpty() || pool.signum() <= 0) {
-      return;
+      List<StudioPartner> partners, int year, int month, String source, List<DatedFee> fees) {
+    Map<Long, BigDecimal> totals = shareOf(partners, fees);
+    totals.forEach(
+        (partnerId, amount) ->
+            ledgerRepository.insertAllocation(partnerId, year, month, source, amount));
+  }
+
+  /**
+   * One recorded fee and the moment it was stored.
+   *
+   * @param at fee timestamp
+   * @param amount studio amount for that fee
+   */
+  record DatedFee(LocalDateTime at, BigDecimal amount) {}
+
+  /**
+   * Gives each partner their own share of each fee whose calendar day falls inside their window.
+   * A fee before they joined, or after the day they left, is not theirs. The unassigned percent stays unassigned.
+   *
+   * @param partners every partner, including those who have left
+   * @param fees dated studio amounts
+   * @return partner id to the summed slice, skipping zero
+   */
+  static Map<Long, BigDecimal> shareOf(List<StudioPartner> partners, List<DatedFee> fees) {
+    Map<Long, BigDecimal> totals = new LinkedHashMap<>();
+    if (partners == null || fees == null) {
+      return totals;
     }
-    int assigned = partners.stream().mapToInt(StudioPartner::getShareBps).sum();
-    BigDecimal assignedPool =
-        pool.multiply(BigDecimal.valueOf(assigned)).divide(BPS, 2, RoundingMode.HALF_UP);
-    BigDecimal used = BigDecimal.ZERO;
-    for (int i = 0; i < partners.size(); i++) {
-      StudioPartner partner = partners.get(i);
-      BigDecimal part;
-      if (i == partners.size() - 1) {
-        part = assignedPool.subtract(used);
-      } else {
-        part =
-            pool.multiply(BigDecimal.valueOf(partner.getShareBps()))
-                .divide(BPS, 2, RoundingMode.DOWN);
-        used = used.add(part);
+    for (DatedFee fee : fees) {
+      if (fee == null || fee.at == null || fee.amount == null || fee.amount.signum() <= 0) {
+        continue;
       }
-      if (part.signum() > 0) {
-        ledgerRepository.insertAllocation(partner.getId(), year, month, source, part);
+      for (StudioPartner partner : partners) {
+        if (partner.getId() == null || partner.getShareBps() == null || !covers(partner, fee.at)) {
+          continue;
+        }
+        BigDecimal part =
+            fee.amount
+                .multiply(BigDecimal.valueOf(partner.getShareBps()))
+                .divide(BPS, 2, RoundingMode.HALF_UP);
+        if (part.signum() > 0) {
+          totals.merge(partner.getId(), part, BigDecimal::add);
+        }
       }
     }
+    return totals;
+  }
+
+  /**
+   * A partner covers a fee when the fee's calendar day is on or after their start day and,
+   * if they have left, on or before the day they left.
+   *
+   * @param partner partner row
+   * @param feeAt fee timestamp
+   * @return whether that fee is inside the window
+   */
+  static boolean covers(StudioPartner partner, LocalDateTime feeAt) {
+    if (partner.getStartedAt() == null || feeAt == null) {
+      return false;
+    }
+    LocalDate feeDay = feeAt.toLocalDate();
+    if (feeDay.isBefore(partner.getStartedAt().toLocalDate())) {
+      return false;
+    }
+    if (partner.getEndedAt() == null) {
+      return true;
+    }
+    return !feeDay.isAfter(partner.getEndedAt().toLocalDate());
   }
 
   private String walletOf(Long accountId) {

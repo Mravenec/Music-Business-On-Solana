@@ -104,6 +104,34 @@ public class StudioPartnerRecord extends UpdatableRecordImpl<StudioPartnerRecord
         return (LocalDateTime) get(5);
     }
 
+    /**
+     * Setter for <code>eh8s.studio_partner.started_at</code>.
+     */
+    public void setStartedAt(LocalDateTime value) {
+        set(6, value);
+    }
+
+    /**
+     * Getter for <code>eh8s.studio_partner.started_at</code>.
+     */
+    public LocalDateTime getStartedAt() {
+        return (LocalDateTime) get(6);
+    }
+
+    /**
+     * Setter for <code>eh8s.studio_partner.ended_at</code>.
+     */
+    public void setEndedAt(LocalDateTime value) {
+        set(7, value);
+    }
+
+    /**
+     * Getter for <code>eh8s.studio_partner.ended_at</code>.
+     */
+    public LocalDateTime getEndedAt() {
+        return (LocalDateTime) get(7);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -127,7 +155,7 @@ public class StudioPartnerRecord extends UpdatableRecordImpl<StudioPartnerRecord
     /**
      * Create a detached, initialised StudioPartnerRecord
      */
-    public StudioPartnerRecord(Long id, String walletPubkey, String displayName, Integer shareBps, Byte active, LocalDateTime createdAt) {
+    public StudioPartnerRecord(Long id, String walletPubkey, String displayName, Integer shareBps, Byte active, LocalDateTime createdAt, LocalDateTime startedAt, LocalDateTime endedAt) {
         super(StudioPartner.STUDIO_PARTNER);
 
         setId(id);
@@ -136,6 +164,8 @@ public class StudioPartnerRecord extends UpdatableRecordImpl<StudioPartnerRecord
         setShareBps(shareBps);
         setActive(active);
         setCreatedAt(createdAt);
+        setStartedAt(startedAt);
+        setEndedAt(endedAt);
         resetChangedOnNotNull();
     }
 
@@ -152,6 +182,8 @@ public class StudioPartnerRecord extends UpdatableRecordImpl<StudioPartnerRecord
             setShareBps(value.getShareBps());
             setActive(value.getActive());
             setCreatedAt(value.getCreatedAt());
+            setStartedAt(value.getStartedAt());
+            setEndedAt(value.getEndedAt());
             resetChangedOnNotNull();
         }
     }

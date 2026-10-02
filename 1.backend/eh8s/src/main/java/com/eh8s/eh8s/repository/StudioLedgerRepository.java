@@ -129,6 +129,16 @@ public class StudioLedgerRepository implements IStudioLedgerRepository {
    * {@inheritDoc}
    */
   @Override
+  public List<StudioPartner> allPartners() {
+    return dsl.selectFrom(STUDIO_PARTNER)
+        .orderBy(STUDIO_PARTNER.ID.asc())
+        .fetchInto(StudioPartner.class);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public Optional<StudioPartner> findPartnerByWallet(String walletPubkey) {
     return dsl.selectFrom(STUDIO_PARTNER)
         .where(STUDIO_PARTNER.WALLET_PUBKEY.eq(walletPubkey))
@@ -171,6 +181,7 @@ public class StudioLedgerRepository implements IStudioLedgerRepository {
         .set(STUDIO_PARTNER.DISPLAY_NAME, displayName)
         .set(STUDIO_PARTNER.SHARE_BPS, shareBps)
         .set(STUDIO_PARTNER.ACTIVE, (byte) 1)
+        .set(STUDIO_PARTNER.STARTED_AT, LocalDateTime.now())
         .execute();
     return findPartnerByWallet(walletPubkey).orElseThrow();
   }
@@ -180,12 +191,25 @@ public class StudioLedgerRepository implements IStudioLedgerRepository {
    */
   @Override
   public StudioPartner updatePartner(Long partnerId, String displayName, int shareBps) {
-    dsl.update(STUDIO_PARTNER)
-        .set(STUDIO_PARTNER.DISPLAY_NAME, displayName)
-        .set(STUDIO_PARTNER.SHARE_BPS, shareBps)
-        .set(STUDIO_PARTNER.ACTIVE, (byte) 1)
-        .where(STUDIO_PARTNER.ID.eq(partnerId))
-        .execute();
+    StudioPartner current = findPartner(partnerId).orElseThrow();
+    boolean rejoining = current.getActive() == null || current.getActive() != (byte) 1;
+    if (rejoining) {
+      dsl.update(STUDIO_PARTNER)
+          .set(STUDIO_PARTNER.DISPLAY_NAME, displayName)
+          .set(STUDIO_PARTNER.SHARE_BPS, shareBps)
+          .set(STUDIO_PARTNER.ACTIVE, (byte) 1)
+          .set(STUDIO_PARTNER.STARTED_AT, LocalDateTime.now())
+          .set(STUDIO_PARTNER.ENDED_AT, (LocalDateTime) null)
+          .where(STUDIO_PARTNER.ID.eq(partnerId))
+          .execute();
+    } else {
+      dsl.update(STUDIO_PARTNER)
+          .set(STUDIO_PARTNER.DISPLAY_NAME, displayName)
+          .set(STUDIO_PARTNER.SHARE_BPS, shareBps)
+          .set(STUDIO_PARTNER.ACTIVE, (byte) 1)
+          .where(STUDIO_PARTNER.ID.eq(partnerId))
+          .execute();
+    }
     return findPartner(partnerId).orElseThrow();
   }
 
@@ -194,10 +218,19 @@ public class StudioLedgerRepository implements IStudioLedgerRepository {
    */
   @Override
   public StudioPartner deactivatePartner(Long partnerId) {
-    dsl.update(STUDIO_PARTNER)
-        .set(STUDIO_PARTNER.ACTIVE, (byte) 0)
-        .where(STUDIO_PARTNER.ID.eq(partnerId))
-        .execute();
+    StudioPartner current = findPartner(partnerId).orElseThrow();
+    if (current.getEndedAt() == null) {
+      dsl.update(STUDIO_PARTNER)
+          .set(STUDIO_PARTNER.ACTIVE, (byte) 0)
+          .set(STUDIO_PARTNER.ENDED_AT, LocalDateTime.now())
+          .where(STUDIO_PARTNER.ID.eq(partnerId))
+          .execute();
+    } else {
+      dsl.update(STUDIO_PARTNER)
+          .set(STUDIO_PARTNER.ACTIVE, (byte) 0)
+          .where(STUDIO_PARTNER.ID.eq(partnerId))
+          .execute();
+    }
     return findPartner(partnerId).orElseThrow();
   }
 

@@ -28,6 +28,21 @@ function money(value: number) {
   return `${Number(value || 0).toFixed(2)} USDC`;
 }
 
+function joinLabel(startedAt: string | number[] | null | undefined) {
+  let year = 0;
+  let month = 0;
+  let date = 0;
+  if (typeof startedAt === "string" && startedAt.length >= 10) {
+    [year, month, date] = startedAt.slice(0, 10).split("-").map(Number);
+  } else if (Array.isArray(startedAt) && startedAt.length >= 3) {
+    [year, month, date] = startedAt;
+  }
+  if (!year || !month || !date || month < 1 || month > 12) {
+    return "";
+  }
+  return `From ${date} ${MONTHS[month - 1]} ${year}`;
+}
+
 function MonthFields({
   month,
   year,
@@ -201,8 +216,9 @@ function OwnerLedger({ year, month, years, onMonth, onYear }: {
         <p className="eh8s-kicker">Owner</p>
         <h1>Partner books</h1>
         <p className="eh8s-lead">
-          Add each partner's wallet and their share of the studio's recorded fees. This split is
-          the books. It does not send USDC.
+          Add each partner's wallet and their share of the studio's recorded fees. A partner
+          shares fees recorded on or after the day they are added, through the day they leave.
+          This split is the books. It does not send USDC.
         </p>
       </header>
       <form className="eh8s-form eh8s-panel" onSubmit={onAdd}>
@@ -237,7 +253,8 @@ function OwnerLedger({ year, month, years, onMonth, onYear }: {
             {books.partners.map((row) => (
               <li key={row.id}>
                 {row.displayName} · {row.walletPubkey.slice(0, 4)}..{row.walletPubkey.slice(-4)} ·{" "}
-                {(row.shareBps / 100).toFixed(2)}%{" "}
+                {(row.shareBps / 100).toFixed(2)}%
+                {joinLabel(row.startedAt) ? ` · ${joinLabel(row.startedAt)}` : ""}{" "}
                 <button className="eh8s-btn" type="button" onClick={() => onRemove(row.id)}>
                   Remove
                 </button>
@@ -269,7 +286,23 @@ function OwnerLedger({ year, month, years, onMonth, onYear }: {
                 </li>
               );
             })}
-            {openBps > 0 ? <li>Not assigned · {money((pool * openBps) / 10000)}</li> : null}
+            {(() => {
+              const activeIds = new Set(books.partners.map((partner) => partner.id));
+              const left = books.allocations
+                .filter((row) => !activeIds.has(row.studioPartnerId))
+                .reduce((sum, row) => sum + Number(row.amountUsdc || 0), 0);
+              const recorded = books.allocations.reduce(
+                (sum, row) => sum + Number(row.amountUsdc || 0),
+                0,
+              );
+              const unassigned = Math.max(0, pool - recorded);
+              return (
+                <>
+                  {left >= 0.005 ? <li>Partners who have left · {money(left)}</li> : null}
+                  {unassigned >= 0.005 ? <li>Not assigned · {money(unassigned)}</li> : null}
+                </>
+              );
+            })()}
           </ul>
         </article>
       ) : null}

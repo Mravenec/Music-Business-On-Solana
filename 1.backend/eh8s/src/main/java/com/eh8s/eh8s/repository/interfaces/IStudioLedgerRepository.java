@@ -74,6 +74,13 @@ public interface IStudioLedgerRepository {
   List<StudioPartner> activePartners();
 
   /**
+   * Every partner, including those who have left, ordered by id.
+   *
+   * @return all partner rows
+   */
+  List<StudioPartner> allPartners();
+
+  /**
    * One partner by wallet.
    *
    * @param walletPubkey partner wallet
@@ -98,7 +105,7 @@ public interface IStudioLedgerRepository {
   int activeShareBps(Long exceptPartnerId);
 
   /**
-   * Inserts a partner.
+   * Inserts a partner and opens their share window at the current time.
    *
    * @param walletPubkey wallet
    * @param displayName name shown to the owner
@@ -108,7 +115,7 @@ public interface IStudioLedgerRepository {
   StudioPartner insertPartner(String walletPubkey, String displayName, int shareBps);
 
   /**
-   * Updates name, share, and marks the partner active.
+   * Updates name and share. A partner who was inactive starts a new window from now.
    *
    * @param partnerId partner id
    * @param displayName name shown to the owner
@@ -118,7 +125,7 @@ public interface IStudioLedgerRepository {
   StudioPartner updatePartner(Long partnerId, String displayName, int shareBps);
 
   /**
-   * Marks a partner inactive. Past allocation rows stay.
+   * Marks a partner inactive and closes their window so later fees are not theirs.
    *
    * @param partnerId partner id
    * @return the stored row

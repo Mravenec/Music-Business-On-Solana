@@ -28,6 +28,7 @@ export type StudioPartner = {
   displayName: string;
   shareBps: number;
   active: number;
+  startedAt?: string | number[] | null;
 };
 
 export type ShowFee = { id: number; eh8sFeeUsdc: number };

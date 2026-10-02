@@ -763,7 +763,7 @@ note bottom of JOOQ
   GET /roles/memberships?walletPubkey=.
   GATE_HTTP includes RoleApplications.http · AcademyOnchain.http · SettleClaimOnchain.http · BandVault.http · RoyaltyGeoOnchain.http · SongRoyalty.http · TxVerification.http · Treasury.http · OwnerDigest.http · AgentAuthority.http · Governance.http · VenueBooking.http · SppInputs.http · StageMap.http · Nexus.http · Harmony.http · Atlas.http · Courses.http · Teaching.http · Auth.http
   JWT: POST /api/auth/register|login public; POST /api/session/challenge public; POST /api/session/wallet requires a signed nonce before accessToken; GET /api/session/current is Bearer and does not ask the wallet to sign again; other /api/** Bearer.
-  Studio ledger: a non-owner reads solo-claims, band-claims, venue-expenses, instructor-shares, and my-allocation. The owner reads partners, show-fees, academy-fees, sync-fees, and allocations. The other role receives 403. Allocations split recorded studio fees; they do not send USDC.
+  Studio ledger: a non-owner reads solo-claims, band-claims, venue-expenses, instructor-shares, and my-allocation. The owner reads partners, show-fees, academy-fees, sync-fees, and allocations. The other role receives 403. Each fee is shared only with partners whose window covers that fee's calendar day. Allocations do not send USDC.
 end note
 
 JOOQ --> ISLR

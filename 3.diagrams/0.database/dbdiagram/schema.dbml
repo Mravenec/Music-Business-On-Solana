@@ -531,8 +531,10 @@ Table studio_partner {
   share_bps int [not null]
   active tinyint [not null, default: 1]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  started_at datetime
+  ended_at datetime
 
-  Note: 'Epic 69: owner-managed partner. share_bps is their slice of recorded studio fees, at most 10000 across active rows.'
+  Note: 'Epic 70: share a fee only when started_at <= fee time and ended_at is null or later. Does not move USDC.'
 }
 
 Table studio_partner_allocation {

@@ -22,6 +22,8 @@ public class StudioPartner implements Serializable {
     private Integer shareBps;
     private Byte active;
     private LocalDateTime createdAt;
+    private LocalDateTime startedAt;
+    private LocalDateTime endedAt;
 
     public StudioPartner() {}
 
@@ -32,6 +34,8 @@ public class StudioPartner implements Serializable {
         this.shareBps = value.shareBps;
         this.active = value.active;
         this.createdAt = value.createdAt;
+        this.startedAt = value.startedAt;
+        this.endedAt = value.endedAt;
     }
 
     public StudioPartner(
@@ -40,7 +44,9 @@ public class StudioPartner implements Serializable {
         String displayName,
         Integer shareBps,
         Byte active,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime startedAt,
+        LocalDateTime endedAt
     ) {
         this.id = id;
         this.walletPubkey = walletPubkey;
@@ -48,6 +54,8 @@ public class StudioPartner implements Serializable {
         this.shareBps = shareBps;
         this.active = active;
         this.createdAt = createdAt;
+        this.startedAt = startedAt;
+        this.endedAt = endedAt;
     }
 
     /**
@@ -134,6 +142,34 @@ public class StudioPartner implements Serializable {
         this.createdAt = createdAt;
     }
 
+    /**
+     * Getter for <code>eh8s.studio_partner.started_at</code>.
+     */
+    public LocalDateTime getStartedAt() {
+        return this.startedAt;
+    }
+
+    /**
+     * Setter for <code>eh8s.studio_partner.started_at</code>.
+     */
+    public void setStartedAt(LocalDateTime startedAt) {
+        this.startedAt = startedAt;
+    }
+
+    /**
+     * Getter for <code>eh8s.studio_partner.ended_at</code>.
+     */
+    public LocalDateTime getEndedAt() {
+        return this.endedAt;
+    }
+
+    /**
+     * Setter for <code>eh8s.studio_partner.ended_at</code>.
+     */
+    public void setEndedAt(LocalDateTime endedAt) {
+        this.endedAt = endedAt;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -179,6 +215,18 @@ public class StudioPartner implements Serializable {
         }
         else if (!this.createdAt.equals(other.createdAt))
             return false;
+        if (this.startedAt == null) {
+            if (other.startedAt != null)
+                return false;
+        }
+        else if (!this.startedAt.equals(other.startedAt))
+            return false;
+        if (this.endedAt == null) {
+            if (other.endedAt != null)
+                return false;
+        }
+        else if (!this.endedAt.equals(other.endedAt))
+            return false;
         return true;
     }
 
@@ -192,6 +240,8 @@ public class StudioPartner implements Serializable {
         result = prime * result + ((this.shareBps == null) ? 0 : this.shareBps.hashCode());
         result = prime * result + ((this.active == null) ? 0 : this.active.hashCode());
         result = prime * result + ((this.createdAt == null) ? 0 : this.createdAt.hashCode());
+        result = prime * result + ((this.startedAt == null) ? 0 : this.startedAt.hashCode());
+        result = prime * result + ((this.endedAt == null) ? 0 : this.endedAt.hashCode());
         return result;
     }
 
@@ -205,6 +255,8 @@ public class StudioPartner implements Serializable {
         sb.append(", ").append(shareBps);
         sb.append(", ").append(active);
         sb.append(", ").append(createdAt);
+        sb.append(", ").append(startedAt);
+        sb.append(", ").append(endedAt);
 
         sb.append(")");
         return sb.toString();

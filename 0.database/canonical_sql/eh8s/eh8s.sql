@@ -965,3 +965,24 @@ CREATE TABLE IF NOT EXISTS studio_partner_allocation (
   CONSTRAINT ck_partner_allocation_source CHECK (source_code IN ('show_fee', 'academy', 'sync')),
   CONSTRAINT fk_partner_allocation FOREIGN KEY (studio_partner_id) REFERENCES studio_partner (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Epic 70: a partner shares a fee only while their window covers that fee's timestamp.
+SET @col := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'studio_partner' AND COLUMN_NAME = 'started_at'
+);
+SET @ddl := IF(@col = 0,
+  'ALTER TABLE studio_partner ADD COLUMN started_at DATETIME NULL AFTER created_at',
+  'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+UPDATE studio_partner SET started_at = created_at WHERE started_at IS NULL;
+
+SET @col := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'studio_partner' AND COLUMN_NAME = 'ended_at'
+);
+SET @ddl := IF(@col = 0,
+  'ALTER TABLE studio_partner ADD COLUMN ended_at DATETIME NULL AFTER started_at',
+  'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;

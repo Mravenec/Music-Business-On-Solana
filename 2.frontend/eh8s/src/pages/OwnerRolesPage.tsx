@@ -64,12 +64,14 @@ export function OwnerRolesPage() {
           </article>
         ))
       )}
-      <Link className="eh8s-btn" to="/owner/roles/granted">
-        Granted roles
-      </Link>
-      <Link className="eh8s-btn eh8s-back" to="/owner">
-        Back to inbox
-      </Link>
+      <div className="eh8s-cta-row">
+        <Link className="eh8s-btn" to="/owner/roles/granted">
+          Granted roles
+        </Link>
+        <Link className="eh8s-btn eh8s-back" to="/owner">
+          Back to inbox
+        </Link>
+      </div>
     </section>
   );
 }
