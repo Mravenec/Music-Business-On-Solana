@@ -36,8 +36,10 @@ export function AgentLevelSetPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Enigma level</p>
-      <h1>{target?.displayName ?? "Musician"}</h1>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Enigma level</p>
+        <h1>{target?.displayName ?? "Musician"}</h1>
+      </header>
       {target ? (
         <p className="eh8s-lead">
           Now at level {target.levelNumber ?? 0} · {target.levelName ?? "Unranked"}.

@@ -41,11 +41,13 @@ export function BandTourNewPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">ATLAS</p>
-      <h1>Plan a route</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">ATLAS</p>
+        <h1>Plan a route</h1>
+        <p className="eh8s-lead">
         ATLAS starts at the best-paying venue, then hops to the nearest one on the next open date.
       </p>
+      </header>
       {tours.data && tours.data.activeZones.length === 0 ? (
         <div className="eh8s-banner bad">
           This band has no active zone yet. <Link to="/catalog/reach">Pay zone reach</Link> first.

@@ -5,7 +5,7 @@ import { lines } from "../services/nexusService";
 /**
  * Job: read one Score Enigma.
  * Primary: Apply level on-chain (only when NEXUS recommends a change not yet applied).
- * Next: /agents/levels/:musicianProfileId (level signing).
+ * Next: /agents/levels/:musicianProfileId (epic 40 level signing).
  * Hidden: raw rubric JSON, prompt, other evaluations.
  */
 export function NexusEvaluationPage() {
@@ -22,8 +22,10 @@ export function NexusEvaluationPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">NEXUS</p>
-      <h1>Score Enigma {e ? e.score : ""}</h1>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">NEXUS</p>
+        <h1>Score Enigma {e ? e.score : ""}</h1>
+      </header>
       {detail ? (
         <p className="eh8s-lead">
           Musician #{detail.musician.id}

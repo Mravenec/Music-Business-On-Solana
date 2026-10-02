@@ -40,8 +40,10 @@ export function VaultSettlePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Settlement</p>
-      <h1>{booking ? `Show ${booking.showDate}` : "Escrow"}</h1>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Settlement</p>
+        <h1>{booking ? `Show ${booking.showDate}` : "Escrow"}</h1>
+      </header>
       {!q.walletReady ? (
         <div className="eh8s-banner bad">Connect the owner or VAULT agent wallet.</div>
       ) : null}

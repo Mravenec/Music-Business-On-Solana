@@ -13,9 +13,11 @@ export function StageConcertsPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Concerts</p>
-      <h1>Concert check-in</h1>
-      <p className="eh8s-lead">Minutes you play count toward your band's concert points.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Concerts</p>
+        <h1>Concert check-in</h1>
+        <p className="eh8s-lead">Minutes you play count toward your band's concert points.</p>
+      </header>
       {stage.error ? <div className="eh8s-banner bad">Could not load concerts.</div> : null}
       {stage.loading ? <p className="eh8s-muted-line">Loading concerts…</p> : null}
       <div className="eh8s-band-grid">

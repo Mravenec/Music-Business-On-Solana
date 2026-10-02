@@ -28,8 +28,10 @@ export function StageVenueApprovePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Venue approval</p>
-      <h1>{venue?.name ?? "Venue"}</h1>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Venue approval</p>
+        <h1>{venue?.name ?? "Venue"}</h1>
+      </header>
       {!q.walletReady ? (
         <div className="eh8s-banner bad">Connect the owner or STAGE agent wallet.</div>
       ) : null}

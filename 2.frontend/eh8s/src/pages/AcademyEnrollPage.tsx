@@ -52,12 +52,14 @@ export function AcademyEnrollPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Profile</p>
-      <h1>Create musician profile</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Profile</p>
+        <h1>Create musician profile</h1>
+        <p className="eh8s-lead">
         Choose an instrument and your country. Everyone starts at level 0; the NEXUS agent moves
         you up.
       </p>
+      </header>
       {msg ? (
         <div
           className={`eh8s-banner ${msg.toLowerCase().includes("could") ? "bad" : "ok"}`}

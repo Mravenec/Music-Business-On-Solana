@@ -64,9 +64,11 @@ export function NexusRequestPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">NEXUS</p>
-      <h1>Request Score Enigma</h1>
-      <p className="eh8s-lead">Rate each area from 0 to 10, add a link and notes, then ask NEXUS.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">NEXUS</p>
+        <h1>Request Score Enigma</h1>
+        <p className="eh8s-lead">Rate each area from 0 to 10, add a link and notes, then ask NEXUS.</p>
+      </header>
       {nexus.status ? <p className="eh8s-muted-line">{nexus.status.audioNote}</p> : null}
       {nexus.status && !nexus.status.aiConfigured ? (
         <div className="eh8s-banner bad">NEXUS is offline: the server has no Anthropic API key.</div>

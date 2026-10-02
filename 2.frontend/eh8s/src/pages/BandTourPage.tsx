@@ -14,8 +14,10 @@ export function BandTourPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">ATLAS</p>
-      <h1>{plan?.title ?? "Tour plan"}</h1>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">ATLAS</p>
+        <h1>{plan?.title ?? "Tour plan"}</h1>
+      </header>
       {plan?.routeNote ? <p className="eh8s-lead">{plan.routeNote}</p> : null}
       {loading ? <p className="eh8s-muted-line">Loading plan…</p> : null}
       {error ? <div className="eh8s-banner bad">{error}</div> : null}

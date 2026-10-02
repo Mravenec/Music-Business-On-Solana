@@ -29,12 +29,14 @@ export function BandVaultActivatePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Band vault</p>
-      <h1>{band.vault?.name ?? "Band"} — activate on-chain</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Band vault</p>
+        <h1>{band.vault?.name ?? "Band"} — activate on-chain</h1>
+        <p className="eh8s-lead">
         The owner opens one vault per band. Every member needs a linked wallet; concerts then
         credit each member's on-chain pending by weight.
       </p>
+      </header>
       {band.error ? <div className="eh8s-banner bad">{band.error}</div> : null}
       {msg ? (
         <div className={`eh8s-banner ${msg.ok ? "ok" : "bad"}`}>

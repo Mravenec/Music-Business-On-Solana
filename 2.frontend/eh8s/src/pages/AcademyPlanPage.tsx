@@ -104,12 +104,14 @@ export function AcademyPlanPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Plan</p>
-      <h1>{plan?.name ?? "Plan"}</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Plan</p>
+        <h1>{plan?.name ?? "Plan"}</h1>
+        <p className="eh8s-lead">
         {plan?.description || "Monthly academy access."}{" "}
         {plan ? `$${plan.usdcMonthly} per month.` : ""}
       </p>
+      </header>
       {msg ? (
         <div
           className={`eh8s-banner ${msg.toLowerCase().includes("fail") ? "bad" : "ok"}`}

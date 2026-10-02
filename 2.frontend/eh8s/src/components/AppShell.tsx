@@ -142,48 +142,44 @@ export function AppShell() {
           <span className="warn">Location not saved: {geoError}</span>
         ) : null}
         {session?.account ? (
-          <span className="eh8s-identity-row">
+          <div className="eh8s-identity-pills">
+            <span className="eh8s-pill">
+              {isOwner ? "Studio owner" : session.account.displayName}
+            </span>
             {isOwner ? (
-              <>
-                Studio owner · platform fee{" "}
+              <span className="eh8s-pill">
+                Fee{" "}
                 {session.protocolFeeBps != null
                   ? `${(session.protocolFeeBps / 100).toFixed(1)}%`
                   : "—"}
-              </>
-            ) : (
-              <>
-                Signed in as <strong>{session.account.displayName}</strong>
-                {approvedRoles.length > 0 ? (
-                  <>
-                    {" · workspace "}
-                    <label className="eh8s-workspace">
-                      <span className="eh8s-sr-only">Active workspace</span>
-                      <select
-                        value={activeWorkspace ?? ""}
-                        onChange={(e) => setActiveWorkspace(e.target.value)}
-                        aria-label="Active workspace"
-                      >
-                        {approvedRoles.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </>
-                ) : (
-                  <> · no approved roles yet — apply below</>
-                )}
-              </>
-            )}
-            {session.account.lastLat != null && session.account.lastLng != null ? (
-              <>
-                {" · near "}
-                {Number(session.account.lastLat).toFixed(2)},{" "}
-                {Number(session.account.lastLng).toFixed(2)}
-              </>
+              </span>
             ) : null}
-          </span>
+            {!isOwner && approvedRoles.length === 0 ? (
+              <span className="eh8s-pill">No role yet</span>
+            ) : null}
+            {session.account.lastLat != null && session.account.lastLng != null ? (
+              <span className="eh8s-pill">
+                Near {Number(session.account.lastLat).toFixed(2)},{" "}
+                {Number(session.account.lastLng).toFixed(2)}
+              </span>
+            ) : null}
+            {!isOwner && approvedRoles.length > 0 ? (
+              <label className="eh8s-workspace eh8s-pill">
+                <span className="eh8s-sr-only">Active workspace</span>
+                <select
+                  value={activeWorkspace ?? ""}
+                  onChange={(e) => setActiveWorkspace(e.target.value)}
+                  aria-label="Active workspace"
+                >
+                  {approvedRoles.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+          </div>
         ) : (
           <span>Connect a wallet to enter.</span>
         )}

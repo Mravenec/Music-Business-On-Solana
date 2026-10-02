@@ -33,9 +33,11 @@ export function StageConcertSetPage() {
   const mine = set.mine;
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Concert #{id}</p>
-      <h1>My set</h1>
-      <p className="eh8s-lead">Tap when you go on stage and when you finish.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Concert #{id}</p>
+        <h1>My set</h1>
+        <p className="eh8s-lead">Tap when you go on stage and when you finish.</p>
+      </header>
       {me == null ? (
         <div className="eh8s-banner bad">Connect the wallet of a band member to check in.</div>
       ) : null}

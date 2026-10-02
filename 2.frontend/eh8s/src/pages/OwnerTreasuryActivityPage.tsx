@@ -15,8 +15,10 @@ export function OwnerTreasuryActivityPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Treasury</p>
-      <h1>Activity</h1>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Treasury</p>
+        <h1>Activity</h1>
+      </header>
       {!t.walletReady ? (
         <div className="eh8s-banner bad">Connect the owner wallet to open the treasury.</div>
       ) : null}

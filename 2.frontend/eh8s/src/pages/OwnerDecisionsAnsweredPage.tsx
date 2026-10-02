@@ -30,9 +30,11 @@ export function OwnerDecisionsAnsweredPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Decisions</p>
-      <h1>Answered decisions</h1>
-      <p className="eh8s-lead">Each decision is answered once - the first answer wins.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Decisions</p>
+        <h1>Answered decisions</h1>
+        <p className="eh8s-lead">Each decision is answered once - the first answer wins.</p>
+      </header>
       {ops.error ? <div className="eh8s-banner bad">{ops.error}</div> : null}
       {ops.loading ? <p className="eh8s-muted-line">Loading decisions.</p> : null}
       {ops.error ? null : !ops.loading && answered.length === 0 ? (

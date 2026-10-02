@@ -16,8 +16,10 @@ export function AcademyCoursePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Video course</p>
-      <h1>{outline?.course.title ?? "Course"}</h1>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Video course</p>
+        <h1>{outline?.course.title ?? "Course"}</h1>
+      </header>
       {outline?.course.summary ? <p className="eh8s-lead">{outline.course.summary}</p> : null}
       {loading ? <p className="eh8s-muted-line">Loading course…</p> : null}
       {error ? <div className="eh8s-banner bad">{error}</div> : null}

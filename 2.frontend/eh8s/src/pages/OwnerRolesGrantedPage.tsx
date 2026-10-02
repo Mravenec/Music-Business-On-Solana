@@ -23,9 +23,11 @@ export function OwnerRolesGrantedPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Roles</p>
-      <h1>Granted roles</h1>
-      <p className="eh8s-lead">People you already approved. Revoke removes the role.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Roles</p>
+        <h1>Granted roles</h1>
+        <p className="eh8s-lead">People you already approved. Revoke removes the role.</p>
+      </header>
       {msg ? <div className="eh8s-banner ok">{msg}</div> : null}
       {roles.grantedQueue.length === 0 ? (
         <p className="eh8s-empty">No granted roles yet.</p>

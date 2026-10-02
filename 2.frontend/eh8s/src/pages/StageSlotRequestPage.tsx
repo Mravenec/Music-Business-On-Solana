@@ -43,9 +43,11 @@ export function StageSlotRequestPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Request slot · {month}</p>
-      <h1>{slot.pin?.venue.name ?? "Venue"}</h1>
-      <p className="eh8s-lead">{slot.pin?.pinLabel ?? "Pick an open date for your band."}</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Request slot · {month}</p>
+        <h1>{slot.pin?.venue.name ?? "Venue"}</h1>
+        <p className="eh8s-lead">{slot.pin?.pinLabel ?? "Pick an open date for your band."}</p>
+      </header>
       {me == null ? (
         <div className="eh8s-banner bad">Connect a musician wallet to request a slot.</div>
       ) : null}

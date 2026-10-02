@@ -64,9 +64,11 @@ export function GovernanceProposePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">New proposal</p>
-      <h1>{meta?.label ?? "Unknown kind"}</h1>
-      <p className="eh8s-lead">{meta?.hint}</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">New proposal</p>
+        <h1>{meta?.label ?? "Unknown kind"}</h1>
+        <p className="eh8s-lead">{meta?.hint}</p>
+      </header>
       {!g.walletReady ? <div className="eh8s-banner bad">Connect a signer wallet.</div> : null}
       {g.error ? <div className="eh8s-banner bad">{g.error}</div> : null}
       {g.view && !g.isSigner ? (

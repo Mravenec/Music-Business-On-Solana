@@ -36,12 +36,14 @@ export function GovernanceSetupPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Governance</p>
-      <h1>Set up signers</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Governance</p>
+        <h1>Set up signers</h1>
+        <p className="eh8s-lead">
         List up to {max} wallets and how many must approve. After this, the owner wallet alone can no
         longer withdraw or grant agent powers.
       </p>
+      </header>
       {!g.walletReady ? <div className="eh8s-banner bad">Connect the owner wallet to sign.</div> : null}
       {g.error ? <div className="eh8s-banner bad">{g.error}</div> : null}
       {g.view?.initialized ? (

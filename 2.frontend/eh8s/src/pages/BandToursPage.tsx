@@ -16,9 +16,11 @@ export function BandToursPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">ATLAS</p>
-      <h1>Tour routes{tours.data ? ` for ${tours.data.band.name}` : ""}</h1>
-      <p className="eh8s-lead">Routes cover approved venues inside the zones this band subscribed to.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">ATLAS</p>
+        <h1>Tour routes{tours.data ? ` for ${tours.data.band.name}` : ""}</h1>
+        <p className="eh8s-lead">Routes cover approved venues inside the zones this band subscribed to.</p>
+      </header>
       {tours.error ? <div className="eh8s-banner bad">{tours.error}</div> : null}
       {tours.data ? (
         <p className="eh8s-muted-line">

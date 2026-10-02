@@ -43,9 +43,11 @@ export function CatalogSyncDealPage() {
   const paid = deal?.status === "paid";
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Sync license</p>
-      <h1>{deal?.licenseeName ?? "Sync deal"}</h1>
-      <p className="eh8s-lead">{deal?.useDescription ?? "Sync license for this song."}</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Sync license</p>
+        <h1>{deal?.licenseeName ?? "Sync deal"}</h1>
+        <p className="eh8s-lead">{deal?.useDescription ?? "Sync license for this song."}</p>
+      </header>
       {msg ? (
         <div className={`eh8s-banner ${msg.ok ? "ok" : "bad"}`}>
           {msg.text}{" "}

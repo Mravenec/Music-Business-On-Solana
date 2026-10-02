@@ -29,9 +29,11 @@ export function CatalogTrackPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Track</p>
-      <h1>{track?.title ?? "Track"}</h1>
-      <p className="eh8s-lead">{track?.provider}</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Track</p>
+        <h1>{track?.title ?? "Track"}</h1>
+        <p className="eh8s-lead">{track?.provider}</p>
+      </header>
       <p className="eh8s-muted-line">
         {song.loading
           ? "Reading song pool…"

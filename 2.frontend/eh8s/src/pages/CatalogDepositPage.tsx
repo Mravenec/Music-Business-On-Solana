@@ -45,12 +45,14 @@ export function CatalogDepositPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Royalties</p>
-      <h1>Deposit royalties</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Royalties</p>
+        <h1>Deposit royalties</h1>
+        <p className="eh8s-lead">
         DevNet USDC into {song.pool?.title ?? "this song"}'s pool. Members are credited by its
         on-chain splits.
       </p>
+      </header>
       {msg ? (
         <div className={`eh8s-banner ${msg.ok ? "ok" : "bad"}`}>
           {msg.text}{" "}

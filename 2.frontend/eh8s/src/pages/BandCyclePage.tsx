@@ -46,12 +46,14 @@ export function BandCyclePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Shared Participation</p>
-      <h1>{shown ? `Cycle ${shown.code}` : "SPP cycle"}</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Shared Participation</p>
+        <h1>{shown ? `Cycle ${shown.code}` : "SPP cycle"}</h1>
+        <p className="eh8s-lead">
         Attendance {weight("attendance")}% · Punctuality {weight("punctuality")}% · Creative{" "}
         {weight("creative")}% · Skill {weight("skill")}% · Concert {weight("concert")}%
       </p>
+      </header>
       {msg ? <div className={`eh8s-banner ${msg.ok ? "ok" : "bad"}`}>{msg.text}</div> : null}
       <button type="button" className="eh8s-btn primary" disabled={busy} onClick={onPrimary}>
         {busy ? "Working…" : open ? "Close cycle" : "Open new cycle"}

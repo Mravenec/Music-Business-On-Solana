@@ -25,9 +25,11 @@ export function StageVenuePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Venue</p>
-      <h1>{venue?.name ?? "Venue"}</h1>
-      <p className="eh8s-lead">Book a show here. Settlement stays on its own screen.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Venue</p>
+        <h1>{venue?.name ?? "Venue"}</h1>
+        <p className="eh8s-lead">Book a show here. Settlement stays on its own screen.</p>
+      </header>
       <Link className="eh8s-btn primary" to={`/stage-map/book?venue=${venueId}`}>
         Book a show
       </Link>

@@ -32,11 +32,13 @@ export function BandMatchPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">HARMONY</p>
-      <h1>Find musicians{match.data ? ` for ${match.data.band.name}` : ""}</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">HARMONY</p>
+        <h1>Find musicians{match.data ? ` for ${match.data.band.name}` : ""}</h1>
+        <p className="eh8s-lead">
         Ranked by instrument gaps, level closeness, country, and shared genres (0-100).
       </p>
+      </header>
       {match.error ? <div className="eh8s-banner bad">{match.error}</div> : null}
       {msg ? <div className={`eh8s-banner ${msg.ok ? "ok" : "bad"}`}>{msg.text}</div> : null}
       <div className="eh8s-cta-row">

@@ -45,9 +45,11 @@ export function OwnerAgentAuthorizePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Agent powers</p>
-      <h1>{agent?.name ?? code}</h1>
-      <p className="eh8s-lead">{agent?.roleSummary ?? "Pick the powers this agent wallet may use."}</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Agent powers</p>
+        <h1>{agent?.name ?? code}</h1>
+        <p className="eh8s-lead">{agent?.roleSummary ?? "Pick the powers this agent wallet may use."}</p>
+      </header>
       {!a.walletReady ? (
         <div className="eh8s-banner bad">Connect the owner wallet to sign.</div>
       ) : null}

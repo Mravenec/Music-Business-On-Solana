@@ -36,9 +36,11 @@ export function OwnerDecisionsPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Decisions</p>
-      <h1>Agent decisions</h1>
-      <p className="eh8s-lead">One approval at a time - here or with the buttons in Slack.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Decisions</p>
+        <h1>Agent decisions</h1>
+        <p className="eh8s-lead">One approval at a time - here or with the buttons in Slack.</p>
+      </header>
       {msg ? <div className={`eh8s-banner ${msg.ok ? "ok" : "bad"}`}>{msg.text}</div> : null}
       {pending.length === 0 ? (
         <p className="eh8s-empty">Nothing waiting.</p>

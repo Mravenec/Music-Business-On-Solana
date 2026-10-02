@@ -13,12 +13,14 @@ export function SongCreditsPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Claims</p>
-      <h1>Song credits</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Claims</p>
+        <h1>Song credits</h1>
+        <p className="eh8s-lead">
         Your split of every confirmed song deposit and paid sync license. These credits are
         already in your on-chain pending balance on DevNet.
       </p>
+      </header>
       {credits.error ? <div className="eh8s-banner bad">{credits.error}</div> : null}
       {!credits.walletPubkey ? (
         <p className="eh8s-empty">Connect your musician wallet to see song credits.</p>

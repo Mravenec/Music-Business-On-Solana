@@ -33,9 +33,11 @@ export function OwnerRolesPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Roles</p>
-      <h1>Role applications</h1>
-      <p className="eh8s-lead">Approve or reject one request at a time.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Roles</p>
+        <h1>Role applications</h1>
+        <p className="eh8s-lead">Approve or reject one request at a time.</p>
+      </header>
       {msg ? <div className="eh8s-banner ok">{msg}</div> : null}
       {roles.pendingQueue.length === 0 ? (
         <p className="eh8s-empty">No applications waiting.</p>

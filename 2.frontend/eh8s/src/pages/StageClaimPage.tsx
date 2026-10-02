@@ -58,9 +58,11 @@ export function StageClaimPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Claim</p>
-      <h1>Claim royalties</h1>
-      <p className="eh8s-lead">Musician wallet receives DevNet USDC. No mark-claimed shortcut.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Claim</p>
+        <h1>Claim royalties</h1>
+        <p className="eh8s-lead">Musician wallet receives DevNet USDC. No mark-claimed shortcut.</p>
+      </header>
       {msg ? (
         <div
           className={`eh8s-banner ${msg.toLowerCase().includes("fail") || msg.toLowerCase().includes("Connect") ? "bad" : "ok"}`}

@@ -36,13 +36,15 @@ export function CatalogSongPoolPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Song pool</p>
-      <h1>{song.pool?.title ?? "Song"} - splits</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Song pool</p>
+        <h1>{song.pool?.title ?? "Song"} - splits</h1>
+        <p className="eh8s-lead">
         {active
           ? "These splits are fixed on-chain. Every deposit and sync license credits members by them."
           : "One pool per song. The owner or a WAVE agent signs once; members need an on-chain musician profile."}
       </p>
+      </header>
       {song.error ? <div className="eh8s-banner bad">{song.error}</div> : null}
       {song.pool?.proposedError ? (
         <div className="eh8s-banner bad">{song.pool.proposedError}</div>

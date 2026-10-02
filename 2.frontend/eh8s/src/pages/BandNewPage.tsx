@@ -34,9 +34,11 @@ export function BandNewPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">New band</p>
-      <h1>Create a band</h1>
-      <p className="eh8s-lead">You join as the leader. Other members come next.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">New band</p>
+        <h1>Create a band</h1>
+        <p className="eh8s-lead">You join as the leader. Other members come next.</p>
+      </header>
       {msg ? <div className="eh8s-banner bad">{msg}</div> : null}
       <form className="eh8s-form eh8s-panel" onSubmit={onSubmit}>
         <label>

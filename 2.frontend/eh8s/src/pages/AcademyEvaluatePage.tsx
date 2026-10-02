@@ -42,9 +42,11 @@ export function AcademyEvaluatePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Score</p>
-      <h1>Record a score</h1>
-      <p className="eh8s-lead">One evaluation at a time, from 0 to 100.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Score</p>
+        <h1>Record a score</h1>
+        <p className="eh8s-lead">One evaluation at a time, from 0 to 100.</p>
+      </header>
       {msg ? (
         <div
           className={`eh8s-banner ${msg.toLowerCase().includes("could") ? "bad" : "ok"}`}

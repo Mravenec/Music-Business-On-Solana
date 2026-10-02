@@ -40,8 +40,10 @@ export function StageBookingConfirmPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Booking contract</p>
-      <h1>{booking ? `Show ${booking.showDate}` : "Booking"}</h1>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Booking contract</p>
+        <h1>{booking ? `Show ${booking.showDate}` : "Booking"}</h1>
+      </header>
       {!q.walletReady ? (
         <div className="eh8s-banner bad">Connect the owner or STAGE agent wallet.</div>
       ) : null}

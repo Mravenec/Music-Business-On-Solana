@@ -13,12 +13,14 @@ export function OwnerSlackPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Decisions</p>
-      <h1>Slack approvals</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Decisions</p>
+        <h1>Slack approvals</h1>
+        <p className="eh8s-lead">
         Yellow and red agent decisions reach Slack with Approve and Reject buttons. A click answers
         the decision once; the message then shows who answered.
       </p>
+      </header>
       {!s.walletReady ? (
         <div className="eh8s-banner bad">Connect the owner wallet to see the Slack bridge.</div>
       ) : null}

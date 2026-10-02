@@ -53,10 +53,12 @@ export function OwnerCourseReviewPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">
         <Link to="/owner/courses/review">Review queue</Link>
       </p>
-      <h1>{course?.title ?? "Course review"}</h1>
+        <h1>{course?.title ?? "Course review"}</h1>
+      </header>
       {course ? (
         <p className="eh8s-lead">
           Level {course.minLevel}+{course.summary ? ` · ${course.summary}` : ""}

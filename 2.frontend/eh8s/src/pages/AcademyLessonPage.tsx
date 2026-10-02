@@ -38,7 +38,8 @@ export function AcademyLessonPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">
         {view ? (
           <Link to={`/academy/courses/${view.course.id}`}>{view.course.title}</Link>
         ) : (
@@ -46,7 +47,8 @@ export function AcademyLessonPage() {
         )}
         {view ? ` · ${view.section.title}` : ""}
       </p>
-      <h1>{lesson?.title ?? "Lesson"}</h1>
+        <h1>{lesson?.title ?? "Lesson"}</h1>
+      </header>
       {loading ? <p className="eh8s-muted-line">Loading lesson…</p> : null}
       {error ? <div className="eh8s-banner bad">{error}</div> : null}
       {view && lesson ? (

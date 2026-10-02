@@ -31,9 +31,11 @@ export function BandRehearsalNewPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Rehearsal</p>
-      <h1>Schedule a rehearsal</h1>
-      <p className="eh8s-lead">One session for this band.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Rehearsal</p>
+        <h1>Schedule a rehearsal</h1>
+        <p className="eh8s-lead">One session for this band.</p>
+      </header>
       {msg ? (
         <div
           className={`eh8s-banner ${msg.toLowerCase().includes("could") ? "bad" : "ok"}`}

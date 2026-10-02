@@ -280,6 +280,140 @@ a {
   color: var(--eh8s-warn);
 }
 
+.eh8s-identity-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.eh8s-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--eh8s-line);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--eh8s-ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.eh8s-pill select {
+  font: inherit;
+  font-weight: 700;
+  color: var(--eh8s-ink);
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.eh8s-lead {
+  max-width: 40rem;
+}
+
+.eh8s-network-field {
+  max-width: 280px;
+  margin-bottom: 1rem;
+}
+
+.eh8s-fact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.eh8s-fact {
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(11, 31, 58, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 24px rgba(11, 31, 58, 0.05);
+}
+
+.eh8s-fact span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--eh8s-muted);
+}
+
+.eh8s-fact code {
+  display: block;
+  color: var(--eh8s-ink);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.eh8s-ix-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.eh8s-ix-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(11, 31, 58, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.eh8s-ix-list li span {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--eh8s-accent-soft);
+  color: var(--eh8s-accent-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.eh8s-ix-list code,
+.eh8s-code-panel pre {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.eh8s-code-panel {
+  background: var(--eh8s-ink);
+  color: #f7faff;
+  border: none;
+}
+
+.eh8s-code-label {
+  display: inline-block;
+  margin-bottom: 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #dcebff;
+}
+
+.eh8s-code-panel pre,
+.eh8s-panel pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.eh8s-code-panel pre {
+  color: #f7faff;
+}
+
 .eh8s-main {
   position: relative;
   z-index: 1;
@@ -807,9 +941,14 @@ button.eh8s-btn {
   }
 }
 
-.eh8s-role-home {
+.eh8s-role-home,
+.eh8s-status-page {
   animation: eh8s-rise 500ms ease both;
-  padding-top: 0.5rem;
+  padding: 1.2rem 1.3rem 1.35rem;
+  border-radius: 20px;
+  border: 1px solid rgba(11, 31, 58, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 28px rgba(11, 31, 58, 0.06);
 }
 
 .eh8s-status-page {
@@ -856,6 +995,11 @@ button.eh8s-btn {
 
 .eh8s-page-hero {
   margin-bottom: 1.35rem;
+  padding: 1.2rem 1.3rem 1.15rem;
+  border-radius: 20px;
+  border: 1px solid rgba(11, 31, 58, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 28px rgba(11, 31, 58, 0.06);
 }
 
 .eh8s-page-hero h1 {
@@ -1198,6 +1342,58 @@ button.eh8s-btn {
   background: rgba(220, 235, 255, 0.35);
 }
 
+.eh8s-table-wrap:has(.eh8s-table:not(:has(thead))) {
+  overflow: visible;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.eh8s-table:not(:has(thead)) tbody {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.eh8s-table:not(:has(thead)) tr {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(11, 31, 58, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(11, 31, 58, 0.05);
+}
+
+.eh8s-table:not(:has(thead)) th,
+.eh8s-table:not(:has(thead)) td {
+  display: block;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.eh8s-table:not(:has(thead)) th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.eh8s-table:not(:has(thead)) tr:hover td,
+.eh8s-table:not(:has(thead)) tr:last-child td {
+  background: transparent;
+  border: none;
+}
+
+.eh8s-page .eh8s-form {
+  padding: 1.1rem 1.15rem;
+  border-radius: 18px;
+  border: 1px solid rgba(11, 31, 58, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(11, 31, 58, 0.05);
+}
+
 .eh8s-mono {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -1419,7 +1615,7 @@ button.eh8s-btn {
   color: var(--eh8s-accent-strong);
 }
 
-/* Academy video library */
+/* Epic 50 — academy video library */
 .eh8s-banner.warn {
   border-color: rgba(29, 111, 216, 0.28);
   background: #eef5ff;
@@ -1511,4 +1707,101 @@ button.eh8s-btn {
 .eh8s-btn-mini:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+.eh8s-page,
+.eh8s-page-hero,
+.eh8s-role-home,
+.eh8s-status-page {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.eh8s-page > .eh8s-cta-row:not(:has(button)),
+.eh8s-role-home > .eh8s-cta-row:not(:has(button)) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.eh8s-page > .eh8s-cta-row:not(:has(button)) > a.eh8s-btn,
+.eh8s-role-home > .eh8s-cta-row:not(:has(button)) > a.eh8s-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+  min-height: 5.5rem;
+  padding: 1rem 1.05rem 0.9rem;
+  border-radius: 18px;
+  border: 1px solid rgba(11, 31, 58, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--eh8s-ink);
+  box-shadow: 0 10px 24px rgba(11, 31, 58, 0.05);
+  overflow: hidden;
+}
+
+.eh8s-page > .eh8s-cta-row:not(:has(button)) > a.eh8s-btn.primary,
+.eh8s-role-home > .eh8s-cta-row:not(:has(button)) > a.eh8s-btn.primary {
+  background: #fff;
+  color: var(--eh8s-ink);
+  border-color: rgba(29, 111, 216, 0.32);
+  box-shadow: 0 12px 28px rgba(29, 111, 216, 0.12);
+}
+
+.eh8s-page > .eh8s-cta-row:not(:has(button)) > a.eh8s-btn.primary::before,
+.eh8s-role-home > .eh8s-cta-row:not(:has(button)) > a.eh8s-btn.primary::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--eh8s-accent);
+}
+
+.eh8s-page > .eh8s-cta-row:not(:has(button)) > a.eh8s-btn::after,
+.eh8s-role-home > .eh8s-cta-row:not(:has(button)) > a.eh8s-btn::after {
+  content: "→";
+  color: var(--eh8s-accent);
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.eh8s-page > a.eh8s-btn {
+  width: fit-content;
+  border-radius: 14px;
+  box-shadow: 0 8px 18px rgba(11, 31, 58, 0.06);
+}
+
+.eh8s-page > .eh8s-empty,
+.eh8s-role-home > .eh8s-empty,
+.eh8s-band-grid > .eh8s-empty {
+  border-radius: 16px;
+  border: 1px dashed rgba(29, 111, 216, 0.35);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.eh8s-role-card {
+  gap: 0.65rem;
+  padding: 1.05rem 1.1rem;
+  border: 1px solid rgba(11, 31, 58, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 24px rgba(11, 31, 58, 0.05);
+  color: var(--eh8s-ink);
+}
+
+.eh8s-role-card strong {
+  font-family: var(--eh8s-font-display);
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.eh8s-field input,
+.eh8s-field select,
+.eh8s-field textarea {
+  background: #fff;
+  color: var(--eh8s-ink);
+  border: 1px solid var(--eh8s-line);
 }

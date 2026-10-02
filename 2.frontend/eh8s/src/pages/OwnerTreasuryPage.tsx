@@ -30,12 +30,14 @@ export function OwnerTreasuryPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Studio</p>
-      <h1>Treasury</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Studio</p>
+        <h1>Treasury</h1>
+        <p className="eh8s-lead">
         Protocol fees land in a program-owned account on DevNet. Only the owner wallet can move
         them out.
       </p>
+      </header>
       {!t.walletReady ? (
         <div className="eh8s-banner bad">Connect the owner wallet to open the treasury.</div>
       ) : null}

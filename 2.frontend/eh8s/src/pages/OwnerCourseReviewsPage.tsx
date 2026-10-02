@@ -12,11 +12,13 @@ export function OwnerCourseReviewsPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">
         <Link to="/owner/courses">Courses</Link>
       </p>
-      <h1>Review queue</h1>
-      <p className="eh8s-lead">Instructor courses reach students only after you approve them.</p>
+        <h1>Review queue</h1>
+        <p className="eh8s-lead">Instructor courses reach students only after you approve them.</p>
+      </header>
       {loading ? <p className="eh8s-muted-line">Loading submissions…</p> : null}
       {error ? <div className="eh8s-banner bad">{error}</div> : null}
       <div className="eh8s-band-grid">

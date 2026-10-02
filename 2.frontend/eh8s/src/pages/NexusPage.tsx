@@ -21,11 +21,13 @@ export function NexusPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">NEXUS</p>
-      <h1>Score Enigma</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">NEXUS</p>
+        <h1>Score Enigma</h1>
+        <p className="eh8s-lead">
         NEXUS reads your rubric and notes and answers with a 0-100 score and a level recommendation.
       </p>
+      </header>
       {nexus.status ? (
         <p className="eh8s-muted-line">
           <span className={`eh8s-badge ${nexus.status.aiConfigured ? "ok" : "bad"}`}>

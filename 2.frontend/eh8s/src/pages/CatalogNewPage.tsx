@@ -32,9 +32,11 @@ export function CatalogNewPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">New track</p>
-      <h1>Add a track</h1>
-      <p className="eh8s-lead">Then pay a royalty deposit with DevNet USDC.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">New track</p>
+        <h1>Add a track</h1>
+        <p className="eh8s-lead">Then pay a royalty deposit with DevNet USDC.</p>
+      </header>
       {msg ? <div className="eh8s-banner bad">{msg}</div> : null}
       <form className="eh8s-form eh8s-panel" onSubmit={onSubmit}>
         <label>

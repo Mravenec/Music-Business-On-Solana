@@ -78,12 +78,14 @@ export function OwnerLessonFormPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">
         <Link to={`${root}/${courseId}`}>{outline?.course.title ?? "Course"}</Link>
         {section ? ` · ${section.title}` : ""}
       </p>
-      <h1>{editing ? "Edit lesson" : "New lesson"}</h1>
-      <p className="eh8s-lead">Upload the video to YouTube (unlisted), Vimeo, Bunny Stream or Cloudflare Stream, then paste its link.</p>
+        <h1>{editing ? "Edit lesson" : "New lesson"}</h1>
+        <p className="eh8s-lead">Upload the video to YouTube (unlisted), Vimeo, Bunny Stream or Cloudflare Stream, then paste its link.</p>
+      </header>
       {loading ? <p className="eh8s-muted-line">Loading…</p> : null}
       {error ? <div className="eh8s-banner bad">{error}</div> : null}
       {!loading && outline && !section ? <div className="eh8s-banner bad">That lesson or section is not in this course.</div> : null}

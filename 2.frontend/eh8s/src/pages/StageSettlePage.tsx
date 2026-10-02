@@ -71,12 +71,14 @@ export function StageSettlePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Settlement</p>
-      <h1>Settle a concert</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Settlement</p>
+        <h1>Settle a concert</h1>
+        <p className="eh8s-lead">
         Venue pays DevNet USDC on net (gross − recorded expenses): protocol fee to owner treasury,
         band pool to vault, split across members by the band vault weights.
       </p>
+      </header>
       {msg ? (
         <div
           className={`eh8s-banner ${msg.toLowerCase().includes("could") || msg.toLowerCase().includes("Connect") ? "bad" : "ok"}`}

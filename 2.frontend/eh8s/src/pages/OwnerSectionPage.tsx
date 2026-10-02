@@ -36,10 +36,12 @@ export function OwnerSectionPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">
         <Link to={`${root}/${courseId}`}>{outline?.course.title ?? "Course"}</Link>
       </p>
-      <h1>Section</h1>
+        <h1>Section</h1>
+      </header>
       {loading ? <p className="eh8s-muted-line">Loading section…</p> : null}
       {error ? <div className="eh8s-banner bad">{error}</div> : null}
       {!loading && outline && !row ? <div className="eh8s-banner bad">That section is not in this course.</div> : null}

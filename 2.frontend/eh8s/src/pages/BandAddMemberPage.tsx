@@ -40,9 +40,11 @@ export function BandAddMemberPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Roster</p>
-      <h1>Add a member</h1>
-      <p className="eh8s-lead">One person, one role, this band only.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Roster</p>
+        <h1>Add a member</h1>
+        <p className="eh8s-lead">One person, one role, this band only.</p>
+      </header>
       {msg ? (
         <div
           className={`eh8s-banner ${msg.toLowerCase().includes("could") ? "bad" : "ok"}`}

@@ -93,9 +93,11 @@ export function CatalogReachPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Reach</p>
-      <h1>Zone access</h1>
-      <p className="eh8s-lead">Pay DevNet USDC per zone. Royalty deposits stay on the track.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Reach</p>
+        <h1>Zone access</h1>
+        <p className="eh8s-lead">Pay DevNet USDC per zone. Royalty deposits stay on the track.</p>
+      </header>
       {msg ? (
         <div
           className={`eh8s-banner ${/fail|connect|missing/i.test(msg) ? "bad" : "ok"}`}

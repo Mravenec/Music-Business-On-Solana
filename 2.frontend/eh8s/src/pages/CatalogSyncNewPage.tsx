@@ -50,9 +50,11 @@ export function CatalogSyncNewPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Sync licensing</p>
-      <h1>New sync deal</h1>
-      <p className="eh8s-lead">The licensee pays once on DevNet. 80% is credited to the song members.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Sync licensing</p>
+        <h1>New sync deal</h1>
+        <p className="eh8s-lead">The licensee pays once on DevNet. 80% is credited to the song members.</p>
+      </header>
       {error ? <div className="eh8s-banner bad">{error}</div> : null}
       <form className="eh8s-form eh8s-panel" onSubmit={onSubmit}>
         <label>

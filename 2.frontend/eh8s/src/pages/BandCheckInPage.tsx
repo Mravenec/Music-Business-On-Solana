@@ -41,9 +41,11 @@ export function BandCheckInPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Attendance</p>
-      <h1>Check in</h1>
-      <p className="eh8s-lead">One rehearsal, one musician.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Attendance</p>
+        <h1>Check in</h1>
+        <p className="eh8s-lead">One rehearsal, one musician.</p>
+      </header>
       {msg ? (
         <div
           className={`eh8s-banner ${msg.toLowerCase().includes("could") ? "bad" : "ok"}`}

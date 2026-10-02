@@ -38,9 +38,11 @@ export function StageVenueDatesPage() {
   const days = slot.pin?.availableDays ?? [];
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Venue calendar</p>
-      <h1>{slot.pin?.venue.name ?? "Venue"}</h1>
-      <p className="eh8s-lead">Open dates make the map pin green and let bands request a slot.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Venue calendar</p>
+        <h1>{slot.pin?.venue.name ?? "Venue"}</h1>
+        <p className="eh8s-lead">Open dates make the map pin green and let bands request a slot.</p>
+      </header>
       {slot.error ? <div className="eh8s-banner bad">{slot.error}</div> : null}
       {msg ? <div className={`eh8s-banner ${msg.ok ? "ok" : "bad"}`}>{msg.text}</div> : null}
       <form className="eh8s-form eh8s-panel" onSubmit={onSubmit}>

@@ -51,10 +51,12 @@ export function OwnerCoursePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">
         <Link to={root}>{teach ? "My courses" : "Courses"}</Link> · {course?.status ?? ""}
       </p>
-      <h1>{course?.title ?? "Course"}</h1>
+        <h1>{course?.title ?? "Course"}</h1>
+      </header>
       {course ? (
         <p className="eh8s-lead">
           Level {course.minLevel}+ · {sections.length} sections · {visibleLessons} visible lessons

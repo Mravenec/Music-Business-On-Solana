@@ -33,8 +33,10 @@ export function GovernanceProposalPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Proposal #{p?.onchainProposalId ?? id}</p>
-      <h1>{p ? describeProposal(p) : "Proposal"}</h1>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Proposal #{p?.onchainProposalId ?? id}</p>
+        <h1>{p ? describeProposal(p) : "Proposal"}</h1>
+      </header>
       {!g.walletReady ? <div className="eh8s-banner bad">Connect the owner or a signer wallet.</div> : null}
       {g.loading ? <p className="eh8s-muted-line">Loading proposal…</p> : null}
       {g.error ? <div className="eh8s-banner bad">{g.error}</div> : null}

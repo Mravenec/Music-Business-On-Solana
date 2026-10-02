@@ -14,9 +14,11 @@ export function CatalogSyncPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Sync licensing</p>
-      <h1>Sync deals</h1>
-      <p className="eh8s-lead">Film, series and ads that license this song. 80% to the artists, 20% to EH8S.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Sync licensing</p>
+        <h1>Sync deals</h1>
+        <p className="eh8s-lead">Film, series and ads that license this song. 80% to the artists, 20% to EH8S.</p>
+      </header>
       {sync.error ? <div className="eh8s-banner bad">{sync.error}</div> : null}
       <Link className="eh8s-btn primary" to={`/catalog/tracks/${id}/sync/new`}>
         New sync deal

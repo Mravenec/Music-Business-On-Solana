@@ -10,9 +10,11 @@ import { PROPOSAL_KINDS } from "./governanceText";
 export function GovernanceNewPage() {
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Governance</p>
-      <h1>New proposal</h1>
-      <p className="eh8s-lead">Your approval is recorded with the proposal.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Governance</p>
+        <h1>New proposal</h1>
+        <p className="eh8s-lead">Your approval is recorded with the proposal.</p>
+      </header>
       <div className="eh8s-band-grid">
         {PROPOSAL_KINDS.map((k) => (
           <article key={k.kind} className="eh8s-band-card">

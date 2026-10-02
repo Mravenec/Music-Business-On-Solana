@@ -35,9 +35,11 @@ export function BandDetailPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Band</p>
-      <h1>{band?.name ?? "Band"}</h1>
-      <p className="eh8s-lead">Roster and rehearsals for this ensemble only.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Band</p>
+        <h1>{band?.name ?? "Band"}</h1>
+        <p className="eh8s-lead">Roster and rehearsals for this ensemble only.</p>
+      </header>
       {error ? (
         <div className="eh8s-banner bad">Could not load this band.</div>
       ) : null}

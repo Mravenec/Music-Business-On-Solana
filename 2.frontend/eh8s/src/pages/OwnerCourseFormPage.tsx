@@ -60,13 +60,15 @@ export function OwnerCourseFormPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Courses</p>
-      <h1>{editing ? "Course details" : "New course"}</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Courses</p>
+        <h1>{editing ? "Course details" : "New course"}</h1>
+        <p className="eh8s-lead">
         {scope === "teach"
           ? "New courses start as drafts. Students see them after the studio owner approves your submission."
           : "New courses start as drafts. Students see them only after you publish."}
       </p>
+      </header>
       {msg ? <div className="eh8s-banner bad">{msg}</div> : null}
       <form className="eh8s-form eh8s-panel" onSubmit={onSubmit}>
         <label>

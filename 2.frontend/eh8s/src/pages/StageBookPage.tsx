@@ -41,9 +41,11 @@ export function StageBookPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Booking</p>
-      <h1>Book a show</h1>
-      <p className="eh8s-lead">One venue, one band, one date.</p>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Booking</p>
+        <h1>Book a show</h1>
+        <p className="eh8s-lead">One venue, one band, one date.</p>
+      </header>
       {msg ? (
         <div
           className={`eh8s-banner ${msg.toLowerCase().includes("could") ? "bad" : "ok"}`}

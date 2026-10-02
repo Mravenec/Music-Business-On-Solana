@@ -42,11 +42,13 @@ export function BandRatePage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Creative contribution</p>
-      <h1>Rate a bandmate</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Creative contribution</p>
+        <h1>Rate a bandmate</h1>
+        <p className="eh8s-lead">
         One score from 1 to 5 per bandmate. The cycle average becomes their creative points.
       </p>
+      </header>
       {me == null ? (
         <div className="eh8s-banner bad">Connect the wallet of a band member to rate.</div>
       ) : null}

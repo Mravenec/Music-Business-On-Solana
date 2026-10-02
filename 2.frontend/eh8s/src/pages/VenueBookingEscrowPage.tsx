@@ -31,8 +31,10 @@ export function VenueBookingEscrowPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Booking escrow</p>
-      <h1>{booking ? `Show ${booking.showDate}` : "Booking"}</h1>
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Booking escrow</p>
+        <h1>{booking ? `Show ${booking.showDate}` : "Booking"}</h1>
+      </header>
       {v.loading ? <p className="eh8s-muted-line">Loading booking…</p> : null}
       {v.error ? <div className="eh8s-banner bad">{v.error}</div> : null}
       {msg ? (

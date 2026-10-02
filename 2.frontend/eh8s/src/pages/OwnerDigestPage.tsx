@@ -25,12 +25,14 @@ export function OwnerDigestPage() {
 
   return (
     <section className="eh8s-page">
-      <p className="eh8s-kicker">Studio</p>
-      <h1>AI digest</h1>
-      <p className="eh8s-lead">
+      <header className="eh8s-page-hero">
+        <p className="eh8s-kicker">Studio</p>
+        <h1>AI digest</h1>
+        <p className="eh8s-lead">
         Claude reads today's live numbers — payments, settlements, claims, treasury — and writes a
         short summary with one next step.
       </p>
+      </header>
       {!d.walletReady ? (
         <div className="eh8s-banner bad">Connect the owner wallet to open the digest.</div>
       ) : null}
