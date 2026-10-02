@@ -26,6 +26,8 @@ import com.eh8s.eh8s.database.jooq.eh8s.tables.RehearsalSession;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.SppCycle;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.SppMemberScore;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.SppVariable;
+import com.eh8s.eh8s.database.jooq.eh8s.tables.StudioPartner;
+import com.eh8s.eh8s.database.jooq.eh8s.tables.StudioPartnerAllocation;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.Venue;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.VenueAvailability;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.records.AccountRecord;
@@ -50,6 +52,8 @@ import com.eh8s.eh8s.database.jooq.eh8s.tables.records.RehearsalSessionRecord;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.records.SppCycleRecord;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.records.SppMemberScoreRecord;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.records.SppVariableRecord;
+import com.eh8s.eh8s.database.jooq.eh8s.tables.records.StudioPartnerAllocationRecord;
+import com.eh8s.eh8s.database.jooq.eh8s.tables.records.StudioPartnerRecord;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.records.VenueAvailabilityRecord;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.records.VenueRecord;
 
@@ -123,6 +127,10 @@ public class Keys {
     public static final UniqueKey<SppMemberScoreRecord> KEY_SPP_MEMBER_SCORE_UK_SPP_SCORE = Internal.createUniqueKey(SppMemberScore.SPP_MEMBER_SCORE, DSL.name("KEY_spp_member_score_uk_spp_score"), new TableField[] { SppMemberScore.SPP_MEMBER_SCORE.SPP_CYCLE_ID, SppMemberScore.SPP_MEMBER_SCORE.MUSICIAN_PROFILE_ID }, true);
     public static final UniqueKey<SppVariableRecord> KEY_SPP_VARIABLE_PRIMARY = Internal.createUniqueKey(SppVariable.SPP_VARIABLE, DSL.name("KEY_spp_variable_PRIMARY"), new TableField[] { SppVariable.SPP_VARIABLE.ID }, true);
     public static final UniqueKey<SppVariableRecord> KEY_SPP_VARIABLE_UK_SPP_VARIABLE_CODE = Internal.createUniqueKey(SppVariable.SPP_VARIABLE, DSL.name("KEY_spp_variable_uk_spp_variable_code"), new TableField[] { SppVariable.SPP_VARIABLE.CODE }, true);
+    public static final UniqueKey<StudioPartnerRecord> KEY_STUDIO_PARTNER_PRIMARY = Internal.createUniqueKey(StudioPartner.STUDIO_PARTNER, DSL.name("KEY_studio_partner_PRIMARY"), new TableField[] { StudioPartner.STUDIO_PARTNER.ID }, true);
+    public static final UniqueKey<StudioPartnerRecord> KEY_STUDIO_PARTNER_UK_STUDIO_PARTNER_WALLET = Internal.createUniqueKey(StudioPartner.STUDIO_PARTNER, DSL.name("KEY_studio_partner_uk_studio_partner_wallet"), new TableField[] { StudioPartner.STUDIO_PARTNER.WALLET_PUBKEY }, true);
+    public static final UniqueKey<StudioPartnerAllocationRecord> KEY_STUDIO_PARTNER_ALLOCATION_PRIMARY = Internal.createUniqueKey(StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION, DSL.name("KEY_studio_partner_allocation_PRIMARY"), new TableField[] { StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION.ID }, true);
+    public static final UniqueKey<StudioPartnerAllocationRecord> KEY_STUDIO_PARTNER_ALLOCATION_UK_PARTNER_ALLOCATION = Internal.createUniqueKey(StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION, DSL.name("KEY_studio_partner_allocation_uk_partner_allocation"), new TableField[] { StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION.STUDIO_PARTNER_ID, StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION.YEAR_NUM, StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION.MONTH_NUM, StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION.SOURCE_CODE }, true);
     public static final UniqueKey<VenueRecord> KEY_VENUE_PRIMARY = Internal.createUniqueKey(Venue.VENUE, DSL.name("KEY_venue_PRIMARY"), new TableField[] { Venue.VENUE.ID }, true);
     public static final UniqueKey<VenueRecord> KEY_VENUE_UK_VENUE_APPROVE_TX = Internal.createUniqueKey(Venue.VENUE, DSL.name("KEY_venue_uk_venue_approve_tx"), new TableField[] { Venue.VENUE.APPROVE_TX_SIGNATURE }, true);
     public static final UniqueKey<VenueRecord> KEY_VENUE_UK_VENUE_CODE = Internal.createUniqueKey(Venue.VENUE, DSL.name("KEY_venue_uk_venue_code"), new TableField[] { Venue.VENUE.CODE }, true);
@@ -163,6 +171,7 @@ public class Keys {
     public static final ForeignKey<SppCycleRecord, BandRecord> FK_CYCLE_BAND = Internal.createForeignKey(SppCycle.SPP_CYCLE, DSL.name("fk_cycle_band"), new TableField[] { SppCycle.SPP_CYCLE.BAND_ID }, Keys.KEY_BAND_PRIMARY, new TableField[] { Band.BAND.ID }, true);
     public static final ForeignKey<SppMemberScoreRecord, SppCycleRecord> FK_SCORE_CYCLE = Internal.createForeignKey(SppMemberScore.SPP_MEMBER_SCORE, DSL.name("fk_score_cycle"), new TableField[] { SppMemberScore.SPP_MEMBER_SCORE.SPP_CYCLE_ID }, Keys.KEY_SPP_CYCLE_PRIMARY, new TableField[] { SppCycle.SPP_CYCLE.ID }, true);
     public static final ForeignKey<SppMemberScoreRecord, MusicianProfileRecord> FK_SCORE_MUSICIAN = Internal.createForeignKey(SppMemberScore.SPP_MEMBER_SCORE, DSL.name("fk_score_musician"), new TableField[] { SppMemberScore.SPP_MEMBER_SCORE.MUSICIAN_PROFILE_ID }, Keys.KEY_MUSICIAN_PROFILE_PRIMARY, new TableField[] { MusicianProfile.MUSICIAN_PROFILE.ID }, true);
+    public static final ForeignKey<StudioPartnerAllocationRecord, StudioPartnerRecord> FK_PARTNER_ALLOCATION = Internal.createForeignKey(StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION, DSL.name("fk_partner_allocation"), new TableField[] { StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION.STUDIO_PARTNER_ID }, Keys.KEY_STUDIO_PARTNER_PRIMARY, new TableField[] { StudioPartner.STUDIO_PARTNER.ID }, true);
     public static final ForeignKey<VenueRecord, ContractTypeRecord> FK_VENUE_CONTRACT = Internal.createForeignKey(Venue.VENUE, DSL.name("fk_venue_contract"), new TableField[] { Venue.VENUE.CONTRACT_TYPE_ID }, Keys.KEY_CONTRACT_TYPE_PRIMARY, new TableField[] { ContractType.CONTRACT_TYPE.ID }, true);
     public static final ForeignKey<VenueAvailabilityRecord, VenueRecord> FK_AVAILABILITY_VENUE = Internal.createForeignKey(VenueAvailability.VENUE_AVAILABILITY, DSL.name("fk_availability_venue"), new TableField[] { VenueAvailability.VENUE_AVAILABILITY.VENUE_ID }, Keys.KEY_VENUE_PRIMARY, new TableField[] { Venue.VENUE.ID }, true);
 }

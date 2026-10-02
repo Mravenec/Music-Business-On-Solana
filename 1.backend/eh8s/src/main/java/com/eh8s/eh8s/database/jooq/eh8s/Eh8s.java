@@ -27,6 +27,8 @@ import com.eh8s.eh8s.database.jooq.eh8s.tables.RehearsalSession;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.SppCycle;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.SppMemberScore;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.SppVariable;
+import com.eh8s.eh8s.database.jooq.eh8s.tables.StudioPartner;
+import com.eh8s.eh8s.database.jooq.eh8s.tables.StudioPartnerAllocation;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.Venue;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.VenueAvailability;
 
@@ -162,6 +164,16 @@ public class Eh8s extends SchemaImpl {
     public final SppVariable SPP_VARIABLE = SppVariable.SPP_VARIABLE;
 
     /**
+     * The table <code>eh8s.studio_partner</code>.
+     */
+    public final StudioPartner STUDIO_PARTNER = StudioPartner.STUDIO_PARTNER;
+
+    /**
+     * The table <code>eh8s.studio_partner_allocation</code>.
+     */
+    public final StudioPartnerAllocation STUDIO_PARTNER_ALLOCATION = StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION;
+
+    /**
      * The table <code>eh8s.venue</code>.
      */
     public final Venue VENUE = Venue.VENUE;
@@ -209,6 +221,8 @@ public class Eh8s extends SchemaImpl {
             SppCycle.SPP_CYCLE,
             SppMemberScore.SPP_MEMBER_SCORE,
             SppVariable.SPP_VARIABLE,
+            StudioPartner.STUDIO_PARTNER,
+            StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION,
             Venue.VENUE,
             VenueAvailability.VENUE_AVAILABILITY
         );

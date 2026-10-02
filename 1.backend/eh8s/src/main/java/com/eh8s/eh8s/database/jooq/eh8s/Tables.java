@@ -26,6 +26,8 @@ import com.eh8s.eh8s.database.jooq.eh8s.tables.RehearsalSession;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.SppCycle;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.SppMemberScore;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.SppVariable;
+import com.eh8s.eh8s.database.jooq.eh8s.tables.StudioPartner;
+import com.eh8s.eh8s.database.jooq.eh8s.tables.StudioPartnerAllocation;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.Venue;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.VenueAvailability;
 
@@ -145,6 +147,16 @@ public class Tables {
      * The table <code>eh8s.spp_variable</code>.
      */
     public static final SppVariable SPP_VARIABLE = SppVariable.SPP_VARIABLE;
+
+    /**
+     * The table <code>eh8s.studio_partner</code>.
+     */
+    public static final StudioPartner STUDIO_PARTNER = StudioPartner.STUDIO_PARTNER;
+
+    /**
+     * The table <code>eh8s.studio_partner_allocation</code>.
+     */
+    public static final StudioPartnerAllocation STUDIO_PARTNER_ALLOCATION = StudioPartnerAllocation.STUDIO_PARTNER_ALLOCATION;
 
     /**
      * The table <code>eh8s.venue</code>.

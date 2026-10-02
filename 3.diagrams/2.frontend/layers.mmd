@@ -9,7 +9,8 @@ flowchart TD
   AppShell -->|role destinations| MorePage
   AppShell -->|role-gated| AcademyPage
   AppShell -->|signed-in rail| WalletRail
-  WalletRail -->|studio accounting| StudioLedgerPage
+  WalletRail -->|non-owner: sources by role| StudioLedgerPage
+  WalletRail -->|owner: partner books| StudioLedgerPage
   AcademyPage -->|one plan, includes listed| AcademyPlanPage
   AcademyPage -->|enroll| AcademyEnrollPage
   AcademyPage -->|score| AcademyEvaluatePage

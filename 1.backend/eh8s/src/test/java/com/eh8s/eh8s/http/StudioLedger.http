@@ -1,10 +1,34 @@
-### Studio ledger without Bearer → 401
-GET http://127.0.0.1:8080/api/studio-ledger/claims?year=2026&month=10
+### Personal ledger without Bearer → 401
+GET http://127.0.0.1:8080/api/studio-ledger/solo-claims?year=2026&month=10
 
-### Studio ledger with Bearer → 2xx (paste accessToken from Auth.http login)
-GET http://127.0.0.1:8080/api/studio-ledger/claims?year=2026&month=10
+### Personal ledger with a non-owner Bearer → 2xx
+GET http://127.0.0.1:8080/api/studio-ledger/solo-claims?year=2026&month=10
 Authorization: Bearer {{accessToken}}
 
-### Instructor shares with Bearer → 2xx
+### Band claims with a non-owner Bearer → 2xx
+GET http://127.0.0.1:8080/api/studio-ledger/band-claims?year=2026&month=10
+Authorization: Bearer {{accessToken}}
+
+### Venue expenses with a non-owner Bearer → 2xx
+GET http://127.0.0.1:8080/api/studio-ledger/venue-expenses?year=2026&month=10
+Authorization: Bearer {{accessToken}}
+
+### Tutor shares with a non-owner Bearer → 2xx
 GET http://127.0.0.1:8080/api/studio-ledger/instructor-shares?year=2026&month=10
 Authorization: Bearer {{accessToken}}
+
+### Own partner allocation with a non-owner Bearer → 2xx
+GET http://127.0.0.1:8080/api/studio-ledger/my-allocation?year=2026&month=10
+Authorization: Bearer {{accessToken}}
+
+### Partner books with a non-owner Bearer → 403
+GET http://127.0.0.1:8080/api/studio-ledger/partners
+Authorization: Bearer {{accessToken}}
+
+### Partner books with the owner Bearer → 2xx
+GET http://127.0.0.1:8080/api/studio-ledger/partners
+Authorization: Bearer {{ownerToken}}
+
+### Personal ledger with the owner Bearer → 403
+GET http://127.0.0.1:8080/api/studio-ledger/solo-claims?year=2026&month=10
+Authorization: Bearer {{ownerToken}}

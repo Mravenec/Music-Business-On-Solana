@@ -1,4 +1,4 @@
--- EH8S through catalog/geo, agents/owner, and Solana chain_config.
+-- EH8S through catalog/geo, agents/owner, and Solana chain_config (Epic 7).
 -- Domain wallet/PDA columns stay nullable; chain_config is the client settings row.
 
 CREATE DATABASE IF NOT EXISTS eh8s
@@ -20,7 +20,13 @@ INSERT INTO app_meta (meta_key, meta_value) VALUES
 ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value);
 
 -- ──────────────────────────────────────────────────────────
--- Seed rows below are product catalog / bootstrap data, not demo data.
+-- From (epic 28 layout): eh8s/02_academy_core.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 28: relocated from canonical_sql/02_academy.sql into eh8s's own
+-- folder (the hub-schema part of that ticket — instructor_profile/
+-- academy_plan/academy_subscription/enigma_evaluation moved to
+-- eh8s_academy/01_academy.sql). No mock/demo data here — instrument and
+-- enigma_level are real product catalog. See MIGRATION_MAP.md.
 CREATE TABLE IF NOT EXISTS instrument (
   id BIGINT NOT NULL AUTO_INCREMENT,
   code VARCHAR(32) NOT NULL,
@@ -87,7 +93,13 @@ INSERT INTO enigma_level (level_number, name, duration_note, milestone) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name), duration_note = VALUES(duration_note), milestone = VALUES(milestone);
 
 -- ──────────────────────────────────────────────────────────
--- Seed rows below are product catalog / bootstrap data, not demo data.
+-- From (epic 28 layout): eh8s/03_bands_spp.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 28: relocated from canonical_sql/03_bands_spp.sql into eh8s's own
+-- folder; mock seed rows (band/musician_profile/band_member/rehearsal_*/
+-- spp_cycle/spp_member_score — the demo "Noche Oscura" band scenario) moved
+-- to 0.database/mocks/eh8s.sql. spp_variable catalog INSERT stays — real SPP
+-- scoring weights the app's own logic depends on. See MIGRATION_MAP.md.
 CREATE TABLE IF NOT EXISTS spp_variable (
   id BIGINT NOT NULL AUTO_INCREMENT,
   code VARCHAR(32) NOT NULL,
@@ -183,7 +195,13 @@ INSERT INTO spp_variable (code, name, weight_bps) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name), weight_bps = VALUES(weight_bps);
 
 -- ──────────────────────────────────────────────────────────
--- Seed rows below are product catalog / bootstrap data, not demo data.
+-- From (epic 28 layout): eh8s/04_venues_concerts.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 28: relocated from canonical_sql/04_venues_concerts.sql into eh8s's
+-- own folder; mock seed rows (venue/booking/concert/concert_expense — the
+-- demo "Bar La Cueva"/"Noche Oscura" scenario) moved to
+-- 0.database/mocks/eh8s.sql. contract_type catalog INSERT stays — real
+-- product taxonomy, not demo data. See MIGRATION_MAP.md.
 CREATE TABLE IF NOT EXISTS contract_type (
   id BIGINT NOT NULL AUTO_INCREMENT,
   code VARCHAR(32) NOT NULL,
@@ -288,6 +306,10 @@ INSERT INTO contract_type (code, name, description) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description);
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s/05_product_shell.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 26: pin the active schema explicitly (eh8s_ops interleaves in the SOURCE order below).
+-- Product shell: wallet session columns on existing DBs (CREATE IF NOT EXISTS does not alter).
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'account' AND COLUMN_NAME = 'last_seen_at'
@@ -307,6 +329,13 @@ SET @ddl := IF(@idx = 0,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s/06_wallet_devnet_pay_claim.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 14 wallet DevNet pay: pending_claim signature columns (idempotent).
+-- Epic 28: relocated from canonical_sql/11_wallet_devnet_pay.sql into eh8s's
+-- own folder (the devnet_pay_marker CREATE + academy_subscription ALTER from
+-- that same ticket moved to eh8s_onchain/02_wallet_devnet_pay.sql and
+-- eh8s_academy/03_wallet_devnet_pay.sql respectively).
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pending_claim' AND COLUMN_NAME = 'tx_signature'
@@ -326,7 +355,14 @@ SET @ddl := IF(@col = 0,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ──────────────────────────────────────────────────────────
--- Seed rows below are product catalog / bootstrap data, not demo data.
+-- From (epic 28 layout): eh8s/07_role_platform_account.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 18: platform owner wallet, session geo on account.
+-- Epic 28: relocated from canonical_sql/16_role_platform_shell.sql into
+-- eh8s's own folder (the chain_config part of that same ticket moved to
+-- eh8s_onchain/04_role_platform_chain.sql instead). The owner account
+-- INSERT stays — bootstrap data the platform's role system depends on,
+-- not a demo scenario. See MIGRATION_MAP.md.
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'account' AND COLUMN_NAME = 'last_lat'
@@ -369,6 +405,10 @@ ON DUPLICATE KEY UPDATE
   wallet_pubkey = VALUES(wallet_pubkey);
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s/08_settle_claim_onchain_devnet.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 26: pin the active schema explicitly (eh8s_ops interleaves in the SOURCE order below).
+-- Epic 22: settle_concert / claim_royalties on-chain linkage (idempotent for existing DBs).
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'concert' AND COLUMN_NAME = 'concert_settlement_pda'
@@ -459,7 +499,7 @@ SET @ddl := IF(@idx = 0,
   'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- BCrypt password_hash for JWT login (nullable — wallet-only accounts).
+-- Epic 30: BCrypt password_hash for JWT login (nullable — wallet-only accounts).
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'account' AND COLUMN_NAME = 'password_hash'
@@ -469,7 +509,7 @@ SET @ddl := IF(@col = 0,
   'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- on-chain BandVault (create_band / update_spp_weights) activation + weight sync.
+-- Epic 35: on-chain BandVault (create_band / update_spp_weights) activation + weight sync.
 -- band_vault_pda already exists; these record the DevNet signatures and the synced weights
 -- ({musicianProfileId, wallet, bps} in vault member order) used for the SPP split.
 SET @col := (
@@ -536,7 +576,7 @@ SET @ddl := IF(@idx = 0,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ----------------------------------------------------------
--- program v0.6.0 - on-chain MusicianProfile carries a country (ISO-3166 alpha-3) and
+-- Epic 40: program v0.6.0 - on-chain MusicianProfile carries a country (ISO-3166 alpha-3) and
 -- the Enigma level is agent-only (update_musician_level). One row per verified level change.
 -- ----------------------------------------------------------
 SET @col := (
@@ -563,7 +603,7 @@ CREATE TABLE IF NOT EXISTS musician_level_change (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------
--- program v0.7.0 - VenueListing (register_venue / approve_venue by a STAGE agent) and
+-- Epic 41: program v0.7.0 - VenueListing (register_venue / approve_venue by a STAGE agent) and
 -- VenueAccessToken escrow (propose_booking -> confirm_booking -> settle_booking by a VAULT agent,
 -- or cancel_booking by the venue while proposed). Each step stores its verified signature.
 -- ----------------------------------------------------------
@@ -765,7 +805,7 @@ SET @ddl := IF(@col = 0,
   'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- SPP inputs (creative ratings, skill delta, concert minutes) + Stage Map pins
+-- Epic 45: SPP inputs (creative ratings, skill delta, concert minutes) + Stage Map pins
 
 CREATE TABLE IF NOT EXISTS creative_rating (
   id BIGINT NOT NULL AUTO_INCREMENT,
@@ -843,7 +883,7 @@ PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 UPDATE venue SET is_partner = 1 WHERE pin_status = 'partner' AND is_partner = 0;
 
--- live agents. HARMONY ranks candidate musicians for a band (instrument gap, level
+-- Epic 46: live agents. HARMONY ranks candidate musicians for a band (instrument gap, level
 -- proximity, country, genre overlap); ATLAS projects tour income from contract_type.band_share_bps.
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
@@ -896,4 +936,32 @@ CREATE TABLE IF NOT EXISTS band_match_suggestion (
   CONSTRAINT ck_band_match_score CHECK (score BETWEEN 0 AND 100),
   CONSTRAINT fk_band_match_band FOREIGN KEY (band_id) REFERENCES band (id),
   CONSTRAINT fk_band_match_musician FOREIGN KEY (musician_profile_id) REFERENCES musician_profile (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Epic 69: owner-managed partners. share_bps is their slice of recorded studio fees.
+-- Allocations are the books for one month and one source. They do not move USDC.
+CREATE TABLE IF NOT EXISTS studio_partner (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  wallet_pubkey VARCHAR(44) NOT NULL,
+  display_name VARCHAR(120) NOT NULL,
+  share_bps INT NOT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_studio_partner_wallet (wallet_pubkey),
+  CONSTRAINT ck_studio_partner_share CHECK (share_bps BETWEEN 1 AND 10000)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS studio_partner_allocation (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  studio_partner_id BIGINT NOT NULL,
+  year_num SMALLINT NOT NULL,
+  month_num TINYINT NOT NULL,
+  source_code VARCHAR(32) NOT NULL,
+  amount_usdc DECIMAL(12,2) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_partner_allocation (studio_partner_id, year_num, month_num, source_code),
+  CONSTRAINT ck_partner_allocation_month CHECK (month_num BETWEEN 1 AND 12),
+  CONSTRAINT ck_partner_allocation_source CHECK (source_code IN ('show_fee', 'academy', 'sync')),
+  CONSTRAINT fk_partner_allocation FOREIGN KEY (studio_partner_id) REFERENCES studio_partner (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

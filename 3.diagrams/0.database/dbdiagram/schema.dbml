@@ -1,7 +1,7 @@
 // =============================================================================
 // dbdiagram.io — copy ALL of this file and paste into https://dbdiagram.io
 // =============================================================================
-// Keep in sync with 0.database/canonical_sql/.
+// Keep in sync with 0.database/canonical_sql/ (see .ai/rules/dbdiagram.md).
 // =============================================================================
 
 Project eh8s {
@@ -57,12 +57,12 @@ Table musician_profile {
   instrument_id bigint [not null]
   enigma_level_id bigint [not null]
   enigma_score tinyint [not null, default: 0]
-  country_code char(3) [note: 'ISO-3166 alpha-3 sent on-chain by upsert_musician_profile']
-  genres varchar(160) [note: 'comma list; HARMONY genre overlap']
+  country_code char(3) [note: 'Epic 40: ISO-3166 alpha-3 sent on-chain by upsert_musician_profile']
+  genres varchar(160) [note: 'Epic 46: comma list; HARMONY genre overlap']
   musician_profile_pda varchar(44)
 }
 
-// one row per verified update_musician_level (NEXUS 0x01 agent or owner).
+// Epic 40: one row per verified update_musician_level (NEXUS 0x01 agent or owner).
 Table musician_level_change {
   id bigint [pk, increment]
   musician_profile_id bigint [not null]
@@ -89,7 +89,7 @@ Table academy_plan {
   code varchar(32) [not null, unique]
   name varchar(80) [not null]
   usdc_monthly decimal(12,2) [not null]
-  onchain_plan_type tinyint [note: 'u8 priced by subscribe_academy (1 basic, 2 band, 3 pro)']
+  onchain_plan_type tinyint [note: 'Epic 43: u8 priced by subscribe_academy (1 basic, 2 band, 3 pro)']
   description varchar(400) [not null]
 }
 
@@ -100,40 +100,40 @@ Table academy_subscription {
   instructor_profile_id bigint
   starts_at date [not null]
   expires_at date [not null]
-  months tinyint [not null, default: 1, note: 'months bought by this row (1..12)']
+  months tinyint [not null, default: 1, note: 'Epic 43: months bought by this row (1..12)']
   treasury_usdc decimal(12,2) [not null, default: 0]
   instructor_usdc decimal(12,2) [not null, default: 0]
-  academy_subscription_pda varchar(44) [note: '[academy_sub, wallet] - renewals share one PDA (indexed, not unique)']
+  academy_subscription_pda varchar(44) [note: 'Epic 43: [academy_sub, wallet] - renewals share one PDA (indexed, not unique)']
   intended_instruction varchar(64)
   pay_tx_signature varchar(128) [unique]
   paid_at datetime
   payer_wallet_pubkey varchar(44)
   on_chain_status varchar(16)
-  onchain_expires_at datetime [note: 'expires_at read from the PDA after confirm']
+  onchain_expires_at datetime [note: 'Epic 43: expires_at read from the PDA after confirm']
 
-  Note: 'pay_tx_signature + academy_subscription_pda link confirmed DevNet subscribe_academy. on_chain_status confirmed only after RPC verify.'
+  Note: 'Epic 21: pay_tx_signature + academy_subscription_pda link confirmed DevNet subscribe_academy. on_chain_status confirmed only after RPC verify.'
 }
 
 Table enigma_evaluation {
   id bigint [pk, increment]
   musician_profile_id bigint [not null]
-  lesson_id bigint [note: 'practice recording sent to NEXUS from this lesson']
-  evaluator_account_id bigint [note: 'teacher or musician who submitted it']
+  lesson_id bigint [note: 'Epic 51: practice recording sent to NEXUS from this lesson']
+  evaluator_account_id bigint [note: 'Epic 46: teacher or musician who submitted it']
   week_start date [not null]
   score tinyint [not null, note: 'Score Enigma 0..100']
   notes varchar(500)
   recording_url varchar(400)
-  rubric_json varchar(1000) [note: '{technique, timing, tone, expression, theory} 0..10 each']
+  rubric_json varchar(1000) [note: 'Epic 46: {technique, timing, tone, expression, theory} 0..10 each']
   strengths varchar(1000)
   errors_found varchar(1000)
   exercises varchar(1000)
   recommended_level tinyint
   source varchar(16) [not null, default: 'manual', note: 'manual | nexus_ai']
   ai_model varchar(64)
-  applied_at datetime [note: 'level applied on-chain via the NEXUS level page']
+  applied_at datetime [note: 'Epic 46: level applied on-chain via the NEXUS level page (epic 40)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
-  Note: 'NEXUS Score Enigma via Claude. Claude reads rubric, notes and recording metadata only (no audio).'
+  Note: 'Epic 46: NEXUS Score Enigma via Claude. Claude reads rubric, notes and recording metadata only (no audio).'
 }
 
 Ref: musician_profile.account_id > account.id
@@ -153,12 +153,12 @@ Table course {
   instrument_id bigint [note: 'NULL = every instrument']
   min_level tinyint [not null, default: 0, note: 'Enigma level 0..5 needed to watch paid lessons']
   status varchar(16) [not null, default: 'draft', note: 'draft | published | archived']
-  review_status varchar(16) [not null, default: 'draft', note: 'draft | submitted | approved | rejected (owner review of instructor courses)']
-  review_note varchar(500) [note: 'owner note, required on reject']
+  review_status varchar(16) [not null, default: 'draft', note: 'Epic 51: draft | submitted | approved | rejected (owner review of instructor courses)']
+  review_note varchar(500) [note: 'Epic 51: owner note, required on reject']
   reviewed_by_account_id bigint
   submitted_at datetime
   reviewed_at datetime
-  author_account_id bigint [not null, note: 'owner or a level-5 instructor']
+  author_account_id bigint [not null, note: 'owner or a level-5 instructor (epic 51)']
   sort_order int [not null, default: 0]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
@@ -169,7 +169,7 @@ Table course {
     (review_status, submitted_at) [name: 'idx_course_review']
   }
 
-  Note: 'academy video library (eh8s_academy). The owner publishes courses; students watch lessons in order. level-5 instructors draft and submit; only the owner approves (publishes).'
+  Note: 'Epic 50: academy video library (eh8s_academy). The owner publishes courses; students watch lessons in order. Epic 51: level-5 instructors draft and submit; only the owner approves (publishes).'
 }
 
 Table course_section {
@@ -197,7 +197,7 @@ Table lesson {
   sort_order int [not null, note: 'gap-free 1..n inside the section']
   is_free_preview tinyint [not null, default: 0]
   resources varchar(2000) [note: 'sheet music / backing track links']
-  practice_prompt varchar(1000) [note: 'exercise the student records and sends to NEXUS']
+  practice_prompt varchar(1000) [note: 'Epic 51: exercise the student records and sends to NEXUS']
   is_active tinyint [not null, default: 1]
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
@@ -236,7 +236,7 @@ Table course_access_grant {
     (wallet_pubkey, course_scope) [unique, name: 'uk_course_access_grant']
   }
 
-  Note: 'owner-granted access by wallet (comped students, in-person payers).'
+  Note: 'Epic 50: owner-granted access by wallet (comped students, in-person payers).'
 }
 
 Ref: course.instrument_id > instrument.id
@@ -266,7 +266,7 @@ Table band {
   band_type varchar(16) [not null]
   spp_enabled tinyint [not null, default: 0]
   geo_code varchar(16)
-  genres varchar(160) [note: 'comma list; HARMONY genre overlap']
+  genres varchar(160) [note: 'Epic 46: comma list; HARMONY genre overlap']
   band_vault_pda varchar(44) [unique]
   vault_tx_signature varchar(100) [unique]
   vault_activated_at datetime
@@ -313,7 +313,7 @@ Table spp_cycle {
   closed_at date
   intended_instruction varchar(64) [not null, default: 'update_spp_weights']
 
-  Note: 'SPP is per cycle, not lifetime. On-chain weights are set by update_spp_weights.'
+  Note: 'SPP is per cycle, not lifetime. On-chain update_spp_weights is Epic 7.'
 }
 
 Table spp_member_score {
@@ -330,7 +330,7 @@ Table spp_member_score {
   enigma_level_start tinyint
   enigma_level_end tinyint
 
-  Note: 'close_cycle computes all five variables (attendance 40, punctuality 15, creative 20, skill 15, concert 10). Skill = Enigma level delta between start and end.'
+  Note: 'Epic 45: close_cycle computes all five variables (attendance 40, punctuality 15, creative 20, skill 15, concert 10). Skill = Enigma level delta between start and end.'
 }
 
 Table creative_rating {
@@ -345,7 +345,7 @@ Table creative_rating {
     (rehearsal_session_id, rater_profile_id, ratee_profile_id) [unique]
   }
 
-  Note: 'members rate each other after a rehearsal; cycle average -> creative points.'
+  Note: 'Epic 45: members rate each other after a rehearsal; cycle average -> creative points.'
 }
 
 Table band_match_suggestion {
@@ -366,7 +366,7 @@ Table band_match_suggestion {
     (band_id, musician_profile_id) [unique]
   }
 
-  Note: 'HARMONY deterministic band match; optional Claude rationale when ANTHROPIC_API_KEY is set.'
+  Note: 'Epic 46: HARMONY deterministic band match; optional Claude rationale when ANTHROPIC_API_KEY is set.'
 }
 
 Ref: band_match_suggestion.band_id > band.id
@@ -389,7 +389,7 @@ Table contract_type {
   code varchar(32) [not null, unique]
   name varchar(80) [not null]
   description varchar(400) [not null]
-  band_share_bps int [note: 'band share of projected gross for ATLAS income (5000 / 7500 / 8000 / 6000)']
+  band_share_bps int [note: 'Epic 46: band share of projected gross for ATLAS income (5000 / 7500 / 8000 / 6000)']
 
   Note: 'fixed_guarantee, door, versus, eh8s_promoter'
 }
@@ -417,7 +417,7 @@ Table venue {
   approve_tx_signature varchar(128) [unique]
   approved_by_wallet varchar(44)
 
-  Note: 'Pins: available, pending, busy, partner. Google Maps is not required in v1. register_venue (venue wallet) -> listing_status pending; approve_venue (STAGE agent) -> approved. map pin is derived from real data (purple is_partner > yellow upcoming confirmed booking > green approved with open dates > red).'
+  Note: 'Pins: available, pending, busy, partner. Google Maps is not required in v1. Epic 41: register_venue (venue wallet) -> listing_status pending; approve_venue (STAGE agent) -> approved. Epic 45: map pin is derived from real data (purple is_partner > yellow upcoming confirmed booking > green approved with open dates > red).'
 }
 
 Table venue_availability {
@@ -429,7 +429,7 @@ Table venue_availability {
     (venue_id, available_date) [unique]
   }
 
-  Note: 'open dates for Stage Map green pins and Request slot.'
+  Note: 'Epic 45: open dates for Stage Map green pins and Request slot.'
 }
 
 Table booking {
@@ -454,7 +454,7 @@ Table booking {
     (venue_id, onchain_concert_id) [unique]
   }
 
-  Note: 'propose_booking escrows gross_usdc -> onchain_status proposed; confirm_booking (STAGE) stores SHA-256 contract_hash; settle_booking (VAULT) or cancel_booking (venue).'
+  Note: 'Epic 41: propose_booking escrows gross_usdc -> onchain_status proposed; confirm_booking (STAGE) stores SHA-256 contract_hash; settle_booking (VAULT) or cancel_booking (venue).'
 }
 
 Table concert {
@@ -480,7 +480,7 @@ Table concert_set_checkin {
     (concert_id, musician_profile_id) [unique]
   }
 
-  Note: 'set start/end check-in; minutes_played / concert.show_minutes -> concert points.'
+  Note: 'Epic 45: set start/end check-in; minutes_played / concert.show_minutes -> concert points.'
 }
 
 Table concert_expense {
@@ -505,7 +505,7 @@ Table concert_settlement {
   settled_via varchar(24)
   settled_by_wallet varchar(44)
 
-  Note: 'settle_concert DevNet tx required before settlement is confirmed. settled_via settle_booking (VAULT agent, escrow) or settle_concert (legacy).'
+  Note: 'Epic 22: settle_concert DevNet tx required before settlement is confirmed. Epic 41: settled_via settle_booking (VAULT agent, escrow) or settle_concert (legacy).'
 }
 
 Table pending_claim {
@@ -521,7 +521,33 @@ Table pending_claim {
   claimer_wallet_pubkey varchar(44)
   on_chain_status varchar(16)
 
-  Note: 'claim_royalties DevNet tx replaces Mark claimed. on_chain_status confirmed only after RPC verify.'
+  Note: 'Epic 22: claim_royalties DevNet tx replaces Mark claimed. on_chain_status confirmed only after RPC verify.'
+}
+
+Table studio_partner {
+  id bigint [pk, increment]
+  wallet_pubkey varchar(44) [not null, unique]
+  display_name varchar(120) [not null]
+  share_bps int [not null]
+  active tinyint [not null, default: 1]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: 'Epic 69: owner-managed partner. share_bps is their slice of recorded studio fees, at most 10000 across active rows.'
+}
+
+Table studio_partner_allocation {
+  id bigint [pk, increment]
+  studio_partner_id bigint [not null]
+  year_num smallint [not null]
+  month_num tinyint [not null]
+  source_code varchar(32) [not null]
+  amount_usdc decimal(12,2) [not null]
+
+  indexes {
+    (studio_partner_id, year_num, month_num, source_code) [unique]
+  }
+
+  Note: 'Epic 69: books for one partner, month, and source (show_fee, academy, sync). Does not move USDC.'
 }
 
 Ref: venue.contract_type_id > contract_type.id
@@ -537,6 +563,7 @@ Ref: concert_set_checkin.musician_profile_id > musician_profile.id
 Ref: venue_availability.venue_id > venue.id
 Ref: concert_settlement.concert_id > concert.id
 Ref: pending_claim.concert_settlement_id > concert_settlement.id
+Ref: studio_partner_allocation.studio_partner_id > studio_partner.id
 Ref: pending_claim.musician_profile_id > musician_profile.id
 
 Table royalty_type {
@@ -556,7 +583,7 @@ Table track {
   pool_tx_signature varchar(128) [unique]
   pool_activated_at datetime
 
-  Note: 'royalty_pool_pda = on-chain RoyaltyPool ["royalty", track_id LE] (create_royalty_pool). pool_splits_json = members + splits_bps activated on-chain [{musicianProfileId, wallet, bps}] in pool order.'
+  Note: 'Epic 44: royalty_pool_pda = on-chain RoyaltyPool ["royalty", track_id LE] (create_royalty_pool). pool_splits_json = members + splits_bps activated on-chain [{musicianProfileId, wallet, bps}] in pool order.'
 }
 
 Table royalty_split {
@@ -580,7 +607,7 @@ Table royalty_deposit {
   payer_wallet_pubkey varchar(44)
   on_chain_status varchar(16)
 
-  Note: 'deposit_royalties DevNet tx + RoyaltyPool PDA. per-song deposit_royalties(track_id, amount) by owner or WAVE; deposits of one song share its pool PDA (non-unique).'
+  Note: 'Epic 23: deposit_royalties DevNet tx + RoyaltyPool PDA. Epic 44: per-song deposit_royalties(track_id, amount) by owner or WAVE; deposits of one song share its pool PDA (non-unique).'
 }
 
 Table sync_license_deal {
@@ -598,7 +625,7 @@ Table sync_license_deal {
   paid_at datetime
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
-  Note: 'sync licensing deal; pay_sync_license(track_id, deal_id=id, amount) 80% artist splits / 20% EH8S; SyncLicense PDA ["sync", track_id LE, deal_id LE]. Status proposed -> paid.'
+  Note: 'Epic 44: sync licensing deal; pay_sync_license(track_id, deal_id=id, amount) 80% artist splits / 20% EH8S; SyncLicense PDA ["sync", track_id LE, deal_id LE]. Status proposed -> paid.'
 }
 
 Table channel_format {
@@ -620,16 +647,16 @@ Table geo_tier {
   code varchar(32) [not null, unique]
   name varchar(80) [not null]
   usdc_monthly decimal(12,2) [not null]
-  onchain_tier tinyint [note: 'u8 priced by subscribe_geographic (1 local .. 5 global)']
+  onchain_tier tinyint [note: 'Epic 43: u8 priced by subscribe_geographic (1 local .. 5 global)']
 }
 
 Table geo_region {
   id bigint [pk, increment]
   code varchar(32) [not null, unique]
   name varchar(80) [not null]
-  onchain_geo_code varchar(24) [note: 'zone seed (A-Z 0-9 _), e.g. MEX_CDMX']
-  country_code char(3) [note: 'venues in this zone match venue.country_code']
-  city varchar(80) [note: 'when set, venue.city must match too']
+  onchain_geo_code varchar(24) [note: 'Epic 43: zone seed (A-Z 0-9 _), e.g. MEX_CDMX']
+  country_code char(3) [note: 'Epic 46: venues in this zone match venue.country_code']
+  city varchar(80) [note: 'Epic 46: when set, venue.city must match too']
 }
 
 Table geographic_subscription {
@@ -640,8 +667,8 @@ Table geographic_subscription {
   starts_at date [not null]
   expires_at date [not null]
   months tinyint [not null, default: 1]
-  geo_code varchar(24) [note: 'zone seed copied from geo_region.onchain_geo_code']
-  geographic_subscription_pda varchar(44) [note: '[geo_sub, wallet, geo_code] - renewals share one PDA']
+  geo_code varchar(24) [note: 'Epic 43: zone seed copied from geo_region.onchain_geo_code']
+  geographic_subscription_pda varchar(44) [note: 'Epic 43: [geo_sub, wallet, geo_code] - renewals share one PDA']
   intended_instruction varchar(64) [not null, default: 'subscribe_geographic']
   pay_tx_signature varchar(128) [unique]
   paid_at datetime
@@ -649,7 +676,7 @@ Table geographic_subscription {
   on_chain_status varchar(16)
   onchain_expires_at datetime
 
-  Note: 'subscribe_geographic DevNet USDC; confirmed only after RPC verify.'
+  Note: 'Epic 23: subscribe_geographic DevNet USDC; confirmed only after RPC verify.'
 }
 
 Table tour_plan {
@@ -679,7 +706,7 @@ Table tour_plan_stop {
     (tour_plan_id, stop_order) [unique]
   }
 
-  Note: 'ATLAS nearest-neighbour route across approved venues inside the band active geographic subscriptions.'
+  Note: 'Epic 46: ATLAS nearest-neighbour route across approved venues inside the band active geographic subscriptions.'
 }
 
 Ref: track.band_id > band.id
@@ -712,7 +739,7 @@ Table ops_agent {
   Note: 'Twelve named agents. AGT-01 NEXUS = Pedagogical, AGT-02 GENESIS = Onboarding. Wallets remain nullable; chain_config holds RPC and program ids.'
 }
 
-// (eh8s_ops): one row per verified authorize_agent tx; the latest row per wallet is live.
+// Epic 40 (eh8s_ops): one row per verified authorize_agent tx; the latest row per wallet is live.
 Table agent_authority {
   id bigint [pk, increment]
   ops_agent_id bigint [not null]
@@ -741,7 +768,7 @@ Table owner_decision {
   decided_at datetime
   reject_reason varchar(500)
   resolved_at datetime
-  answered_via varchar(16) [note: 'web | slack']
+  answered_via varchar(16) [note: 'web | slack (epic 47)']
   answered_by varchar(80) [note: 'Slack user or owner wallet']
   related_booking_id bigint
 }
@@ -776,10 +803,10 @@ Table chain_config {
   Note: 'Singleton client config. owner_wallet_pubkey is platform owner. instruction_registry_json lists live DevNet Anchor instructions. usdc_mint must be DevNet USDC for wallet tests.'
 }
 
-// no schema gap — stage product uses existing venue booking concert settlement claim tables.
+// Epic 11: no schema gap — stage product uses existing venue booking concert settlement claim tables.
 
 
-// no schema gap for catalog geo channel CMS.
+// Epic 12: no schema gap for catalog geo channel CMS.
 Table devnet_pay_marker {
   id bigint [pk, increment]
   kind varchar(16) [not null]
@@ -799,13 +826,13 @@ Table devnet_pay_marker {
 Ref: devnet_pay_marker.related_claim_id > pending_claim.id
 Ref: devnet_pay_marker.related_subscription_id > academy_subscription.id
 
-// (eh8s_onchain): one row per verified withdraw_treasury (treasury PDA ATA -> owner ATA).
+// Epic 37 (eh8s_onchain): one row per verified withdraw_treasury (treasury PDA ATA -> owner ATA).
 Table treasury_withdrawal {
   id bigint [pk, increment]
   owner_wallet_pubkey varchar(44) [not null]
   amount_usdc decimal(12,2) [not null]
   tx_signature varchar(128) [not null, unique]
-  proposal_id bigint [note: 'set when the withdraw ran through an executed governance proposal']
+  proposal_id bigint [note: 'Epic 42: set when the withdraw ran through an executed governance proposal']
   created_at datetime [not null]
 
   Note: 'Owner treasury withdrawals, recorded only after the RPC verifier decodes withdraw_treasury or execute_withdraw_proposal.'
@@ -813,7 +840,7 @@ Table treasury_withdrawal {
 
 Ref: treasury_withdrawal.proposal_id > governance_proposal.id
 
-// (eh8s_onchain): program v0.8.0 owner multisig. After init_governance, treasury
+// Epic 42 (eh8s_onchain): program v0.8.0 owner multisig. After init_governance, treasury
 // withdrawals and agent permissions only move through M-of-N proposals.
 Table governance {
   id bigint [pk, increment]
@@ -921,7 +948,7 @@ Table slack_delivery_log {
 
 Ref: slack_delivery_log.owner_decision_id > owner_decision.id
 Ref: slack_delivery_log.agent_event_id > agent_event_log.id
-// Claude owner digest written from live metrics (ANTHROPIC_API_KEY env only).
+// Epic 38: Claude owner digest written from live metrics (ANTHROPIC_API_KEY env only).
 Table owner_digest {
   id bigint [pk, increment]
   owner_wallet_pubkey varchar(44) [not null]
@@ -937,7 +964,7 @@ Table owner_digest {
     created_at [name: 'idx_owner_digest_created']
   }
 }
-// role apply/approve + multi-role membership (owner not applyable).
+// Epic 19: role apply/approve + multi-role membership (owner not applyable).
 Table account_role_application {
   id bigint [pk, increment]
   account_id bigint [not null]
