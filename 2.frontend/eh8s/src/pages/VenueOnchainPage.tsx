@@ -93,7 +93,7 @@ export function VenueOnchainPage() {
         </>
       ) : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to={`/stage-map/venues/${venueId}`}>
+        <Link className="eh8s-btn eh8s-back" to={`/stage-map/venues/${venueId}`}>
           Back to venue
         </Link>
       </div>

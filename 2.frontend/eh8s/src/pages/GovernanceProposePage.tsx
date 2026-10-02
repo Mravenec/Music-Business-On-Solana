@@ -171,7 +171,7 @@ export function GovernanceProposePage() {
         </form>
       ) : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/owner/governance">
+        <Link className="eh8s-btn eh8s-back" to="/owner/governance">
           Back to governance
         </Link>
       </div>

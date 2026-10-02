@@ -162,7 +162,7 @@ export function OwnerLessonFormPage() {
         </form>
       ) : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to={`${root}/${courseId}`}>
+        <Link className="eh8s-btn eh8s-back" to={`${root}/${courseId}`}>
           Back to course
         </Link>
       </div>

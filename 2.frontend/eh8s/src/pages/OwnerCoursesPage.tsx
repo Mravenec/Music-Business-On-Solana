@@ -69,7 +69,7 @@ export function OwnerCoursesPage() {
         ) : null}
       </div>
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to={owner ? "/owner" : "/academy/teach"}>
+        <Link className="eh8s-btn eh8s-back" to={owner ? "/owner" : "/academy/teach"}>
           {owner ? "Back to inbox" : "Back to Teach"}
         </Link>
       </div>

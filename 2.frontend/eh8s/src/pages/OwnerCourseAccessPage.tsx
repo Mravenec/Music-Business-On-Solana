@@ -90,7 +90,7 @@ export function OwnerCourseAccessPage() {
         <p className="eh8s-empty">No grants yet.</p>
       ) : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/owner/courses">
+        <Link className="eh8s-btn eh8s-back" to="/owner/courses">
           Back to courses
         </Link>
       </div>

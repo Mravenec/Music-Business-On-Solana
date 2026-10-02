@@ -116,7 +116,7 @@ export function AcademyPlanPage() {
     return (
       <section className="eh8s-page">
         <p className="eh8s-empty">That plan was not found.</p>
-        <Link className="eh8s-btn" to="/academy">
+        <Link className="eh8s-btn eh8s-back" to="/academy">
           Back to plans
         </Link>
       </section>
@@ -191,7 +191,7 @@ export function AcademyPlanPage() {
             Create musician profile
           </Link>
         ) : null}
-        <Link className="eh8s-btn" to="/academy">
+        <Link className="eh8s-btn eh8s-back" to="/academy">
           Back to plans
         </Link>
       </div>

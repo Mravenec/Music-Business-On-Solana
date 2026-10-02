@@ -41,7 +41,7 @@ export function OwnerCourseReviewsPage() {
         {!rows.length && !loading && !error ? <p className="eh8s-empty">Nothing waiting for review.</p> : null}
       </div>
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/owner/courses">
+        <Link className="eh8s-btn eh8s-back" to="/owner/courses">
           Back to courses
         </Link>
       </div>

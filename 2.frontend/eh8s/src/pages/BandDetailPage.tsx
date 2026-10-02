@@ -26,7 +26,7 @@ export function BandDetailPage() {
     return (
       <section className="eh8s-page">
         <p className="eh8s-empty">That band was not found.</p>
-        <Link className="eh8s-btn" to="/bands">
+        <Link className="eh8s-btn eh8s-back" to="/bands">
           Back to bands
         </Link>
       </section>
@@ -93,7 +93,7 @@ export function BandDetailPage() {
         </ul>
       )}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/bands">
+        <Link className="eh8s-btn eh8s-back" to="/bands">
           Back to bands
         </Link>
       </div>

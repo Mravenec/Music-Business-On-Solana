@@ -20,7 +20,7 @@ export function CatalogTrackPage() {
     return (
       <section className="eh8s-page">
         <p className="eh8s-empty">That track was not found.</p>
-        <Link className="eh8s-btn" to="/catalog">
+        <Link className="eh8s-btn eh8s-back" to="/catalog">
           Back to catalog
         </Link>
       </section>
@@ -59,7 +59,7 @@ export function CatalogTrackPage() {
         <Link className="eh8s-btn" to={`/catalog/tracks/${id}/sync`}>
           Sync licenses
         </Link>
-        <Link className="eh8s-btn" to="/catalog">
+        <Link className="eh8s-btn eh8s-back" to="/catalog">
           Back to catalog
         </Link>
       </div>

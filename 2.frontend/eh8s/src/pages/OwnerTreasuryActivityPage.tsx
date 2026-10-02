@@ -60,7 +60,7 @@ export function OwnerTreasuryActivityPage() {
         ))
       )}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/owner/treasury">
+        <Link className="eh8s-btn eh8s-back" to="/owner/treasury">
           Back to treasury
         </Link>
       </div>

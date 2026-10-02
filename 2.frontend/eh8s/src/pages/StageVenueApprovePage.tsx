@@ -69,7 +69,7 @@ export function StageVenueApprovePage() {
         <p className="eh8s-empty">This venue is not waiting for approval.</p>
       ) : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/agents/stage">
+        <Link className="eh8s-btn eh8s-back" to="/agents/stage">
           Back to queue
         </Link>
       </div>

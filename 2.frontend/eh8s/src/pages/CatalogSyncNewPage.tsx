@@ -76,7 +76,7 @@ export function CatalogSyncNewPage() {
           {saving ? "Saving." : "Propose deal"}
         </button>
       </form>
-      <Link className="eh8s-btn" to={`/catalog/tracks/${id}/sync`}>
+      <Link className="eh8s-btn eh8s-back" to={`/catalog/tracks/${id}/sync`}>
         Back to sync deals
       </Link>
     </section>

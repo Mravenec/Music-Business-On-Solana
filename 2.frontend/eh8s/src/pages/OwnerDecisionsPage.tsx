@@ -70,7 +70,7 @@ export function OwnerDecisionsPage() {
         <Link className="eh8s-btn" to="/owner/slack">
           Slack approvals
         </Link>
-        <Link className="eh8s-btn" to="/owner">
+        <Link className="eh8s-btn eh8s-back" to="/owner">
           Back to inbox
         </Link>
       </div>

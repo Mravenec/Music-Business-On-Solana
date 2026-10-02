@@ -48,7 +48,7 @@ export function SongCreditsPage() {
           </div>
         </>
       )}
-      <Link className="eh8s-btn primary" to="/stage-map/claim">
+      <Link className="eh8s-btn primary eh8s-back" to="/stage-map/claim">
         Back to claims
       </Link>
     </section>

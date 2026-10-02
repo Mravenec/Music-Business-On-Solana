@@ -57,7 +57,7 @@ export function StageVenueDatesPage() {
       <p className="eh8s-muted-line">
         Open in {month}: {days.length ? days.join(", ") : "none"}
       </p>
-      <Link className="eh8s-btn" to={`/stage-map/venues/${id}`}>
+      <Link className="eh8s-btn eh8s-back" to={`/stage-map/venues/${id}`}>
         Back to venue
       </Link>
     </section>

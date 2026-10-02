@@ -98,7 +98,7 @@ export function OwnerAgentAuthorizePage() {
       ) : null}
       {a.roster && !agent ? <p className="eh8s-empty">Unknown agent {code}.</p> : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/owner/agents">
+        <Link className="eh8s-btn eh8s-back" to="/owner/agents">
           Back to agents
         </Link>
       </div>

@@ -86,7 +86,7 @@ export function VaultSettlePage() {
         <p className="eh8s-empty">This escrow is not waiting for a settlement.</p>
       ) : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/agents/vault">
+        <Link className="eh8s-btn eh8s-back" to="/agents/vault">
           Back to escrows
         </Link>
       </div>

@@ -65,7 +65,7 @@ export function OwnerSectionPage() {
         <Link className="eh8s-btn" to={`${root}/${courseId}/sections/${sectionId}/lessons/new`}>
           Add lesson here
         </Link>
-        <Link className="eh8s-btn" to={`${root}/${courseId}`}>
+        <Link className="eh8s-btn eh8s-back" to={`${root}/${courseId}`}>
           Back to course
         </Link>
       </div>

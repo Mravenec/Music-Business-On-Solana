@@ -72,7 +72,7 @@ export function BandAddMemberPage() {
           Add member
         </button>
       </form>
-      <Link className="eh8s-btn" to={`/bands/${id}`}>
+      <Link className="eh8s-btn eh8s-back" to={`/bands/${id}`}>
         Back to band
       </Link>
     </section>

@@ -72,7 +72,7 @@ export function BandTourNewPage() {
         </button>
       </form>
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to={`/bands/${id}/tours`}>
+        <Link className="eh8s-btn eh8s-back" to={`/bands/${id}/tours`}>
           Back to routes
         </Link>
       </div>

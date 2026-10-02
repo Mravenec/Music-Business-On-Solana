@@ -76,7 +76,7 @@ export function BandMatchPage() {
         <Link className="eh8s-btn" to={`/bands/${id}/members/add`}>
           Add member
         </Link>
-        <Link className="eh8s-btn" to={`/bands/${id}`}>
+        <Link className="eh8s-btn eh8s-back" to={`/bands/${id}`}>
           Back to band
         </Link>
       </div>

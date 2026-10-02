@@ -37,7 +37,7 @@ export function HealthPage() {
         {loading ? <p>Refreshing…</p> : null}
       </div>
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn primary" to="/">
+        <Link className="eh8s-btn primary eh8s-back" to="/">
           Back to home
         </Link>
       </div>

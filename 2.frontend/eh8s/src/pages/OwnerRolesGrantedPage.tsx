@@ -42,7 +42,7 @@ export function OwnerRolesGrantedPage() {
           </article>
         ))
       )}
-      <Link className="eh8s-btn" to="/owner/roles">
+      <Link className="eh8s-btn eh8s-back" to="/owner/roles">
         Back to applications
       </Link>
     </section>

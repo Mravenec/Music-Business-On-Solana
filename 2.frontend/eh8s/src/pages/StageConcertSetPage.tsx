@@ -75,7 +75,7 @@ export function StageConcertSetPage() {
           </p>
         </div>
       ) : null}
-      <Link className="eh8s-btn" to="/stage-map/concerts">
+      <Link className="eh8s-btn eh8s-back" to="/stage-map/concerts">
         Back to concerts
       </Link>
     </section>

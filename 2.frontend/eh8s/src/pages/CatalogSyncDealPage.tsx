@@ -33,7 +33,7 @@ export function CatalogSyncDealPage() {
     return (
       <section className="eh8s-page">
         <p className="eh8s-empty">That sync deal was not found.</p>
-        <Link className="eh8s-btn" to={`/catalog/tracks/${id}/sync`}>
+        <Link className="eh8s-btn eh8s-back" to={`/catalog/tracks/${id}/sync`}>
           Back to sync deals
         </Link>
       </section>
@@ -82,7 +82,7 @@ export function CatalogSyncDealPage() {
           </button>
         </div>
       )}
-      <Link className="eh8s-btn" to={`/catalog/tracks/${id}/sync`}>
+      <Link className="eh8s-btn eh8s-back" to={`/catalog/tracks/${id}/sync`}>
         Back to sync deals
       </Link>
     </section>

@@ -86,7 +86,7 @@ export function StageVenueNewPage() {
           Create venue
         </button>
       </form>
-      <Link className="eh8s-btn" to="/stage-map">
+      <Link className="eh8s-btn eh8s-back" to="/stage-map">
         Back to stage
       </Link>
     </section>

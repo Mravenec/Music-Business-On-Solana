@@ -86,7 +86,7 @@ export function BandVaultSyncPage() {
         <Link className="eh8s-btn" to="/stage-map/settle">
           Settle a concert
         </Link>
-        <Link className="eh8s-btn" to={`/bands/${id}`}>
+        <Link className="eh8s-btn eh8s-back" to={`/bands/${id}`}>
           Back to band
         </Link>
       </div>

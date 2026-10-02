@@ -98,7 +98,7 @@ export function OwnerTreasuryPage() {
             Activity
           </Link>
         ) : null}
-        <Link className="eh8s-btn" to="/owner">
+        <Link className="eh8s-btn eh8s-back" to="/owner">
           Back to inbox
         </Link>
       </div>

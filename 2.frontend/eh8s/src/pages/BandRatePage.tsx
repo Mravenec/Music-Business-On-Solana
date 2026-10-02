@@ -92,7 +92,7 @@ export function BandRatePage() {
       {ratings.mine.length ? (
         <p className="eh8s-muted-line">You rated {ratings.mine.length} bandmate(s) here.</p>
       ) : null}
-      <Link className="eh8s-btn" to={`/bands/${id}`}>
+      <Link className="eh8s-btn eh8s-back" to={`/bands/${id}`}>
         Back to band
       </Link>
     </section>

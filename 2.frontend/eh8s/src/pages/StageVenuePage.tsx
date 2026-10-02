@@ -16,7 +16,7 @@ export function StageVenuePage() {
     return (
       <section className="eh8s-page">
         <p className="eh8s-empty">That venue was not found.</p>
-        <Link className="eh8s-btn" to="/stage-map">
+        <Link className="eh8s-btn eh8s-back" to="/stage-map">
           Back to stage
         </Link>
       </section>
@@ -43,7 +43,7 @@ export function StageVenuePage() {
         <Link className="eh8s-btn" to={`/stage-map/venues/${venueId}/onchain`}>
           On-chain listing and escrow
         </Link>
-        <Link className="eh8s-btn" to="/stage-map">
+        <Link className="eh8s-btn eh8s-back" to="/stage-map">
           Back to stage
         </Link>
       </div>

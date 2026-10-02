@@ -85,7 +85,7 @@ export function AgentLevelSetPage() {
         <Link className="eh8s-btn" to={`/academy/nexus?musician=${id}`}>
           Score Enigma history
         </Link>
-        <Link className="eh8s-btn" to="/agents/levels">
+        <Link className="eh8s-btn eh8s-back" to="/agents/levels">
           Back to musicians
         </Link>
       </div>

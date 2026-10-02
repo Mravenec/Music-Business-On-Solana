@@ -107,7 +107,7 @@ export function VenueBookingEscrowPage() {
       ) : null}
       {v.console && !booking ? <p className="eh8s-empty">That booking was not found.</p> : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to={`/stage-map/venues/${venueId}/onchain`}>
+        <Link className="eh8s-btn eh8s-back" to={`/stage-map/venues/${venueId}/onchain`}>
           Back to venue on-chain
         </Link>
       </div>

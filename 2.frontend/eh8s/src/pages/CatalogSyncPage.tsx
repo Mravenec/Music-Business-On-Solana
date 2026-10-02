@@ -39,7 +39,7 @@ export function CatalogSyncPage() {
           <p className="eh8s-empty">No sync deals for this song yet.</p>
         ) : null}
       </div>
-      <Link className="eh8s-btn" to={`/catalog/tracks/${id}`}>
+      <Link className="eh8s-btn eh8s-back" to={`/catalog/tracks/${id}`}>
         Back to track
       </Link>
     </section>

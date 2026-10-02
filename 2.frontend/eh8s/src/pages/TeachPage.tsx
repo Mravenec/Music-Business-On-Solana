@@ -68,7 +68,7 @@ export function TeachPage() {
         </>
       ) : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/academy">
+        <Link className="eh8s-btn eh8s-back" to="/academy">
           Back to Academy
         </Link>
       </div>

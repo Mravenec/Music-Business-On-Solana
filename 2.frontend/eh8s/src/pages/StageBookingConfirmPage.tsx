@@ -77,7 +77,7 @@ export function StageBookingConfirmPage() {
         <p className="eh8s-empty">This booking is not waiting for a contract.</p>
       ) : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/agents/stage">
+        <Link className="eh8s-btn eh8s-back" to="/agents/stage">
           Back to queue
         </Link>
       </div>

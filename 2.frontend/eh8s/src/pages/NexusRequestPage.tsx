@@ -112,7 +112,7 @@ export function NexusRequestPage() {
         </button>
       </form>
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to={musicianId ? `/academy/nexus?musician=${musicianId}` : "/academy/nexus"}>
+        <Link className="eh8s-btn eh8s-back" to={musicianId ? `/academy/nexus?musician=${musicianId}` : "/academy/nexus"}>
           Back to scores
         </Link>
       </div>

@@ -39,7 +39,7 @@ export function OwnerSlackPage() {
           ) : null}
         </article>
       ) : null}
-      <Link className="eh8s-btn primary" to="/owner/decisions">
+      <Link className="eh8s-btn primary eh8s-back" to="/owner/decisions">
         Back to decisions
       </Link>
     </section>

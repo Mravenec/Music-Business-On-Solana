@@ -83,7 +83,7 @@ export function MorePage() {
         </div>
       )}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/">
+        <Link className="eh8s-btn eh8s-back" to="/">
           Back home
         </Link>
       </div>

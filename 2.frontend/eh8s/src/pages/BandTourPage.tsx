@@ -71,7 +71,7 @@ export function BandTourPage() {
         </>
       ) : null}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to={`/bands/${bandId}/tours`}>
+        <Link className="eh8s-btn eh8s-back" to={`/bands/${bandId}/tours`}>
           Back to routes
         </Link>
       </div>

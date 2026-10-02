@@ -36,7 +36,7 @@ export function StageConcertsPage() {
           <p className="eh8s-empty">No concerts scheduled yet.</p>
         ) : null}
       </div>
-      <Link className="eh8s-btn" to="/stage-map">
+      <Link className="eh8s-btn eh8s-back" to="/stage-map">
         Back to stage
       </Link>
     </section>

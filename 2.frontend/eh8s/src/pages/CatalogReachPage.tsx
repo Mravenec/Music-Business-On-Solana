@@ -152,7 +152,7 @@ export function CatalogReachPage() {
           {busy ? "Waiting for wallet." : "Pay with wallet"}
         </button>
       </form>
-      <Link className="eh8s-btn" to="/catalog">
+      <Link className="eh8s-btn eh8s-back" to="/catalog">
         Back to catalog
       </Link>
     </section>
