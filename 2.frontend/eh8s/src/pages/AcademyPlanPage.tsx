@@ -20,8 +20,29 @@ function axiosMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback;
 }
 
+const PLAN_INCLUDES: Record<string, string[]> = {
+  basic: [
+    "2 individual classes per week",
+    "Access to the platform",
+    "Weekly Enigma Score from the teaching agent",
+    "Access to class recordings",
+  ],
+  band: [
+    "Everything in Basic",
+    "2 group rehearsals per week",
+    "Priority to join a band",
+    "Eligible for SPP",
+  ],
+  pro: [
+    "Everything in Band",
+    "Monthly mentoring from outside the regular class",
+    "Access to the recording studio",
+    "Music distribution included",
+  ],
+};
+
 /**
- * Job: see one plan and pay 1-12 months (renewing extends the same on-chain subscription).
+ * Job: see one plan, what it includes, and pay 1-12 months.
  * Primary: Pay with wallet.
  * Next: Active until date or back to list.
  * Hidden: other plans, enroll form, evaluate, raw ids, PDA and plan code.
@@ -109,9 +130,23 @@ export function AcademyPlanPage() {
         <h1>{plan?.name ?? "Plan"}</h1>
         <p className="eh8s-lead">
         {plan?.description || "Monthly academy access."}{" "}
-        {plan ? `$${plan.usdcMonthly} per month.` : ""}
+        {plan ? `$${plan.usdcMonthly} USDC per month.` : ""}
       </p>
       </header>
+      {plan && PLAN_INCLUDES[plan.code] ? (
+        <article className="eh8s-band-card eh8s-plan-includes">
+          <h2>What this plan includes</h2>
+          <ul>
+            {PLAN_INCLUDES[plan.code].map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <p className="eh8s-muted-line">
+            Each subscription creates or renews an on-chain academy subscription.
+            85% goes to the EH8S treasury. 15% goes to the instructor wallet.
+          </p>
+        </article>
+      ) : null}
       {msg ? (
         <div
           className={`eh8s-banner ${msg.toLowerCase().includes("fail") ? "bad" : "ok"}`}

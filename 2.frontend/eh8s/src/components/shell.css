@@ -1725,6 +1725,29 @@ button.eh8s-btn {
   width: 100%;
 }
 
+.eh8s-page > .eh8s-cta-row:not(:has(button)) + .eh8s-band-grid {
+  margin-top: 2.25rem;
+}
+
+.eh8s-plan-includes {
+  cursor: default;
+  margin-bottom: 1.25rem;
+}
+
+.eh8s-plan-includes h2 {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+}
+
+.eh8s-plan-includes ul {
+  margin: 0 0 0.85rem;
+  padding-left: 1.15rem;
+}
+
+.eh8s-plan-includes li + li {
+  margin-top: 0.35rem;
+}
+
 .eh8s-page > .eh8s-cta-row:not(:has(button)) > a.eh8s-btn,
 .eh8s-role-home > .eh8s-cta-row:not(:has(button)) > a.eh8s-btn {
   position: relative;
