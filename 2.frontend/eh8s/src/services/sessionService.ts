@@ -26,6 +26,8 @@ export type WalletSession = {
   account: Account;
   musicianProfile?: MusicianProfile | null;
   platformOwner?: boolean;
+  studioAdmin?: boolean;
+  partner?: boolean;
   protocolFeeBps?: number | null;
   accessToken?: string | null;
 };

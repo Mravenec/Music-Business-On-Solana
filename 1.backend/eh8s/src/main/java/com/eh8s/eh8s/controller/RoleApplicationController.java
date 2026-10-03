@@ -4,7 +4,9 @@ import com.eh8s.eh8s.controller.interfaces.IRoleApplicationController;
 import com.eh8s.eh8s.database.jooq.eh8s_role.tables.pojos.AccountRole;
 import com.eh8s.eh8s.database.jooq.eh8s_role.tables.pojos.AccountRoleApplication;
 import com.eh8s.eh8s.service.interfaces.IRoleApplicationService;
+import com.eh8s.eh8s.service.interfaces.JwtPrincipal;
 import java.util.List;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -76,5 +78,17 @@ public class RoleApplicationController implements IRoleApplicationController {
   @GetMapping("/roles/memberships")
   public List<AccountRole> listMemberships(@RequestParam String walletPubkey) {
     return roleApplicationService.listMemberships(walletPubkey);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  @PostMapping("/role-grants")
+  public AccountRoleApplication grant(
+      @AuthenticationPrincipal JwtPrincipal principal, @RequestBody AccountRoleApplication request) {
+    if (principal == null || principal.accountId() == null) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.UNAUTHORIZED, "Sign in first");
+    }
+    return roleApplicationService.grant(principal.accountId(), request);
   }
 }

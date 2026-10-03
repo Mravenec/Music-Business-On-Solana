@@ -2,6 +2,7 @@ package com.eh8s.eh8s.controller.interfaces;
 
 import com.eh8s.eh8s.database.jooq.eh8s_role.tables.pojos.AccountRole;
 import com.eh8s.eh8s.database.jooq.eh8s_role.tables.pojos.AccountRoleApplication;
+import com.eh8s.eh8s.service.interfaces.JwtPrincipal;
 import java.util.List;
 
 /**
@@ -60,4 +61,13 @@ public interface IRoleApplicationController {
    * @return memberships
    */
   List<AccountRole> listMemberships(String walletPubkey);
+
+  /**
+   * Grants studio admin or partner. The signed-in wallet is the reviewer.
+   *
+   * @param principal signed-in account
+   * @param request application JSON ({@code walletPubkey}, {@code role})
+   * @return approved application
+   */
+  AccountRoleApplication grant(JwtPrincipal principal, AccountRoleApplication request);
 }

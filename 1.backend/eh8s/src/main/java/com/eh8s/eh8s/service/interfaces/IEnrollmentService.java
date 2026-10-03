@@ -13,7 +13,7 @@ import java.util.Map;
 public interface IEnrollmentService {
 
   /**
-   * Creates a musician account (wallet_pubkey optional until a wallet connects).
+   * Creates a musician account (wallet_pubkey optional until Epic 7).
    *
    * @param account incoming account
    * @return stored account
@@ -76,7 +76,8 @@ public interface IEnrollmentService {
    *     {@code email}, {@code role}, {@code countryCode}
    * @param signature base58 signature of the challenge message
    * @return non-table session JSON: {@code account} and {@code musicianProfile} POJOs, plus
-   *     {@code platformOwner}, {@code protocolFeeBps}, {@code accessToken}
+   *     {@code platformOwner}, {@code studioAdmin}, {@code partner}, {@code protocolFeeBps},
+   *     {@code accessToken}
    */
   Map<String, Object> upsertWalletSession(Account request, String signature);
 

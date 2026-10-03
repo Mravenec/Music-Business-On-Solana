@@ -52,7 +52,9 @@ export function MorePage() {
   }
 
   const isOwner =
-    session.platformOwner || session.account.role?.toLowerCase() === "owner";
+    session.platformOwner ||
+    session.studioAdmin ||
+    session.account.role?.toLowerCase() === "owner";
   const items = destinations(isOwner, activeWorkspace);
 
   return (

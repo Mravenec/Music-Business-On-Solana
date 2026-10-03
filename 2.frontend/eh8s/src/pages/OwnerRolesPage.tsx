@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useRoles } from "../hooks/useRoles";
+import { useSession } from "../hooks/useSession";
 
 /**
  * Job: approve or reject one role application.
@@ -10,8 +11,13 @@ import { useRoles } from "../hooks/useRoles";
  */
 export function OwnerRolesPage() {
   const roles = useRoles();
+  const { session } = useSession();
+  const principal = Boolean(
+    session?.platformOwner || session?.account?.role?.toLowerCase() === "owner"
+  );
   const [msg, setMsg] = useState<string | null>(null);
   const [reason, setReason] = useState("Does not meet studio criteria");
+  const [adminWallet, setAdminWallet] = useState("");
 
   async function onApprove(id: number) {
     try {
@@ -19,6 +25,17 @@ export function OwnerRolesPage() {
       setMsg("Application approved.");
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Could not approve");
+    }
+  }
+
+  async function onGrantAdmin(ev: React.FormEvent) {
+    ev.preventDefault();
+    try {
+      await roles.grant(adminWallet.trim(), "studio_admin");
+      setAdminWallet("");
+      setMsg("Studio admin granted. That wallet can edit the books and cannot replace you.");
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Could not grant studio admin");
     }
   }
 
@@ -64,6 +81,21 @@ export function OwnerRolesPage() {
           </article>
         ))
       )}
+      {principal ? (
+        <form className="eh8s-form eh8s-panel" onSubmit={onGrantAdmin}>
+          <label>
+            Studio admin wallet
+            <input
+              value={adminWallet}
+              onChange={(ev) => setAdminWallet(ev.target.value)}
+              spellCheck={false}
+            />
+          </label>
+          <button className="eh8s-btn primary" type="submit">
+            Grant studio admin
+          </button>
+        </form>
+      ) : null}
       <div className="eh8s-cta-row">
         <Link className="eh8s-btn" to="/owner/roles/granted">
           Granted roles

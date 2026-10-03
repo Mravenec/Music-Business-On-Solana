@@ -1,10 +1,13 @@
+-- Epic 27: account_role/account_role_application live in their own schema
+-- (eh8s_role), not the hub eh8s schema — see MIGRATION_MAP.md and
+-- .docs/journey/27-multi-schema-domains.md.
 CREATE DATABASE IF NOT EXISTS eh8s_role
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE eh8s_role;
 
--- role applications + multi-role membership (owner is not applyable).
+-- Epic 19: role applications + multi-role membership (owner is not applyable).
 CREATE TABLE IF NOT EXISTS account_role_application (
   id BIGINT NOT NULL AUTO_INCREMENT,
   account_id BIGINT NOT NULL,
@@ -53,3 +56,30 @@ SELECT a.id, a.role, UTC_TIMESTAMP()
 FROM eh8s.account a
 WHERE a.role IN ('student', 'musician', 'instructor', 'venue')
 ON DUPLICATE KEY UPDATE role = VALUES(role);
+
+-- Epic 71: studio_admin and partner are granted beside the principal wallet.
+SET @c := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'account_role_application' AND CONSTRAINT_NAME = 'chk_role_app_role'
+);
+SET @ddl := IF(@c = 1,
+  'ALTER TABLE account_role_application DROP CONSTRAINT chk_role_app_role',
+  'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+ALTER TABLE account_role_application
+  ADD CONSTRAINT chk_role_app_role
+  CHECK (role IN ('student', 'musician', 'instructor', 'venue', 'studio_admin', 'partner'));
+
+SET @c := (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'account_role' AND CONSTRAINT_NAME = 'chk_account_role_role'
+);
+SET @ddl := IF(@c = 1,
+  'ALTER TABLE account_role DROP CONSTRAINT chk_account_role_role',
+  'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+ALTER TABLE account_role
+  ADD CONSTRAINT chk_account_role_role
+  CHECK (role IN ('student', 'musician', 'instructor', 'venue', 'studio_admin', 'partner'));

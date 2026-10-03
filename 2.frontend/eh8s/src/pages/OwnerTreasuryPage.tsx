@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useOwnerTreasury } from "../hooks/useOwnerTreasury";
+import { useSession } from "../hooks/useSession";
 import { explorerTxUrl } from "../services/settleClaimOnchainTx";
 
 /**
@@ -10,7 +11,29 @@ import { explorerTxUrl } from "../services/settleClaimOnchainTx";
  * Hidden: PDA seeds, instruction bytes, inflow and withdrawal history.
  */
 export function OwnerTreasuryPage() {
+  const { session } = useSession();
+  const principal = Boolean(
+    session?.platformOwner || session?.account?.role?.toLowerCase() === "owner"
+  );
   const t = useOwnerTreasury();
+  if (session && !principal) {
+    return (
+      <section className="eh8s-page">
+        <header className="eh8s-page-hero">
+          <p className="eh8s-kicker">Treasury</p>
+          <h1>Principal wallet only</h1>
+          <p className="eh8s-lead">
+            Only the principal wallet can move USDC out of the treasury.
+          </p>
+        </header>
+        <div className="eh8s-cta-row">
+          <Link className="eh8s-btn eh8s-back" to="/owner">
+            Back to inbox
+          </Link>
+        </div>
+      </section>
+    );
+  }
   const [amount, setAmount] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string; sig?: string } | null>(null);
   const balance = t.treasury ? Number(t.treasury.balanceUsdc) : 0;

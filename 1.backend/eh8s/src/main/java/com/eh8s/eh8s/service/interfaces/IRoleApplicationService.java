@@ -61,4 +61,28 @@ public interface IRoleApplicationService {
    * @return memberships
    */
   List<AccountRole> listMemberships(String walletPubkey);
+
+  /**
+   * Grants studio admin or partner to a wallet that already has an account.
+   * Studio admin can be granted only by the principal wallet.
+   *
+   * @param reviewerAccountId signed-in reviewer
+   * @param request application POJO carrying {@code walletPubkey} and {@code role}
+   * @return the approved application
+   */
+  AccountRoleApplication grant(Long reviewerAccountId, AccountRoleApplication request);
+
+  /**
+   * Records the partner role for a wallet that was added to the books. No account means nothing is stored yet.
+   *
+   * @param walletPubkey partner wallet
+   */
+  void ensurePartner(String walletPubkey);
+
+  /**
+   * Removes the partner role when that wallet leaves the books. The principal wallet is left alone.
+   *
+   * @param walletPubkey partner wallet
+   */
+  void clearPartner(String walletPubkey);
 }

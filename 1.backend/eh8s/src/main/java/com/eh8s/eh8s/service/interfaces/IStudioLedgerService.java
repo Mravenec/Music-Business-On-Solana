@@ -22,6 +22,14 @@ public interface IStudioLedgerService {
   boolean isOwner(Long accountId);
 
   /**
+   * Whether this account may edit the partner books: the principal wallet or a studio admin.
+   *
+   * @param accountId signed-in account
+   * @return true when the books are theirs to change
+   */
+  boolean isBooksEditor(Long accountId);
+
+  /**
    * Confirmed solo-show claims for the account wallet in that month.
    *
    * @param accountId signed-in account

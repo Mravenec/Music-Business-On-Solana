@@ -9,8 +9,8 @@ flowchart TD
   AppShell -->|role destinations| MorePage
   AppShell -->|role-gated| AcademyPage
   AppShell -->|signed-in rail| WalletRail
-  WalletRail -->|non-owner: sources by role| StudioLedgerPage
-  WalletRail -->|owner: partner books| StudioLedgerPage
+  WalletRail -->|partner: own share| StudioLedgerPage
+  WalletRail -->|principal or studio admin: partner books| StudioLedgerPage
   AcademyPage -->|one plan, includes listed| AcademyPlanPage
   AcademyPage -->|enroll| AcademyEnrollPage
   AcademyPage -->|score| AcademyEvaluatePage
@@ -50,16 +50,16 @@ flowchart TD
   CatalogSyncPage -->|open deal| CatalogSyncDealPage
   StageClaimPage -->|song credits| SongCreditsPage
   CatalogPage -->|reach wallet| CatalogReachPage
-  AppShell -->|owner inbox| OwnerPage
+  AppShell -->|principal or studio admin inbox| OwnerPage
   OwnerPage -->|roles| OwnerRolesPage
-  OwnerRolesPage -->|granted| OwnerRolesGrantedPage
+  OwnerRolesPage -->|principal grants studio admin| OwnerRolesGrantedPage
   OwnerPage -->|decisions| OwnerDecisionsPage
-  OwnerPage -->|treasury| OwnerTreasuryPage
+  OwnerPage -->|principal only treasury| OwnerTreasuryPage
   OwnerTreasuryPage -->|activity| OwnerTreasuryActivityPage
   OwnerPage -->|AI digest| OwnerDigestPage
   OwnerPage -->|agent powers| OwnerAgentsPage
   OwnerAgentsPage -->|one agent| OwnerAgentAuthorizePage
-  OwnerPage -->|governance| GovernancePage
+  OwnerPage -->|principal only governance| GovernancePage
   GovernancePage -->|before init| GovernanceSetupPage
   GovernancePage -->|open| GovernanceProposalPage
   GovernancePage -->|new proposal| GovernanceNewPage

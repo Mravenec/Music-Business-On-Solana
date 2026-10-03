@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useGovernance } from "../hooks/useGovernance";
+import { useSession } from "../hooks/useSession";
 import { describeProposal } from "./governanceText";
 
 /**
@@ -9,7 +10,29 @@ import { describeProposal } from "./governanceText";
  * Hidden: governance PDA, epochs, instruction bytes, executed history details.
  */
 export function GovernancePage() {
+  const { session } = useSession();
+  const principal = Boolean(
+    session?.platformOwner || session?.account?.role?.toLowerCase() === "owner"
+  );
   const g = useGovernance();
+  if (session && !principal) {
+    return (
+      <section className="eh8s-page">
+        <header className="eh8s-page-hero">
+          <p className="eh8s-kicker">Governance</p>
+          <h1>Principal wallet only</h1>
+          <p className="eh8s-lead">
+            Only the principal wallet can change who signs for the studio.
+          </p>
+        </header>
+        <div className="eh8s-cta-row">
+          <Link className="eh8s-btn eh8s-back" to="/owner">
+            Back to inbox
+          </Link>
+        </div>
+      </section>
+    );
+  }
   const v = g.view;
   const open = (v?.proposals ?? []).filter((row) => row.proposal.status === "open");
   const closed = (v?.proposals ?? []).filter((row) => row.proposal.status !== "open");

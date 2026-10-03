@@ -82,6 +82,11 @@ class RoleApplicationServiceTest {
     }
 
     @Override
+    public Optional<Account> findAccount(Long accountId) {
+      return Optional.empty();
+    }
+
+    @Override
     public AccountRoleApplication insertApplication(AccountRoleApplication application) {
       return application;
     }

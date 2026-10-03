@@ -56,18 +56,21 @@ export function HomePage() {
   const platform = usePlatformConfig();
 
   if (session?.account) {
-    const isOwner =
+    const principal =
       session.platformOwner || session.account.role?.toLowerCase() === "owner";
+    const isOwner = principal || Boolean(session.studioAdmin);
     const hub = hubForRole(isOwner, activeWorkspace);
 
     return (
       <section className="eh8s-role-home">
         <p className="eh8s-kicker">
-          {isOwner
+          {principal
             ? "Studio owner"
-            : activeWorkspace
-              ? `Your ${activeWorkspace} home`
-              : "Waiting for a role"}
+            : session.studioAdmin
+              ? "Studio admin"
+              : activeWorkspace
+                ? `Your ${activeWorkspace} home`
+                : "Waiting for a role"}
         </p>
         <h1>
           {isOwner
@@ -75,11 +78,13 @@ export function HomePage() {
             : `Welcome, ${session.account.displayName}`}
         </h1>
         <p className="eh8s-lead">
-          {isOwner
+          {principal
             ? "Review the next approval. Other studio tools stay one click away."
-            : activeWorkspace
-              ? "One next step for this role. Open More for the rest."
-              : "Apply for a role. Destinations stay hidden until the owner approves."}
+            : session.studioAdmin
+              ? "Review applications and the partner books. The treasury stays with the principal wallet."
+              : activeWorkspace
+                ? "One next step for this role. Open More for the rest."
+                : "Apply for a role. Destinations stay hidden until the owner approves."}
         </p>
         <div className="eh8s-cta-row">
           <Link className="eh8s-btn primary" to={hub.primaryTo}>

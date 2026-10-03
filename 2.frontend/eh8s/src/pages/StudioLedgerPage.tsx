@@ -213,7 +213,7 @@ function OwnerLedger({ year, month, years, onMonth, onYear }: {
   return (
     <section className="eh8s-page">
       <header className="eh8s-page-hero">
-        <p className="eh8s-kicker">Owner</p>
+        <p className="eh8s-kicker">Studio</p>
         <h1>Partner books</h1>
         <p className="eh8s-lead">
           Add each partner's wallet and their share of the studio's recorded fees. A partner
@@ -330,7 +330,9 @@ export function StudioLedgerPage() {
     return <Navigate to="/" replace />;
   }
   const owner =
-    session.platformOwner || session.account.role?.toLowerCase() === "owner";
+    session.platformOwner ||
+    session.studioAdmin ||
+    session.account.role?.toLowerCase() === "owner";
   if (owner) {
     return (
       <OwnerLedger

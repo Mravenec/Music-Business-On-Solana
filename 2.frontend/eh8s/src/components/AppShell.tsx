@@ -55,7 +55,8 @@ export function AppShell() {
   const health = useHealth();
   const location = useLocation();
   const role = session?.account?.role?.toLowerCase();
-  const isOwner = Boolean(session?.platformOwner || role === "owner");
+  const principal = Boolean(session?.platformOwner || role === "owner");
+  const isOwner = Boolean(principal || session?.studioAdmin);
   const connected = Boolean(session?.account);
   const links = visibleLinks(isOwner, activeWorkspace, connected);
   const approvedRoles = memberships.map((m) => m.role.toLowerCase());
@@ -145,7 +146,11 @@ export function AppShell() {
         {session?.account ? (
           <div className="eh8s-identity-pills">
             <span className="eh8s-pill">
-              {isOwner ? "Studio owner" : session.account.displayName}
+              {principal
+                ? "Studio owner"
+                : session.studioAdmin
+                  ? "Studio admin"
+                  : session.account.displayName}
             </span>
             {isOwner ? (
               <span className="eh8s-pill">

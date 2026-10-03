@@ -20,6 +20,14 @@ public interface IRoleApplicationRepository {
   Optional<Account> findAccountByWallet(String walletPubkey);
 
   /**
+   * Finds an account by id.
+   *
+   * @param accountId account primary key
+   * @return account if present
+   */
+  Optional<Account> findAccount(Long accountId);
+
+  /**
    * Inserts a role application.
    *
    * @param application row without id

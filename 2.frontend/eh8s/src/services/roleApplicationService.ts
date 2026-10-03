@@ -100,6 +100,17 @@ export async function revokeRoleApplication(
 /**
  * Lists approved multi-role memberships for a wallet.
  */
+/**
+ * Principal grants studio admin. A studio admin may grant partner.
+ */
+export async function grantRole(walletPubkey: string, role: string): Promise<RoleApplication> {
+  const { data } = await apiClient.post<RoleApplication>("/api/role-grants", {
+    walletPubkey,
+    role,
+  });
+  return data;
+}
+
 export async function fetchRoleMemberships(
   walletPubkey: string
 ): Promise<AccountRole[]> {

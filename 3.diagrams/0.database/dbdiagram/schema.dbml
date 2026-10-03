@@ -978,7 +978,7 @@ Table account_role_application {
   created_at datetime [not null, default: CURRENT_TIMESTAMP]
   reviewed_at datetime
 
-  Note: 'Applyable roles: student, musician, instructor, venue. Status: pending|approved|rejected. Owner never applyable. Unique (account_id, role) and (wallet_pubkey, role).'
+  Note: 'Applyable: student, musician, instructor, venue. Granted by the principal: studio_admin. Granted with a partner share: partner. Owner is never applyable.'
 }
 
 Table account_role {
@@ -988,7 +988,7 @@ Table account_role {
   granted_at datetime [not null, default: CURRENT_TIMESTAMP]
   application_id bigint
 
-  Note: 'Multi-role membership for approved applyable roles. Unique (account_id, role).'
+  Note: 'Membership for approved roles, including studio_admin and partner. Unique (account_id, role).'
 }
 
 Ref: account_role_application.account_id > account.id

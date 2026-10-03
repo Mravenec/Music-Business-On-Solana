@@ -9,8 +9,10 @@ import com.eh8s.eh8s.database.jooq.eh8s_academy.tables.pojos.AcademySubscription
 import com.eh8s.eh8s.database.jooq.eh8s_catalog.tables.pojos.SyncLicenseDeal;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.pojos.ChainConfig;
 import com.eh8s.eh8s.repository.interfaces.IChainConfigRepository;
+import com.eh8s.eh8s.repository.interfaces.IRoleApplicationRepository;
 import com.eh8s.eh8s.repository.interfaces.IStudioLedgerRepository;
 import com.eh8s.eh8s.service.course.CourseRules;
+import com.eh8s.eh8s.service.interfaces.IRoleApplicationService;
 import com.eh8s.eh8s.service.interfaces.IStudioLedgerService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -35,17 +37,26 @@ public class StudioLedgerService implements IStudioLedgerService {
 
   private final IStudioLedgerRepository ledgerRepository;
   private final IChainConfigRepository chainConfigRepository;
+  private final IRoleApplicationRepository roleApplicationRepository;
+  private final IRoleApplicationService roleApplicationService;
 
   /**
    * Creates the service.
    *
    * @param ledgerRepository studio credit and partner persistence
    * @param chainConfigRepository active chain config, for the owner wallet
+   * @param roleApplicationRepository studio admin membership
+   * @param roleApplicationService partner role grant that follows the books
    */
   public StudioLedgerService(
-      IStudioLedgerRepository ledgerRepository, IChainConfigRepository chainConfigRepository) {
+      IStudioLedgerRepository ledgerRepository,
+      IChainConfigRepository chainConfigRepository,
+      IRoleApplicationRepository roleApplicationRepository,
+      IRoleApplicationService roleApplicationService) {
     this.ledgerRepository = ledgerRepository;
     this.chainConfigRepository = chainConfigRepository;
+    this.roleApplicationRepository = roleApplicationRepository;
+    this.roleApplicationService = roleApplicationService;
   }
 
   /**
@@ -60,6 +71,19 @@ public class StudioLedgerService implements IStudioLedgerService {
     String ownerWallet =
         chainConfigRepository.findActive().map(ChainConfig::getOwnerWalletPubkey).orElse(null);
     return CourseRules.isOwner(account.getRole(), account.getWalletPubkey(), ownerWallet);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean isBooksEditor(Long accountId) {
+    if (isOwner(accountId)) {
+      return true;
+    }
+    return roleApplicationRepository
+        .findMembership(accountId, StudioAccess.STUDIO_ADMIN)
+        .isPresent();
   }
 
   /**
@@ -160,10 +184,12 @@ public class StudioLedgerService implements IStudioLedgerService {
     if (ledgerRepository.activeShareBps(exceptId) + share > 10000) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Active shares cannot pass 100%");
     }
-    if (existing == null) {
-      return ledgerRepository.insertPartner(wallet, name, share);
-    }
-    return ledgerRepository.updatePartner(existing.getId(), name, share);
+    StudioPartner saved =
+        existing == null
+            ? ledgerRepository.insertPartner(wallet, name, share)
+            : ledgerRepository.updatePartner(existing.getId(), name, share);
+    roleApplicationService.ensurePartner(wallet);
+    return saved;
   }
 
   /**
@@ -174,7 +200,9 @@ public class StudioLedgerService implements IStudioLedgerService {
     if (ledgerRepository.findPartner(partnerId).isEmpty()) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "That partner is not on the books");
     }
-    return ledgerRepository.deactivatePartner(partnerId);
+    StudioPartner removed = ledgerRepository.deactivatePartner(partnerId);
+    roleApplicationService.clearPartner(removed.getWalletPubkey());
+    return removed;
   }
 
   /**

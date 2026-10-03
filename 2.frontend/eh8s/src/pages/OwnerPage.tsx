@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useOps } from "../hooks/useOps";
 import { useRoles } from "../hooks/useRoles";
+import { useSession } from "../hooks/useSession";
 
 /**
  * Job: see what needs the owner.
@@ -13,6 +14,10 @@ import { useRoles } from "../hooks/useRoles";
 export function OwnerPage() {
   const ops = useOps();
   const roles = useRoles();
+  const { session } = useSession();
+  const principal = Boolean(
+    session?.platformOwner || session?.account?.role?.toLowerCase() === "owner"
+  );
   const pendingRoles = roles.pendingQueue.length;
   const pendingDecisions = ops.decisions.filter((d) => d.status === "pending").length;
 
@@ -36,9 +41,11 @@ export function OwnerPage() {
         <Link className="eh8s-btn" to="/owner/decisions">
           Agent decisions ({pendingDecisions})
         </Link>
-        <Link className="eh8s-btn" to="/owner/treasury">
-          Treasury
-        </Link>
+        {principal ? (
+          <Link className="eh8s-btn" to="/owner/treasury">
+            Treasury
+          </Link>
+        ) : null}
         <Link className="eh8s-btn" to="/owner/digest">
           AI digest
         </Link>
@@ -48,9 +55,11 @@ export function OwnerPage() {
         <Link className="eh8s-btn" to="/owner/agents">
           Agent powers
         </Link>
-        <Link className="eh8s-btn" to="/owner/governance">
-          Governance
-        </Link>
+        {principal ? (
+          <Link className="eh8s-btn" to="/owner/governance">
+            Governance
+          </Link>
+        ) : null}
         <Link className="eh8s-btn" to="/agents/levels">
           Enigma levels
         </Link>

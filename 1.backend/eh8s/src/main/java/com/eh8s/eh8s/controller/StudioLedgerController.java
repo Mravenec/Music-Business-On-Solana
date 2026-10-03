@@ -189,15 +189,15 @@ public class StudioLedgerController implements IStudioLedgerController {
 
   private void requireUser(JwtPrincipal principal, int year, int month) {
     requireMonth(principal, year, month);
-    if (ledgerService.isOwner(principal.accountId())) {
+    if (ledgerService.isBooksEditor(principal.accountId())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Owners use the partner books");
     }
   }
 
   private void requireOwnerMonth(JwtPrincipal principal, int year, int month) {
     requireMonth(principal, year, month);
-    if (!ledgerService.isOwner(principal.accountId())) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the owner can open the partner books");
+    if (!ledgerService.isBooksEditor(principal.accountId())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the studio can open the partner books");
     }
   }
 
@@ -205,8 +205,8 @@ public class StudioLedgerController implements IStudioLedgerController {
     if (principal == null || principal.accountId() == null) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sign in first");
     }
-    if (!ledgerService.isOwner(principal.accountId())) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the owner can open the partner books");
+    if (!ledgerService.isBooksEditor(principal.accountId())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the studio can open the partner books");
     }
   }
 

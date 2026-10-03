@@ -8,6 +8,8 @@ import com.eh8s.eh8s.database.jooq.eh8s_academy.tables.pojos.EnigmaEvaluation;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.MusicianProfile;
 import com.eh8s.eh8s.repository.interfaces.IChainConfigRepository;
 import com.eh8s.eh8s.repository.interfaces.IEnrollmentRepository;
+import com.eh8s.eh8s.repository.interfaces.IRoleApplicationRepository;
+import com.eh8s.eh8s.repository.interfaces.IStudioLedgerRepository;
 import com.eh8s.eh8s.service.interfaces.IEnrollmentService;
 import com.eh8s.eh8s.service.interfaces.IJwtService;
 import com.eh8s.eh8s.service.interfaces.JwtPrincipal;
@@ -47,6 +49,8 @@ public class EnrollmentService implements IEnrollmentService {
   private final IEnrollmentRepository enrollmentRepository;
   private final IChainConfigRepository chainConfigRepository;
   private final IJwtService jwtService;
+  private final IRoleApplicationRepository roleApplicationRepository;
+  private final IStudioLedgerRepository studioLedgerRepository;
 
   /**
    * Creates the service.
@@ -54,14 +58,20 @@ public class EnrollmentService implements IEnrollmentService {
    * @param enrollmentRepository enrollment persistence
    * @param chainConfigRepository active chain_config (owner wallet + fee)
    * @param jwtService issues Bearer tokens after wallet upsert
+   * @param roleApplicationRepository granted studio admin and partner roles
+   * @param studioLedgerRepository active partner rows
    */
   public EnrollmentService(
       IEnrollmentRepository enrollmentRepository,
       IChainConfigRepository chainConfigRepository,
-      IJwtService jwtService) {
+      IJwtService jwtService,
+      IRoleApplicationRepository roleApplicationRepository,
+      IStudioLedgerRepository studioLedgerRepository) {
     this.enrollmentRepository = enrollmentRepository;
     this.chainConfigRepository = chainConfigRepository;
     this.jwtService = jwtService;
+    this.roleApplicationRepository = roleApplicationRepository;
+    this.studioLedgerRepository = studioLedgerRepository;
   }
 
   /**
@@ -325,7 +335,30 @@ public class EnrollmentService implements IEnrollmentService {
     session.put("account", account);
     session.put(
         "musicianProfile", enrollmentRepository.findMusicianByAccount(account.getId()).orElse(null));
+    boolean studioAdmin =
+        owner
+            || (roleApplicationRepository != null
+                && roleApplicationRepository
+                    .findMembership(account.getId(), StudioAccess.STUDIO_ADMIN)
+                    .isPresent());
+    boolean partner =
+        roleApplicationRepository != null
+            && roleApplicationRepository
+                .findMembership(account.getId(), StudioAccess.PARTNER)
+                .isPresent();
+    if (!partner
+        && studioLedgerRepository != null
+        && account.getWalletPubkey() != null
+        && !account.getWalletPubkey().isBlank()) {
+      partner =
+          studioLedgerRepository
+              .findPartnerByWallet(account.getWalletPubkey())
+              .filter(row -> row.getActive() != null && row.getActive() == (byte) 1)
+              .isPresent();
+    }
     session.put("platformOwner", owner || ROLE_OWNER.equalsIgnoreCase(account.getRole()));
+    session.put("studioAdmin", owner || studioAdmin);
+    session.put("partner", partner);
     session.put("protocolFeeBps", cfg != null ? cfg.getProtocolFeeBps() : null);
     session.put("accessToken", jwtService.issue(account.getId(), account.getEmail()));
     return session;

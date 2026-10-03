@@ -100,8 +100,8 @@ public class RoleApplicationService implements IRoleApplicationService {
   /** {@inheritDoc} */
   @Override
   public AccountRoleApplication approve(Long applicationId, AccountRoleApplication review) {
-    assertOwnerReviewer(review);
     AccountRoleApplication app = requirePending(applicationId);
+    assertCanReview(review, app);
     AccountRoleApplication updated =
         roleApplicationRepository.updateApplicationStatus(
             applicationId,
@@ -127,12 +127,12 @@ public class RoleApplicationService implements IRoleApplicationService {
    */
   @Override
   public AccountRoleApplication revoke(Long applicationId, AccountRoleApplication review) {
-    assertOwnerReviewer(review);
     AccountRoleApplication app =
         roleApplicationRepository
             .findApplication(applicationId)
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+    assertCanReview(review, app);
     if (!STATUS_APPROVED.equalsIgnoreCase(app.getStatus())) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Only an approved role can be revoked");
     }
@@ -148,8 +148,8 @@ public class RoleApplicationService implements IRoleApplicationService {
   /** {@inheritDoc} */
   @Override
   public AccountRoleApplication reject(Long applicationId, AccountRoleApplication review) {
-    assertOwnerReviewer(review);
-    requirePending(applicationId);
+    AccountRoleApplication pending = requirePending(applicationId);
+    assertCanReview(review, pending);
     return roleApplicationRepository.updateApplicationStatus(
         applicationId,
         STATUS_REJECTED,
@@ -182,16 +182,120 @@ public class RoleApplicationService implements IRoleApplicationService {
     return app;
   }
 
-  private void assertOwnerReviewer(AccountRoleApplication review) {
+  /** {@inheritDoc} */
+  @Override
+  public AccountRoleApplication grant(Long reviewerAccountId, AccountRoleApplication request) {
+    if (request == null || request.getWalletPubkey() == null || request.getRole() == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "walletPubkey and role required");
+    }
+    Account reviewer =
+        roleApplicationRepository
+            .findAccount(reviewerAccountId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sign in first"));
+    String role = request.getRole().trim().toLowerCase(Locale.ROOT);
+    String wallet = request.getWalletPubkey().trim();
+    boolean principal = isPlatformOwnerWallet(reviewer.getWalletPubkey());
+    boolean studioAdmin = principal || holds(reviewer.getId(), StudioAccess.STUDIO_ADMIN);
+    if (!StudioAccess.canGrant(principal, studioAdmin, role)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "That role grant is not yours to give");
+    }
+    if (isPlatformOwnerWallet(wallet)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The principal wallet is not a grant");
+    }
+    return storeGrant(wallet, role, reviewer.getWalletPubkey(), "Granted by the studio");
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void ensurePartner(String walletPubkey) {
+    if (walletPubkey == null || walletPubkey.isBlank() || isPlatformOwnerWallet(walletPubkey)) {
+      return;
+    }
+    Account account = roleApplicationRepository.findAccountByWallet(walletPubkey.trim()).orElse(null);
+    if (account == null || holds(account.getId(), StudioAccess.PARTNER)) {
+      return;
+    }
+    String reviewer =
+        chainConfigRepository
+            .findActive()
+            .map(ChainConfig::getOwnerWalletPubkey)
+            .orElse(walletPubkey.trim());
+    storeGrant(walletPubkey.trim(), StudioAccess.PARTNER, reviewer, "Partner share");
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void clearPartner(String walletPubkey) {
+    if (walletPubkey == null || walletPubkey.isBlank() || isPlatformOwnerWallet(walletPubkey)) {
+      return;
+    }
+    Account account = roleApplicationRepository.findAccountByWallet(walletPubkey.trim()).orElse(null);
+    if (account == null) {
+      return;
+    }
+    roleApplicationRepository.deleteMembership(account.getId(), StudioAccess.PARTNER);
+    roleApplicationRepository.findApplications(STATUS_APPROVED, walletPubkey.trim()).stream()
+        .filter(row -> StudioAccess.PARTNER.equals(row.getRole()))
+        .forEach(row -> roleApplicationRepository.deleteApplication(row.getId()));
+  }
+
+  private AccountRoleApplication storeGrant(
+      String wallet, String role, String reviewerWallet, String reason) {
+    Account account =
+        roleApplicationRepository
+            .findAccountByWallet(wallet)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "That wallet has not signed in yet"));
+    if (holds(account.getId(), role)) {
+      return roleApplicationRepository.findApplications(STATUS_APPROVED, wallet).stream()
+          .filter(row -> role.equals(row.getRole()))
+          .findFirst()
+          .orElseThrow();
+    }
+    AccountRoleApplication row = new AccountRoleApplication();
+    row.setAccountId(account.getId());
+    row.setWalletPubkey(wallet);
+    row.setRole(role);
+    row.setStatus(STATUS_APPROVED);
+    row.setReason(reason);
+    row.setReviewedByWallet(reviewerWallet);
+    row.setCreatedAt(LocalDateTime.now());
+    row.setReviewedAt(LocalDateTime.now());
+    AccountRoleApplication stored = roleApplicationRepository.insertApplication(row);
+    AccountRole membership = new AccountRole();
+    membership.setAccountId(account.getId());
+    membership.setRole(role);
+    membership.setGrantedAt(LocalDateTime.now());
+    membership.setApplicationId(stored.getId());
+    roleApplicationRepository.insertMembership(membership);
+    return stored;
+  }
+
+  private void assertCanReview(AccountRoleApplication review, AccountRoleApplication app) {
     if (review == null
         || review.getReviewedByWallet() == null
         || review.getReviewedByWallet().isBlank()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "reviewedByWallet required");
     }
-    if (!isPlatformOwnerWallet(review.getReviewedByWallet().trim())) {
-      throw new ResponseStatusException(
-          HttpStatus.FORBIDDEN, "Only chain_config owner wallet may approve or reject");
+    String reviewerWallet = review.getReviewedByWallet().trim();
+    boolean principal = isPlatformOwnerWallet(reviewerWallet);
+    boolean studioAdmin = principal || reviewerHoldsStudioAdmin(reviewerWallet);
+    boolean targetPrincipal =
+        app.getWalletPubkey() != null && isPlatformOwnerWallet(app.getWalletPubkey());
+    if (!StudioAccess.canReview(principal, studioAdmin, app.getRole(), targetPrincipal)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "That review is not yours to make");
     }
+  }
+
+  private boolean reviewerHoldsStudioAdmin(String wallet) {
+    Account account = roleApplicationRepository.findAccountByWallet(wallet).orElse(null);
+    return account != null && holds(account.getId(), StudioAccess.STUDIO_ADMIN);
+  }
+
+  private boolean holds(Long accountId, String role) {
+    return roleApplicationRepository.findMembership(accountId, role).isPresent();
   }
 
   private boolean isPlatformOwnerWallet(String wallet) {

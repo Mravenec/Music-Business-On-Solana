@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useRoles } from "../hooks/useRoles";
+import { useSession } from "../hooks/useSession";
 
 /**
  * Job: revoke one granted role.
@@ -10,6 +11,10 @@ import { useRoles } from "../hooks/useRoles";
  */
 export function OwnerRolesGrantedPage() {
   const roles = useRoles();
+  const { session } = useSession();
+  const principal = Boolean(
+    session?.platformOwner || session?.account?.role?.toLowerCase() === "owner"
+  );
   const [msg, setMsg] = useState<string | null>(null);
 
   async function onRevoke(id: number, role: string) {
@@ -36,9 +41,11 @@ export function OwnerRolesGrantedPage() {
           <article key={row.id} className="eh8s-score-card">
             <strong>{row.role}</strong>
             <p className="eh8s-muted-line">{row.walletPubkey}</p>
-            <button type="button" className="eh8s-btn" onClick={() => void onRevoke(row.id, row.role)}>
-              Revoke
-            </button>
+            {row.role === "studio_admin" && !principal ? null : (
+              <button type="button" className="eh8s-btn" onClick={() => void onRevoke(row.id, row.role)}>
+                Revoke
+              </button>
+            )}
           </article>
         ))
       )}

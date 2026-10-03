@@ -44,6 +44,12 @@ public class RoleApplicationRepository implements IRoleApplicationRepository {
 
   /** {@inheritDoc} */
   @Override
+  public Optional<Account> findAccount(Long accountId) {
+    return dsl.selectFrom(ACCOUNT).where(ACCOUNT.ID.eq(accountId)).fetchOptionalInto(Account.class);
+  }
+
+  /** {@inheritDoc} */
+  @Override
   public AccountRoleApplication insertApplication(AccountRoleApplication application) {
     AccountRoleApplicationRecord rec = dsl.newRecord(ACCOUNT_ROLE_APPLICATION, application);
     rec.changed(ACCOUNT_ROLE_APPLICATION.ID, false);

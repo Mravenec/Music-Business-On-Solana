@@ -15,6 +15,7 @@ import {
   fetchRoleApplications,
   fetchRoleMemberships,
   rejectRoleApplication,
+  grantRole,
   revokeRoleApplication,
   type AccountRole,
   type RoleApplication,
@@ -36,6 +37,7 @@ type RolesState = {
   approve: (id: number, reason?: string) => Promise<void>;
   reject: (id: number, reason?: string) => Promise<void>;
   revoke: (id: number, reason?: string) => Promise<void>;
+  grant: (walletPubkey: string, role: string) => Promise<void>;
   applyableRoles: readonly string[];
 };
 
@@ -53,6 +55,7 @@ const RolesContext = createContext<RolesState>({
   approve: async () => undefined,
   reject: async () => undefined,
   revoke: async () => undefined,
+  grant: async () => undefined,
   applyableRoles: APPLYABLE_ROLES,
 });
 
@@ -73,7 +76,9 @@ export function RolesProvider({ children }: { children: ReactNode }) {
 
   const wallet = session?.account?.walletPubkey ?? null;
   const isOwner = Boolean(
-    session?.platformOwner || session?.account?.role?.toLowerCase() === "owner"
+    session?.platformOwner ||
+      session?.studioAdmin ||
+      session?.account?.role?.toLowerCase() === "owner"
   );
 
   const setActiveWorkspace = useCallback((role: string) => {
@@ -158,6 +163,14 @@ export function RolesProvider({ children }: { children: ReactNode }) {
     [wallet, refresh]
   );
 
+  const grant = useCallback(
+    async (walletPubkey: string, role: string) => {
+      await grantRole(walletPubkey, role);
+      await refresh();
+    },
+    [refresh]
+  );
+
   const revoke = useCallback(
     async (id: number, reason?: string) => {
       if (!wallet) throw new Error("Owner wallet required");
@@ -182,6 +195,7 @@ export function RolesProvider({ children }: { children: ReactNode }) {
       approve,
       reject,
       revoke,
+      grant,
       applyableRoles: APPLYABLE_ROLES,
     }),
     [
@@ -198,6 +212,7 @@ export function RolesProvider({ children }: { children: ReactNode }) {
       approve,
       reject,
       revoke,
+      grant,
     ]
   );
 
