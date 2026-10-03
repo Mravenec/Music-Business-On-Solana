@@ -11,6 +11,8 @@ flowchart TD
   AppShell -->|signed-in rail| WalletRail
   WalletRail -->|partner: own share| StudioLedgerPage
   WalletRail -->|principal or studio admin: partner books| StudioLedgerPage
+  StudioLedgerPage -->|your earnings| MyEarningsPage
+  MyEarningsPage -->|back to partner books| StudioLedgerPage
   AcademyPage -->|one plan, includes listed| AcademyPlanPage
   AcademyPage -->|enroll| AcademyEnrollPage
   AcademyPage -->|score| AcademyEvaluatePage

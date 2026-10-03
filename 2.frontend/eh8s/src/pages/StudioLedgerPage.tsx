@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useSession } from "../hooks/useSession";
 import { useOwnerLedger, useStudioLedger } from "../hooks/useStudioLedger";
 
@@ -88,12 +88,13 @@ function MonthFields({
  * Next: read each source, or the empty line.
  * Hidden: partner form, other wallets, studio fee totals.
  */
-function UserLedger({ year, month, years, onMonth, onYear }: {
+function UserLedger({ year, month, years, onMonth, onYear, backTo }: {
   year: number;
   month: number;
   years: number[];
   onMonth: (value: number) => void;
   onYear: (value: number) => void;
+  backTo?: string;
 }) {
   const ledger = useStudioLedger(year, month);
   const lines = [
@@ -141,6 +142,13 @@ function UserLedger({ year, month, years, onMonth, onYear }: {
             ))}
           </ul>
         </article>
+      ) : null}
+      {backTo ? (
+        <div className="eh8s-cta-row">
+          <Link className="eh8s-btn eh8s-back" to={backTo}>
+            Back to partner books
+          </Link>
+        </div>
       ) : null}
     </section>
   );
@@ -221,6 +229,11 @@ function OwnerLedger({ year, month, years, onMonth, onYear }: {
           This split is the books. It does not send USDC.
         </p>
       </header>
+      <div className="eh8s-cta-row">
+        <Link className="eh8s-btn" to="/studio-ledger/mine">
+          Your earnings
+        </Link>
+      </div>
       <form className="eh8s-form eh8s-panel" onSubmit={onAdd}>
         <label>
           Partner name
@@ -346,5 +359,44 @@ export function StudioLedgerPage() {
   }
   return (
     <UserLedger year={year} month={month} years={years} onMonth={setMonth} onYear={setYear} />
+  );
+}
+
+/**
+ * Job: read this wallet's own studio earnings for one month.
+ * Primary: choose the month and year.
+ * Next: return to the partner books when this wallet edits them.
+ * Hidden: other wallets and the partner form.
+ */
+export function MyEarningsPage() {
+  const { session, loading } = useSession();
+  const today = useMemo(() => new Date(), []);
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth() + 1);
+  const years = useMemo(() => {
+    const current = today.getFullYear();
+    return [current, current - 1, current - 2, current - 3, current - 4];
+  }, [today]);
+
+  if (loading) {
+    return <p className="eh8s-muted-line">Opening your studio…</p>;
+  }
+  if (!session?.account) {
+    return <Navigate to="/" replace />;
+  }
+  const booksEditor = Boolean(
+    session.platformOwner ||
+      session.studioAdmin ||
+      session.account.role?.toLowerCase() === "owner"
+  );
+  return (
+    <UserLedger
+      year={year}
+      month={month}
+      years={years}
+      onMonth={setMonth}
+      onYear={setYear}
+      backTo={booksEditor ? "/studio-ledger" : undefined}
+    />
   );
 }

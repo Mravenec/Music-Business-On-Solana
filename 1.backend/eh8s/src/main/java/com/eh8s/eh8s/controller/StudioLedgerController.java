@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Serves personal earnings to a non-owner and partner books to the owner.
+ * Serves each signed-in wallet their own earnings, and partner books to a books editor.
  */
 @RestController
 public class StudioLedgerController implements IStudioLedgerController {
@@ -189,9 +189,6 @@ public class StudioLedgerController implements IStudioLedgerController {
 
   private void requireUser(JwtPrincipal principal, int year, int month) {
     requireMonth(principal, year, month);
-    if (ledgerService.isBooksEditor(principal.accountId())) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Owners use the partner books");
-    }
   }
 
   private void requireOwnerMonth(JwtPrincipal principal, int year, int month) {

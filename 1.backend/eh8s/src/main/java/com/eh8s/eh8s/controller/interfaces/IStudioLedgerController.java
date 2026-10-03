@@ -10,12 +10,12 @@ import com.eh8s.eh8s.service.interfaces.JwtPrincipal;
 import java.util.List;
 
 /**
- * HTTP for personal studio earnings and the owner's partner books.
+ * HTTP for each signed-in wallet's earnings and a books editor's partner books.
  */
 public interface IStudioLedgerController {
 
   /**
-   * Confirmed solo-show claims for one month. The owner receives 403.
+   * Confirmed solo-show claims for one month, including when this wallet edits the books.
    *
    * @param principal signed-in account
    * @param year calendar year
@@ -25,7 +25,7 @@ public interface IStudioLedgerController {
   List<PendingClaim> soloClaims(JwtPrincipal principal, int year, int month);
 
   /**
-   * Confirmed band-show claims for one month. The owner receives 403.
+   * Confirmed band-show claims for one month, including when this wallet edits the books.
    *
    * @param principal signed-in account
    * @param year calendar year
@@ -35,7 +35,7 @@ public interface IStudioLedgerController {
   List<PendingClaim> bandClaims(JwtPrincipal principal, int year, int month);
 
   /**
-   * Confirmed venue expense returns for one month. The owner receives 403.
+   * Confirmed venue expense returns for one month, including when this wallet edits the books.
    *
    * @param principal signed-in account
    * @param year calendar year
@@ -45,7 +45,7 @@ public interface IStudioLedgerController {
   List<ConcertSettlement> venueExpenses(JwtPrincipal principal, int year, int month);
 
   /**
-   * Confirmed instructor shares for one month. The owner receives 403.
+   * Confirmed instructor shares for one month, including when this wallet edits the books.
    *
    * @param principal signed-in account
    * @param year calendar year
@@ -55,7 +55,7 @@ public interface IStudioLedgerController {
   List<AcademySubscription> instructorShares(JwtPrincipal principal, int year, int month);
 
   /**
-   * This wallet's partner allocation for one month. The owner receives 403.
+   * This wallet's partner allocation for one month, including when this wallet edits the books.
    *
    * @param principal signed-in account
    * @param year calendar year
