@@ -3,7 +3,7 @@
 **Contest:** Crypto World's Fair (Colosseum)  
 **Judged window:** 14 Sep 2026 – 12 Oct 2026 (PT)  
 **Product:** EH8S (Enigma H8 Studios)  
-**Repo tip documented here:** `main` after Land 52 (27 Sep 2026), tagged locally `colosseum-worldsfair-2026`. Earlier tips: Land 48 `d4e4bf6` (27 Sep), Land 39 (26 Sep), Land 33 `5811700` (25 Sep).
+**Repo tip documented here:** `main` after Land 72 (2 Oct 2026), updated 5 Oct 2026. Earlier tips: Land 52 (27 Sep, tagged locally `colosseum-worldsfair-2026`), Land 48 `d4e4bf6` (27 Sep), Land 39 (26 Sep), Land 33 `5811700` (25 Sep).
 
 Colosseum allows pre-existing code but **judges work done in the contest window** and requires **disclosure of prior development** on the submission form. Paste or summarize this file there.
 
@@ -13,7 +13,7 @@ Official FAQ: [colosseum.com/hackathon](https://colosseum.com/hackathon) · Rule
 
 ## One-line disclosure (submission form)
 
-EH8S began **6–8 Sep 2026**. Before **14 Sep**: full MariaDB / Spring Boot JOOQ / React studio app and Anchor DevNet program with academy / geo / deposit / claim USDC; `settle_concert` was PDA-only. **During Crypto World's Fair (from 14 Sep):** JWT auth, progressive-disclosure UI, no-mock Colosseum smoke and wallet-only money gates (epic 32), on-chain settle fee→owner + pool→vault + claim path without mocks (epic 33), and on 26 Sep: hardened Anchor accounts + Rust program tests + first real DevNet deploy (epic 34), BandVault + SPP-weighted split with expenses (epic 35), backend verification of every signature (epic 36), treasury PDA + owner withdraw (epic 37), Claude owner digest (epic 38), refreshed judge kit (epic 39); and on 27 Sep: agent authority PDAs + agent-only musician levels (epic 40), on-chain venue listings + booking escrow + VAULT settle (epic 41), native owner multisig (epic 42), academy / zone subscriptions with on-chain expiry (epic 43), per-song royalty pools + sync licensing 80/20 (epic 44), real SPP inputs + live Stage Map pins (epic 45), live NEXUS / HARMONY / ATLAS agents (epic 46), Slack two-way approvals (epic 47), judge kit refresh (epic 48), repo hygiene + submission kit (epic 49), academy video library (epic 50), earned teaching path with owner review and lesson practice to NEXUS (epic 51), final submission refresh (epic 52), backend layer conformance with generated JOOQ POJOs from the database to the React services and no Java DTOs (epic 53); program upgraded v0.6.0 → v0.10.0 on DevNet. Single git author. DevNet faucet USDC only — not Mainnet.
+EH8S began **6–8 Sep 2026**. Before **14 Sep**: full MariaDB / Spring Boot JOOQ / React studio app and Anchor DevNet program with academy / geo / deposit / claim USDC; `settle_concert` was PDA-only. **During Crypto World's Fair (from 14 Sep):** JWT auth, progressive-disclosure UI, no-mock Colosseum smoke and wallet-only money gates (epic 32), on-chain settle fee→owner + pool→vault + claim path without mocks (epic 33), and on 26 Sep: hardened Anchor accounts + Rust program tests + first real DevNet deploy (epic 34), BandVault + SPP-weighted split with expenses (epic 35), backend verification of every signature (epic 36), treasury PDA + owner withdraw (epic 37), Claude owner digest (epic 38), refreshed judge kit (epic 39); and on 27 Sep: agent authority PDAs + agent-only musician levels (epic 40), on-chain venue listings + booking escrow + VAULT settle (epic 41), native owner multisig (epic 42), academy / zone subscriptions with on-chain expiry (epic 43), per-song royalty pools + sync licensing 80/20 (epic 44), real SPP inputs + live Stage Map pins (epic 45), live NEXUS / HARMONY / ATLAS agents (epic 46), Slack two-way approvals (epic 47), judge kit refresh (epic 48), repo hygiene + submission kit (epic 49), academy video library (epic 50), earned teaching path with owner review and lesson practice to NEXUS (epic 51), final submission refresh (epic 52), backend layer conformance with generated JOOQ POJOs from the database to the React services and no Java DTOs (epic 53); program upgraded v0.6.0 → v0.10.0 on DevNet. From 27 Sep to 2 Oct: USDC account owner guards and replay 409s (epic 56), venue listing and role revoke (epic 57), wallet-signed login with a one-time nonce (epic 58), band roster fix (epic 59), studio mark (epics 60–61), session and wallet kept on refresh (epics 62–65), clearer studio and academy pages (epics 66–67), wallet contents and per-user studio ledger with partner books (epics 68–70), studio admin and partner roles granted by the principal wallet (epics 71–72). Single git author. DevNet faucet USDC only — not Mainnet.
 
 ---
 
@@ -46,9 +46,19 @@ EH8S began **6–8 Sep 2026**. Before **14 Sep**: full MariaDB / Spring Boot JOO
 | | Teaching path (epic 51, 27 Sep): only Enigma level 5 + approved instructor role can draft courses; submit → owner approves or sends back with a note; lesson practice exercises go to NEXUS and the evaluation links the lesson |
 | | Final refresh (epic 52, 27 Sep): preflight covers the course and teaching routes (25 checks), guided steps 18–19, demo script academy shot, this disclosure, local tag |
 | | Layer conformance (epic 53, 27 Sep): no Java DTOs; table-shaped bodies bind the generated JOOQ POJOs, services and repositories never receive request maps, on-chain services take typed values; the React services send the POJO JSON keys; 159 backend tests |
-| | Further commits through **12 Oct 2026** also count — amend this table before submit |
+| | Harness gates (epics 54–55, 27 Sep): a layer audit that refuses a commit with Java DTOs, map bodies or inverted layers, and worktree commit guards. Development tooling in the private harness, not product code |
+| | USDC owner guards (epic 56, 27 Sep): claim, propose and concert settle require the USDC account to be owned by the musician or the venue; confirm paths pin every money account and return 409 for a signature already stored. The Java checks run now. The Anchor constraints are in the source and pass the program tests, but DevNet still runs the v0.10.0 binary until a program upgrade |
+| | Venue listing and role revoke (epic 57, 28 Sep): venue create requires capacity, ticket price and contract type; the owner can revoke a granted role so that wallet can apply again |
+| | Wallet-signed login (epic 58, 28 Sep): the server issues a one-time nonce and returns a session only for a valid ed25519 signature; a public key alone no longer gets a token |
+| | Band roster fix (epic 59, 28 Sep): a band page shows only that band's members and rehearsals, and the creator stays on the roster |
+| | Studio mark (epics 60–61, 28 Sep): the Enigma mark in the header, on the landing page and in `5.submission/` |
+| | Session and wallet on refresh (epics 62–65, 1 Oct): `GET /api/session/current` restores the session from the JWT; the wallet address stays in the header; menus stay hidden until sign-in; Connect opens the wallet to start a session |
+| | Clearer pages (epics 66–67, 2 Oct): session chips and card layout, Programs shows DevNet live and Mainnet not open; each academy plan spells out what it includes |
+| | Wallet and studio ledger (epics 68–70, 2 Oct): the header shows what the wallet holds and what EH8S recorded for it; each user sees their own earnings by source; the owner sees partner books; partners share fees only from the day they join |
+| | Studio admin and partner (epics 71–72, 2 Oct): the principal wallet grants or revokes `studio_admin`; treasury and governance stay principal-only; a studio admin sees their own earnings beside the partner books. Roles, partner percentages and ledger splits are MariaDB records and move no USDC |
+| | Last updated 5 Oct 2026 (`main` after Land 72). Any later commit before **12 Oct 2026** is added here |
 
-Git volume at the epic 52 commit (27 Sep 2026, epics 49–51 included): **375** commits before the window (`git log --until=2026-09-13`), **265** from 14 Sep (`git log --since=2026-09-14`), one author. The Land 49–52 merges on `main` add a few more; rerun the two commands below at the tag for the exact figure.
+Git volume in the private development harness at Land 72 (2 Oct 2026): **375** commits before the window (`git log --until=2026-09-13`), **479** from 14 Sep (`git log --since=2026-09-14`), one author. The public product repository publishes the same code with a shorter history.
 
 ---
 
@@ -75,10 +85,10 @@ DistroKid, Chartmetric, MoonPay / Transak / Bitso, Stripe Identity, DocuSign, Me
 | # | Question | Answer (from this git history) |
 |---|---|---|
 | 1 | When did EH8S development start? | ~**6 Sep 2026** harness day-zero; product `eh8s` scaffolds **8 Sep** |
-| 2 | When did the current version start? | Continuous from **8 Sep**. Judge-facing baseline: `main` after **epic 52 (27 Sep)**, tag `colosseum-worldsfair-2026` |
+| 2 | When did the current version start? | Continuous from **8 Sep**. Judge-facing version: `main` after **Land 72 (2 Oct)**; earlier baseline tag `colosseum-worldsfair-2026` (epic 52, 27 Sep) |
 | 3 | What existed before 14 Sep? | Full DB/API/UI, roles, Solana config, Anchor program, academy/geo/deposit/claim USDC; settle PDA-only. Tip: `14c4e12` (11 Sep) |
 | 4 | Solana/Anchor before 14 Sep? | **Yes** — scaffold 9 Sep; instructions + program id 9–10 Sep. Settle did **not** transfer USDC yet |
-| 5 | New work 14 Sep–12 Oct | JWT, progressive UI, no-DTO hardening, epic 32 smoke/gates, epic 33 settle USDC loop, epics 34–39 (hardened program + tests + first deploy, BandVault split with expenses, tx verification, treasury PDA withdraw, Claude digest, judge kit), epics 40–48 (agent authority, venue escrow, multisig, subscriptions with expiry, per-song royalties + sync, SPP inputs + Stage Map, live agents, Slack approvals, kit refresh), epics 49–52 (repo hygiene + submission kit, academy video library, earned teaching path with owner review, final refresh) (+ any later commits) |
+| 5 | New work 14 Sep–12 Oct | JWT, progressive UI, no-DTO hardening, epic 32 smoke/gates, epic 33 settle USDC loop, epics 34–39 (hardened program + tests + first deploy, BandVault split with expenses, tx verification, treasury PDA withdraw, Claude digest, judge kit), epics 40–48 (agent authority, venue escrow, multisig, subscriptions with expiry, per-song royalties + sync, SPP inputs + Stage Map, live agents, Slack approvals, kit refresh), epics 49–52 (repo hygiene + submission kit, academy video library, earned teaching path with owner review, final refresh), epics 53–72 (no-DTO layer conformance, USDC owner guards, wallet-signed login, session on refresh, clearer pages, wallet and studio ledger, studio admin and partner roles) |
 | 6 | First wallet integration? | **9 Sep** (epic 14 markers; academy `sendTransaction` APP-21-3) |
 | 7 | First USDC settle/claim? | **Claim** ~9–10 Sep (epic 22). **Settle that moves USDC** coded **25 Sep** (epic 33), live on DevNet **26 Sep** (epic 34 deploy); weighted split with expenses **26 Sep** (epic 35) |
 | 8 | DevNet program deploy? | Program id `GUY7o…` reserved and documented by epic 20 (~10 Sep). **First real DevNet deploy 26 Sep 2026** (epic 34, slot 504604312); upgraded to v0.5.0 in epic 37 (treasury PDA), then v0.6.0 → v0.10.0 on **27 Sep** (epics 40–44) |
@@ -87,9 +97,9 @@ DistroKid, Chartmetric, MoonPay / Transak / Bitso, Stripe Identity, DocuSign, Me
 | 11 | Pre-window code modified in-window? | **Yes** — settle ix + FE accounts; money screens; React page splits; JWT; SQL for auth |
 | 12 | Last big changes before window? | **11 Sep** SQL consolidation (26–29); JWT tickets started. Tip `14c4e12` |
 | 13 | Who built what? | **One git author:** `mravenec` / `kcamposgo90@gmail.com`. Board “agents” are process roles |
-| 14 | Commits before 14 Sep? | **Yes** (375; 265 from 14 Sep at the epic 52 commit) |
+| 14 | Commits before 14 Sep? | **Yes** (375 in the private harness; 479 from 14 Sep at Land 72) |
 | 15 | Functional before 14 Sep? | **Yes** — run stack + DevNet academy/geo/claim; settle PDA-only |
-| 16 | Version to submit by 12 Oct? | `main` at/after Land 52; local annotated tag `colosseum-worldsfair-2026` (push the tag before upload) |
+| 16 | Version to submit by 12 Oct? | `main` at/after Land 72 (2 Oct 2026) |
 
 ---
 
