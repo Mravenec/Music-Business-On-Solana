@@ -27,5 +27,3 @@ SOURCE eh8s_catalog/eh8s_catalog.sql;
 SOURCE eh8s_ops/eh8s_ops.sql;
 SOURCE eh8s_role/eh8s_role.sql;
 SOURCE eh8s_onchain/eh8s_onchain.sql;
-SOURCE 22_onchain_studio_role_partner_share_mirrors.sql;
-SOURCE 23_lesson_content_hash_storage_ref.sql;

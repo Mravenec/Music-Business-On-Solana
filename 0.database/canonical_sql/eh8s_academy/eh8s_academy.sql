@@ -504,3 +504,38 @@ SET @ddl := IF(@fk = 0,
   'ALTER TABLE enigma_evaluation ADD CONSTRAINT fk_eval_lesson FOREIGN KEY (lesson_id) REFERENCES lesson (id)',
   'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+-- ----------------------------------------------------------
+-- Epic 76 (folded from root 23_ by epic 78): official lesson media integrity.
+-- Nullable content_hash, storage_ref, key_id for encrypted host objects.
+-- Does NOT drop or alter video_url / embed_url — legacy link lessons stay.
+-- ----------------------------------------------------------
+
+-- SHA-256 hex of official ciphertext (NULL = legacy URL-only lesson).
+SET @col := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'lesson' AND COLUMN_NAME = 'content_hash'
+);
+SET @ddl := IF(@col = 0,
+  'ALTER TABLE lesson ADD COLUMN content_hash CHAR(64) NULL AFTER video_url',
+  'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Host object key / path (Bunny / Cloudflare / S3); rebuildable from storage.
+SET @col := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'lesson' AND COLUMN_NAME = 'storage_ref'
+);
+SET @ddl := IF(@col = 0,
+  'ALTER TABLE lesson ADD COLUMN storage_ref VARCHAR(600) NULL AFTER content_hash',
+  'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Encryption key identifier for the ciphertext at storage_ref.
+SET @col := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'lesson' AND COLUMN_NAME = 'key_id'
+);
+SET @ddl := IF(@col = 0,
+  'ALTER TABLE lesson ADD COLUMN key_id VARCHAR(64) NULL AFTER storage_ref',
+  'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
