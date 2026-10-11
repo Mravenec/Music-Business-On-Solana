@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * NEXUS Score Enigma: a teacher or the musician submits a recording link, rubric scores and
  * notes; Claude returns a 0..100 score, strengths, errors, exercises and a level recommendation.
- * The level itself only changes on-chain through the NEXUS level page.
+ * The level itself only changes on-chain through the NEXUS level page (epic 40).
  */
 public interface INexusService {
 

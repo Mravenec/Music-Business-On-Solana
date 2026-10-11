@@ -22,7 +22,7 @@ export async function fetchAgentEvents(): Promise<AgentEvent[]> {
 }
 
 /**
- * Resolves agent by code, then POSTs /api/agents/{id}/tick.
+ * Resolves agent by code, then POSTs /api/agents/{id}/tick (GATE_HTTP path).
  */
 export async function tickAgent(body: {
   agentCode?: string;

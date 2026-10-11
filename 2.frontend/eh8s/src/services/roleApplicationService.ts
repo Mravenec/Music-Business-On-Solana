@@ -53,46 +53,43 @@ export async function fetchRoleApplications(
 }
 
 /**
- * Owner approves a pending application.
+ * Approves a pending application. Authz is the JWT session only (no body reviewer wallet).
  */
 export async function approveRoleApplication(
   id: number,
-  reviewedByWallet: string,
   reason?: string
 ): Promise<RoleApplication> {
   const { data } = await apiClient.post<RoleApplication>(
     `/api/role-applications/${id}/approve`,
-    { reviewedByWallet, reason }
+    reason != null && reason !== "" ? { reason } : {}
   );
   return data;
 }
 
 /**
- * Owner rejects a pending application.
+ * Rejects a pending application. Authz is the JWT session only (no body reviewer wallet).
  */
 export async function rejectRoleApplication(
   id: number,
-  reviewedByWallet: string,
   reason?: string
 ): Promise<RoleApplication> {
   const { data } = await apiClient.post<RoleApplication>(
     `/api/role-applications/${id}/reject`,
-    { reviewedByWallet, reason }
+    reason != null && reason !== "" ? { reason } : {}
   );
   return data;
 }
 
 /**
- * Owner revokes an approved role. The grant is removed so the wallet can apply again.
+ * Revokes an approved role. Authz is the JWT session only (no body reviewer wallet).
  */
 export async function revokeRoleApplication(
   id: number,
-  reviewedByWallet: string,
   reason?: string
 ): Promise<RoleApplication> {
   const { data } = await apiClient.post<RoleApplication>(
     `/api/role-applications/${id}/revoke`,
-    { reviewedByWallet, reason }
+    reason != null && reason !== "" ? { reason } : {}
   );
   return data;
 }

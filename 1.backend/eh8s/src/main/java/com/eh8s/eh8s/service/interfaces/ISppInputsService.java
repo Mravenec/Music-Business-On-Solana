@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * SPP inputs: peer creative ratings, concert set check-ins, Enigma skill capture, and
+ * SPP inputs (Epic 45): peer creative ratings, concert set check-ins, Enigma skill capture, and
  * the close_cycle computation of all five weighted variables.
  */
 public interface ISppInputsService {

@@ -14,6 +14,8 @@ import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.Governance;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceApproval;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceProposal;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceSigner;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.PartnerShare;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.StudioRoleGrant;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.TreasuryWithdrawal;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.records.ChainConfigRecord;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.records.DevnetPayMarkerRecord;
@@ -21,6 +23,8 @@ import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.records.GovernanceApprova
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.records.GovernanceProposalRecord;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.records.GovernanceRecord;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.records.GovernanceSignerRecord;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.records.PartnerShareRecord;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.records.StudioRoleGrantRecord;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.records.TreasuryWithdrawalRecord;
 
 import org.jooq.ForeignKey;
@@ -56,6 +60,12 @@ public class Keys {
     public static final UniqueKey<GovernanceProposalRecord> KEY_GOVERNANCE_PROPOSAL_UK_GOVERNANCE_PROPOSAL_TX = Internal.createUniqueKey(GovernanceProposal.GOVERNANCE_PROPOSAL, DSL.name("KEY_governance_proposal_uk_governance_proposal_tx"), new TableField[] { GovernanceProposal.GOVERNANCE_PROPOSAL.PROPOSE_TX_SIGNATURE }, true);
     public static final UniqueKey<GovernanceSignerRecord> KEY_GOVERNANCE_SIGNER_PRIMARY = Internal.createUniqueKey(GovernanceSigner.GOVERNANCE_SIGNER, DSL.name("KEY_governance_signer_PRIMARY"), new TableField[] { GovernanceSigner.GOVERNANCE_SIGNER.ID }, true);
     public static final UniqueKey<GovernanceSignerRecord> KEY_GOVERNANCE_SIGNER_UK_GOVERNANCE_SIGNER = Internal.createUniqueKey(GovernanceSigner.GOVERNANCE_SIGNER, DSL.name("KEY_governance_signer_uk_governance_signer"), new TableField[] { GovernanceSigner.GOVERNANCE_SIGNER.GOVERNANCE_ID, GovernanceSigner.GOVERNANCE_SIGNER.WALLET_PUBKEY }, true);
+    public static final UniqueKey<PartnerShareRecord> KEY_PARTNER_SHARE_PRIMARY = Internal.createUniqueKey(PartnerShare.PARTNER_SHARE, DSL.name("KEY_partner_share_PRIMARY"), new TableField[] { PartnerShare.PARTNER_SHARE.ID }, true);
+    public static final UniqueKey<PartnerShareRecord> KEY_PARTNER_SHARE_UK_PARTNER_SHARE_PDA = Internal.createUniqueKey(PartnerShare.PARTNER_SHARE, DSL.name("KEY_partner_share_uk_partner_share_pda"), new TableField[] { PartnerShare.PARTNER_SHARE.PDA }, true);
+    public static final UniqueKey<PartnerShareRecord> KEY_PARTNER_SHARE_UK_PARTNER_SHARE_TX = Internal.createUniqueKey(PartnerShare.PARTNER_SHARE, DSL.name("KEY_partner_share_uk_partner_share_tx"), new TableField[] { PartnerShare.PARTNER_SHARE.TX_SIGNATURE }, true);
+    public static final UniqueKey<StudioRoleGrantRecord> KEY_STUDIO_ROLE_GRANT_PRIMARY = Internal.createUniqueKey(StudioRoleGrant.STUDIO_ROLE_GRANT, DSL.name("KEY_studio_role_grant_PRIMARY"), new TableField[] { StudioRoleGrant.STUDIO_ROLE_GRANT.ID }, true);
+    public static final UniqueKey<StudioRoleGrantRecord> KEY_STUDIO_ROLE_GRANT_UK_STUDIO_ROLE_GRANT_PDA = Internal.createUniqueKey(StudioRoleGrant.STUDIO_ROLE_GRANT, DSL.name("KEY_studio_role_grant_uk_studio_role_grant_pda"), new TableField[] { StudioRoleGrant.STUDIO_ROLE_GRANT.PDA }, true);
+    public static final UniqueKey<StudioRoleGrantRecord> KEY_STUDIO_ROLE_GRANT_UK_STUDIO_ROLE_GRANT_TX = Internal.createUniqueKey(StudioRoleGrant.STUDIO_ROLE_GRANT, DSL.name("KEY_studio_role_grant_uk_studio_role_grant_tx"), new TableField[] { StudioRoleGrant.STUDIO_ROLE_GRANT.TX_SIGNATURE }, true);
     public static final UniqueKey<TreasuryWithdrawalRecord> KEY_TREASURY_WITHDRAWAL_PRIMARY = Internal.createUniqueKey(TreasuryWithdrawal.TREASURY_WITHDRAWAL, DSL.name("KEY_treasury_withdrawal_PRIMARY"), new TableField[] { TreasuryWithdrawal.TREASURY_WITHDRAWAL.ID }, true);
     public static final UniqueKey<TreasuryWithdrawalRecord> KEY_TREASURY_WITHDRAWAL_UK_TREASURY_WITHDRAWAL_TX = Internal.createUniqueKey(TreasuryWithdrawal.TREASURY_WITHDRAWAL, DSL.name("KEY_treasury_withdrawal_uk_treasury_withdrawal_tx"), new TableField[] { TreasuryWithdrawal.TREASURY_WITHDRAWAL.TX_SIGNATURE }, true);
 

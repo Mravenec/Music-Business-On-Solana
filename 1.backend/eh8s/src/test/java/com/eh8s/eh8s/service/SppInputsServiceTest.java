@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * five SPP variables from real inputs, creative rating rules, concert minutes.
+ * Epic 45: five SPP variables from real inputs, creative rating rules, concert minutes.
  */
 class SppInputsServiceTest {
 

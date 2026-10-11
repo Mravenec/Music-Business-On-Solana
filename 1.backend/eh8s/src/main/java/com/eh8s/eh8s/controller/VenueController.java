@@ -3,12 +3,10 @@ package com.eh8s.eh8s.controller;
 import com.eh8s.eh8s.controller.interfaces.IVenueController;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.Booking;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.Concert;
-import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.ConcertSettlement;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.ContractType;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.PendingClaim;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.Venue;
 import com.eh8s.eh8s.service.interfaces.IVenueService;
-import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -96,18 +94,6 @@ public class VenueController implements IVenueController {
   @PostMapping("/concerts")
   public Concert createConcert(@RequestBody Concert concert) {
     return venueService.createConcert(concert);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  @PostMapping("/concerts/{concertId}/settle")
-  public ConcertSettlement settle(
-      @PathVariable Long concertId, @RequestBody(required = false) ConcertSettlement input) {
-    BigDecimal gross =
-        input == null || input.getGrossUsdc() == null ? new BigDecimal("875.00") : input.getGrossUsdc();
-    return venueService.settle(concertId, gross);
   }
 
   /**

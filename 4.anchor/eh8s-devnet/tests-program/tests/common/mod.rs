@@ -983,3 +983,79 @@ pub fn execute_signers_ix(executor: &Pubkey, id: u64) -> Instruction {
         data: eh8s_devnet::instruction::ExecuteSignersProposal {}.data(),
     }
 }
+
+// ---- Studio powers (v0.11.0): studio_admin role + partner shares -------------------------
+
+pub const E_INVALID_PARTNER_SHARE: u32 = 32;
+pub const E_PARTNER_SHARES_EXCEED_TOTAL: u32 = 33;
+pub const E_PARTNER_BOOK_FULL: u32 = 34;
+pub const E_INVALID_STUDIO_WALLET: u32 = 35;
+
+pub fn studio_role_pda(wallet: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[b"studio_role", wallet.as_ref()], &program_id()).0
+}
+
+pub fn partner_share_pda(wallet: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[b"partner_share", wallet.as_ref()], &program_id()).0
+}
+
+pub fn partner_book_pda() -> Pubkey {
+    Pubkey::find_program_address(&[b"partner_book"], &program_id()).0
+}
+
+pub fn grant_studio_role_ix(owner: &Pubkey, wallet: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: program_id(),
+        accounts: eh8s_devnet::accounts::GrantStudioRole {
+            owner: *owner,
+            config: config_pda(),
+            studio_role: studio_role_pda(wallet),
+            system_program: system_program::id(),
+            governance: governance_pda(),
+        }
+        .to_account_metas(None),
+        data: eh8s_devnet::instruction::GrantStudioRole { wallet: *wallet }.data(),
+    }
+}
+
+pub fn revoke_studio_role_ix(owner: &Pubkey, wallet: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: program_id(),
+        accounts: eh8s_devnet::accounts::RevokeStudioRole {
+            owner: *owner,
+            config: config_pda(),
+            studio_role: studio_role_pda(wallet),
+            governance: governance_pda(),
+        }
+        .to_account_metas(None),
+        data: eh8s_devnet::instruction::RevokeStudioRole { wallet: *wallet }.data(),
+    }
+}
+
+pub fn set_partner_share_ix(
+    owner: &Pubkey,
+    wallet: &Pubkey,
+    share_bps: u16,
+    starts_at: i64,
+    ends_at: i64,
+) -> Instruction {
+    Instruction {
+        program_id: program_id(),
+        accounts: eh8s_devnet::accounts::SetPartnerShare {
+            owner: *owner,
+            config: config_pda(),
+            partner_share: partner_share_pda(wallet),
+            partner_book: partner_book_pda(),
+            system_program: system_program::id(),
+            governance: governance_pda(),
+        }
+        .to_account_metas(None),
+        data: eh8s_devnet::instruction::SetPartnerShare {
+            wallet: *wallet,
+            share_bps,
+            starts_at,
+            ends_at,
+        }
+        .data(),
+    }
+}

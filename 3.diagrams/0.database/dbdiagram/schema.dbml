@@ -191,7 +191,10 @@ Table lesson {
   title varchar(160) [not null]
   description varchar(2000)
   video_provider varchar(16) [not null, note: 'youtube | vimeo | bunny | cloudflare']
-  video_url varchar(600) [not null, note: 'link as pasted by the author']
+  video_url varchar(600) [not null, note: 'link as pasted by the author; kept for legacy / free-preview migration']
+  content_hash char(64) [note: 'Epic 76: SHA-256 hex of official ciphertext; NULL = legacy URL lesson']
+  storage_ref varchar(600) [note: 'Epic 76: host object key/path (Bunny/CF/S3); rebuildable']
+  key_id varchar(64) [note: 'Epic 76: encryption key id for ciphertext at storage_ref']
   embed_url varchar(600) [not null, note: 'normalized player URL; returned only when the caller may watch']
   duration_sec int
   sort_order int [not null, note: 'gap-free 1..n inside the section']
@@ -912,6 +915,43 @@ Table governance_approval {
 }
 
 Ref: governance_approval.proposal_id > governance_proposal.id
+
+// Epic 74 (eh8s_onchain): MariaDB mirrors of future Anchor PDAs. Cache only —
+// does not replace eh8s_role.account_role or eh8s.studio_partner.
+Table studio_role_grant {
+  id bigint [pk, increment]
+  wallet_pubkey varchar(44) [not null]
+  role varchar(32) [not null, note: 'studio_admin only']
+  granted_at datetime [not null]
+  revoked_at datetime
+  tx_signature varchar(128) [not null, unique]
+  pda varchar(44) [not null, unique, note: 'Future StudioRoleGrant PDA']
+
+  Indexes {
+    wallet_pubkey [name: 'idx_studio_role_grant_wallet']
+    (wallet_pubkey, role, revoked_at) [name: 'idx_studio_role_grant_active']
+  }
+
+  Note: 'Epic 74: chain-confirmed studio_admin grant/revoke mirror. Active when revoked_at is null. JWT alone must not invent rows.'
+}
+
+Table partner_share {
+  id bigint [pk, increment]
+  wallet_pubkey varchar(44) [not null]
+  share_bps int [not null, note: '1..10000; sum of active windows <= 10000']
+  started_at datetime [not null]
+  ended_at datetime
+  tx_signature varchar(128) [not null, unique]
+  pda varchar(44) [not null, unique, note: 'Future PartnerShare PDA']
+
+  Indexes {
+    wallet_pubkey [name: 'idx_partner_share_wallet']
+    (wallet_pubkey, started_at, ended_at) [name: 'idx_partner_share_window']
+  }
+
+  Note: 'Epic 74: chain-confirmed partner share window mirror. Hub studio_partner stays for books display until reconcile.'
+}
+
 Table agent_event_log {
   id bigint [pk, increment]
   ops_agent_id bigint [not null]

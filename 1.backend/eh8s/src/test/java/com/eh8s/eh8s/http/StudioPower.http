@@ -1,0 +1,84 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Console without Bearer must be 401
+GET http://127.0.0.1:8080/api/studio-power/console?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+
+### Console for a wallet that is not the principal must be 403
+GET http://127.0.0.1:8080/api/studio-power/console?walletPubkey=U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq
+Authorization: Bearer {{token}}
+
+### Console for the principal wallet: 2xx (roleGrants + partnerShares mirrors)
+GET http://127.0.0.1:8080/api/studio-power/console?walletPubkey=7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC
+Authorization: Bearer {{token}}
+
+### Build grant_studio_role without Bearer must be 401
+POST http://127.0.0.1:8080/api/studio-power/grant/build
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "adminWalletPubkey": "U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq"
+}
+
+### Build grant_studio_role as a non-principal must be 403
+POST http://127.0.0.1:8080/api/studio-power/grant/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq",
+  "adminWalletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"
+}
+
+### Build grant_studio_role for the principal: 2xx (unsigned tx for the wallet)
+POST http://127.0.0.1:8080/api/studio-power/grant/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "adminWalletPubkey": "U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq"
+}
+
+### Build revoke_studio_role for the principal: 2xx
+POST http://127.0.0.1:8080/api/studio-power/revoke/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "adminWalletPubkey": "U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq"
+}
+
+### Build set_partner_share (25%, open ended) for the principal: 2xx
+POST http://127.0.0.1:8080/api/studio-power/partner-share/build
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "partnerWalletPubkey": "U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq",
+  "shareBps": 2500,
+  "startsAt": 1790000000,
+  "endsAt": 0
+}
+
+### Confirm grant with a signature that was never sent on chain must be refused: 502 from the verifier, no mirror write (console stays empty)
+POST http://127.0.0.1:8080/api/studio-power/grant/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "adminWalletPubkey": "U9mzuiHMVUsCw9BLKGibq55BPZuLaxipnvKFvn76Vjq",
+  "txSignature": "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+}

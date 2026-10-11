@@ -45,15 +45,8 @@ Content-Type: application/json
   "status": "scheduled"
 }
 
-### Settle Bar La Cueva (gross 875, expenses 200)
-POST http://127.0.0.1:8080/api/concerts/1/settle
-Content-Type: application/json
-
-{
-  "grossUsdc": 875.00
-}
-
-###
+### Settlement rows come from booking settle/confirm only (VenueBooking.http)
+### GET claims after settle_booking mirrored MariaDB
 GET http://127.0.0.1:8080/api/settlements/1/claims
 
 ###

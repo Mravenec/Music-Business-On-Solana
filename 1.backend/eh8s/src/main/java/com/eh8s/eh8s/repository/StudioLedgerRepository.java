@@ -217,6 +217,39 @@ public class StudioLedgerRepository implements IStudioLedgerRepository {
    * {@inheritDoc}
    */
   @Override
+  public StudioPartner syncPartnerFromChain(
+      String walletPubkey,
+      String displayName,
+      int shareBps,
+      LocalDateTime startedAt,
+      LocalDateTime endedAt,
+      boolean active) {
+    byte flag = active ? (byte) 1 : (byte) 0;
+    if (findPartnerByWallet(walletPubkey).isEmpty()) {
+      dsl.insertInto(STUDIO_PARTNER)
+          .set(STUDIO_PARTNER.WALLET_PUBKEY, walletPubkey)
+          .set(STUDIO_PARTNER.DISPLAY_NAME, displayName)
+          .set(STUDIO_PARTNER.SHARE_BPS, shareBps)
+          .set(STUDIO_PARTNER.ACTIVE, flag)
+          .set(STUDIO_PARTNER.STARTED_AT, startedAt)
+          .set(STUDIO_PARTNER.ENDED_AT, endedAt)
+          .execute();
+    } else {
+      dsl.update(STUDIO_PARTNER)
+          .set(STUDIO_PARTNER.SHARE_BPS, shareBps)
+          .set(STUDIO_PARTNER.ACTIVE, flag)
+          .set(STUDIO_PARTNER.STARTED_AT, startedAt)
+          .set(STUDIO_PARTNER.ENDED_AT, endedAt)
+          .where(STUDIO_PARTNER.WALLET_PUBKEY.eq(walletPubkey))
+          .execute();
+    }
+    return findPartnerByWallet(walletPubkey).orElseThrow();
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public StudioPartner deactivatePartner(Long partnerId) {
     StudioPartner current = findPartner(partnerId).orElseThrow();
     if (current.getEndedAt() == null) {

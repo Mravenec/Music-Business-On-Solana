@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * JOOQ reads and writes for the five SPP inputs: creative ratings, concert set
+ * JOOQ reads and writes for the five SPP inputs (Epic 45): creative ratings, concert set
  * check-ins, Enigma levels, and the per-cycle source rows used by close_cycle.
  */
 public interface ISppInputsRepository {

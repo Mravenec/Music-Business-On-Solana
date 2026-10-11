@@ -8,17 +8,19 @@ import { formatDuration, isSafeEmbed, PROVIDER_LABEL } from "../services/courseS
  * Primary: Mark complete and continue (next lesson, or back to the course after the last one).
  * Next: /academy/lessons/:nextLessonId or /academy/courses/:courseId
  * Also: Send practice to NEXUS (/academy/nexus/new?lessonId=…) when the lesson has a practice exercise.
- * Hidden: other sections, raw video links, resources until opened.
+ * Hidden: other sections, raw video links, storage refs, resources until opened.
  */
 export function AcademyLessonPage() {
   const { lessonId = "" } = useParams();
   const navigate = useNavigate();
-  const { loading, error, view, complete } = useLesson(Number(lessonId));
+  const { loading, error, view, watch, watchError, refreshWatch, complete } = useLesson(Number(lessonId));
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const lesson = view?.lesson;
   const done = Boolean(view?.progress?.completedAt);
-  const embed = lesson && isSafeEmbed(lesson.embedUrl) ? lesson.embedUrl : null;
+  const embed = watch?.kind === "embed" && isSafeEmbed(watch.url) ? watch.url : null;
+  const signed = watch?.kind === "signed" && watch.url ? watch.url : null;
 
   const next = () =>
     navigate(view?.nextLessonId ? `/academy/lessons/${view.nextLessonId}` : `/academy/courses/${view?.course.id}`);
@@ -36,17 +38,26 @@ export function AcademyLessonPage() {
     }
   };
 
+  const onRefreshWatch = async () => {
+    setRefreshing(true);
+    try {
+      await refreshWatch();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <section className="eh8s-page">
       <header className="eh8s-page-hero">
         <p className="eh8s-kicker">
-        {view ? (
-          <Link to={`/academy/courses/${view.course.id}`}>{view.course.title}</Link>
-        ) : (
-          "Lesson"
-        )}
-        {view ? ` · ${view.section.title}` : ""}
-      </p>
+          {view ? (
+            <Link to={`/academy/courses/${view.course.id}`}>{view.course.title}</Link>
+          ) : (
+            "Lesson"
+          )}
+          {view ? ` · ${view.section.title}` : ""}
+        </p>
         <h1>{lesson?.title ?? "Lesson"}</h1>
       </header>
       {loading ? <p className="eh8s-muted-line">Loading lesson…</p> : null}
@@ -73,14 +84,32 @@ export function AcademyLessonPage() {
                   referrerPolicy="strict-origin-when-cross-origin"
                 />
               </div>
-            ) : (
-              <div className="eh8s-banner bad">This video link cannot be played here.</div>
-            )}
+            ) : null}
+            {signed ? (
+              <div className="eh8s-player">
+                <video key={signed} src={signed} controls playsInline preload="metadata" title={lesson.title} />
+              </div>
+            ) : null}
+            {!embed && !signed ? (
+              <div className="eh8s-banner bad">
+                {watchError ?? (view.official ? "Official media is not ready yet." : "This video link cannot be played here.")}
+              </div>
+            ) : null}
             <p className="eh8s-muted-line">
-              {PROVIDER_LABEL[lesson.videoProvider]}
+              {view.official ? "Official media" : PROVIDER_LABEL[lesson.videoProvider]}
               {lesson.durationSec ? ` · ${formatDuration(lesson.durationSec)}` : ""}
               {done ? " · Completed" : ""}
+              {watch?.kind === "signed" && watch.expiresAt
+                ? ` · Temporary link until ${new Date(watch.expiresAt).toLocaleTimeString()}`
+                : ""}
             </p>
+            {watch?.kind === "signed" ? (
+              <div className="eh8s-cta-row">
+                <button type="button" className="eh8s-btn" onClick={onRefreshWatch} disabled={refreshing}>
+                  {refreshing ? "Refreshing…" : "Refresh watch link"}
+                </button>
+              </div>
+            ) : null}
             {saveError ? <div className="eh8s-banner bad">{saveError}</div> : null}
             <div className="eh8s-cta-row">
               {done ? (

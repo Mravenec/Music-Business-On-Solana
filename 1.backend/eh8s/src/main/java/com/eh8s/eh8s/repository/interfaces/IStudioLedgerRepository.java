@@ -125,6 +125,27 @@ public interface IStudioLedgerRepository {
   StudioPartner updatePartner(Long partnerId, String displayName, int shareBps);
 
   /**
+   * Repairs (or creates) the MariaDB partner row of a wallet from its confirmed on-chain
+   * {@code PartnerShare} window. Share, window and active flag follow the chain; an existing
+   * display name is kept.
+   *
+   * @param walletPubkey partner wallet
+   * @param displayName name used only when the row is created
+   * @param shareBps on-chain share in basis points
+   * @param startedAt on-chain window start
+   * @param endedAt on-chain window end, or {@code null} when open ended
+   * @param active whether the window is still live
+   * @return the stored row
+   */
+  StudioPartner syncPartnerFromChain(
+      String walletPubkey,
+      String displayName,
+      int shareBps,
+      LocalDateTime startedAt,
+      LocalDateTime endedAt,
+      boolean active);
+
+  /**
    * Marks a partner inactive and closes their window so later fees are not theirs.
    *
    * @param partnerId partner id

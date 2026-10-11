@@ -50,6 +50,21 @@ public class SolanaTxVerifier implements ISolanaTxVerifier {
 
   /** {@inheritDoc} */
   @Override
+  public void requireSuccessfulTransaction(String rpcUrl, String txSignature) {
+    if (txSignature == null || txSignature.isBlank()) {
+      throw reject("Missing transaction signature");
+    }
+    JsonNode tx = solanaRpcClient.getTransaction(rpcUrl, txSignature.trim());
+    if (tx == null || tx.isNull() || tx.isMissingNode()) {
+      throw reject("DevNet transaction not found or not confirmed yet");
+    }
+    if (!tx.path("meta").path("err").isNull()) {
+      throw reject("DevNet transaction failed on-chain; nothing recorded");
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
   public void verifyTransaction(
       JsonNode tx,
       String programId,

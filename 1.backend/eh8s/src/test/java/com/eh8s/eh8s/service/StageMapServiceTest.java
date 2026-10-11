@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * pin colors from real data and Request slot rules.
+ * Epic 45: pin colors from real data and Request slot rules.
  */
 class StageMapServiceTest {
 

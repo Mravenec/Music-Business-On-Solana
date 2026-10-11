@@ -1,10 +1,10 @@
 # EH8S Colosseum smoke - three DevNet wallets, no mocks. Program v0.10.0.
 # Closed profit loop: academy + settle fees -> treasury PDA -> owner withdraw;
 # settle pool -> vault -> band members by SPP weights -> per-member claim; AI owner digest.
-# venue listing + booking escrow + VAULT settle, subscriptions with expiry,
+# Epics 40-47: venue listing + booking escrow + VAULT settle, subscriptions with expiry,
 # per-song royalty pools + sync licenses (80/20), NEXUS / HARMONY / ATLAS, Slack approvals,
 # and (last, optional) the owner multisig that replaces direct treasury withdraws.
-# academy video library (owner publishes, students watch with progress) and the
+# Epics 50-51: academy video library (owner publishes, students watch with progress) and the
 # teaching path (level-5 instructors draft courses, the owner reviews, lesson practice goes to NEXUS).
 #
 #   powershell -File 4.anchor/eh8s-devnet/hackathon-smoke.ps1 -Preflight   # automated checks only
@@ -150,9 +150,9 @@ function Invoke-Preflight {
   try {
     $g = Get-RpcAccount $GovernancePda
     if ($null -eq $g) {
-      Add-Check "Governance PDA" $true "not initialized: owner withdraws directly (step 10); multisig is optional step 20"
+      Add-Check "Governance PDA" $true "not initialized: owner withdraws directly (step 11); multisig is optional step 19"
     } else {
-      Add-Check "Governance PDA" ($g.owner -eq $Program) "initialized: withdraws and agent grants go through proposals (step 20)"
+      Add-Check "Governance PDA" ($g.owner -eq $Program) "initialized: withdraws and agent grants go through proposals (step 19)"
     }
   } catch { Add-Check "Governance PDA" $false $_.Exception.Message }
 
@@ -176,7 +176,7 @@ function Invoke-Preflight {
   return $failed
 }
 
-Write-Host "EH8S judge smoke - DevNet USDC only, no demo data."
+Write-Host "EH8S judge smoke - DevNet USDC only. Do not run load_mocks.py."
 Write-Host "Program: $Program"
 Write-Host "Treasury PDA: $TreasuryPda (USDC ATA $TreasuryAta)"
 Write-Host "Owner wallet (withdraws the treasury): $Owner"
@@ -190,7 +190,7 @@ if ($Preflight) {
 }
 
 Pause-Step "0. Stack up (no mocks)" @"
-1. python 0.database/scripts/setup_db.py
+1. python 0.database/scripts/setup_db.py      (Do NOT run load_mocks.py.)
 2. cd 1.backend/eh8s ; mvn spring-boot:run
 3. cd 2.frontend/eh8s ; npm run dev
 4. Open $Ui - Health chip must not be Network Error.
@@ -276,14 +276,14 @@ The page shows the latest Claude summary of academy, settlements, claims, vaults
 Without the key the page says AI is off - that is expected, not a failure of the money loop.
 "@
 
-Pause-Step "12. VENUE lists on-chain, OWNER approves" @"
+Pause-Step "12. VENUE lists on-chain, OWNER approves (epic 41)" @"
 Phantom: wallet C. Open $Ui/stage-map/venues/<venueId> -> On-chain listing and escrow -> Register on-chain
 (register_venue: VenueListing PDA ["venue", wallet C, venueId], status pending). Disconnect.
 Phantom: owner $Owner. Inbox -> Venues and bookings -> the venue -> Approve venue (approve_venue).
 A wallet granted STAGE (0x04) under Inbox -> Agent powers may approve instead of the owner.
 "@
 
-Pause-Step "13. Booking escrow -> contract hash -> VAULT settle" @"
+Pause-Step "13. Booking escrow -> contract hash -> VAULT settle (epic 41)" @"
 Phantom: wallet C. Book a show at the approved venue for the band, then open the booking under
 On-chain listing and escrow -> Escrow with wallet (propose_booking: gross USDC -> escrow of the
 VenueAccessToken PDA ["access", wallet C, band, date]). Cancel and refund works only before confirm.
@@ -294,7 +294,7 @@ expenses -> venue, fee -> treasury ATA $TreasuryAta, pool -> vault, member pendi
 Members claim again at $Ui/stage-map/claim.
 "@
 
-Pause-Step "14. Subscriptions with an on-chain expiry" @"
+Pause-Step "14. Subscriptions with an on-chain expiry (epic 43)" @"
 Phantom: wallet B. Academy -> a plan -> Months (1-12) -> Pay with wallet (subscribe_academy(plan, months)).
 The page shows "Active until <date>. Paying again adds months."
 Catalog -> Region access -> region + reach tier + Months -> Pay with wallet (subscribe_geographic;
@@ -302,7 +302,7 @@ GeographicSubscription PDA ["geo_sub", wallet B, geo code]) for the wallet's fir
 Pay a zone that contains the approved venue: ATLAS (step 16) routes only inside paid, unexpired zones.
 "@
 
-Pause-Step "15. Per-song royalty pool + sync license 80/20" @"
+Pause-Step "15. Per-song royalty pool + sync license 80/20 (epic 44)" @"
 Phantom: owner (or a WAVE 0x10 agent). Catalog -> a track -> Activate song pool -> Activate with wallet
 (create_royalty_pool: RoyaltyPool PDA ["royalty", trackId], splits sum 10000 bps).
 Deposit royalties -> amount -> Pay with wallet (deposit_royalties credits each member by the song split).
@@ -311,7 +311,7 @@ Any wallet as licensee: track -> Sync licenses -> New sync deal -> Propose deal 
 Members: $Ui/stage-map/claim -> Song credits lists their share of each deposit and license.
 "@
 
-Pause-Step "16. NEXUS / HARMONY / ATLAS agents (46)" @"
+Pause-Step "16. NEXUS / HARMONY / ATLAS agents (epics 40, 46)" @"
 NEXUS needs ANTHROPIC_API_KEY on the backend (env only); without it the page says AI offline (503), by design.
 Academy -> Score Enigma (NEXUS) -> Request Score Enigma -> Ask NEXUS. On the result, Apply level on-chain
 opens the Enigma level signer (update_musician_level, owner or a NEXUS 0x01 agent wallet).
@@ -319,7 +319,7 @@ Band page -> Find musicians -> Run HARMONY (explained 0-100 ranking).
 Band page -> Tour routes -> Plan a route -> Generate route (stops inside the zone paid in step 14).
 "@
 
-Pause-Step "17. Slack approvals" @"
+Pause-Step "17. Slack approvals (epic 47)" @"
 Owner inbox -> Agent decisions -> Slack approvals shows Buttons are live / Buttons are off.
 Live needs SLACK_SIGNING_SECRET plus the Slack app's Interactivity Request URL
 https://<public tunnel>/api/slack/interactions (and a webhook or bot token for delivery).
@@ -328,7 +328,7 @@ the Slack message names who answered, and Agent decisions -> Answered decisions 
 "Approved in Slack by <user>". Answering it again on the web is refused (first answer wins).
 "@
 
-Pause-Step "18. OWNER publishes a video course, STUDENT watches" @"
+Pause-Step "18. OWNER publishes a video course, STUDENT watches (epic 50)" @"
 Phantom: owner $Owner. Inbox -> Courses -> New course (title, minimum Enigma level) -> Create course.
 Add section -> + Add lesson -> paste an unlisted YouTube / Vimeo / Bunny Stream / Cloudflare Stream link
 (the form says "Recognized: ...") -> tick Free preview for the first lesson -> Add lesson. Add a second, paid lesson.
@@ -339,7 +339,7 @@ an active plan (step 5/14) and the course's minimum level, or an owner grant. Lo
 Mark complete and continue -> the course percentage rises.
 "@
 
-Pause-Step "19. Level-5 INSTRUCTOR drafts, OWNER reviews, practice to NEXUS" @"
+Pause-Step "19. Level-5 INSTRUCTOR drafts, OWNER reviews, practice to NEXUS (epic 51)" @"
 Teaching is earned: Enigma level 5 (set on-chain by NEXUS or the owner, step 16) AND an approved instructor role
 (apply at /apply, owner approves at Roles). Academy -> Teach shows both requirements and the one missing step.
 Phantom: an eligible instructor wallet. Teach -> My courses -> New course, sections, lessons with a
@@ -350,7 +350,7 @@ Phantom: wallet B. Open an unlocked lesson with an exercise -> Send practice to 
 the exercise and the stored evaluation links back to the lesson.
 "@
 
-Pause-Step "20. OPTIONAL, LAST: owner multisig" @"
+Pause-Step "20. OPTIONAL, LAST: owner multisig (epic 42)" @"
 WARNING: once governance exists on this shared DevNet program, the direct treasury withdraw (step 10) and
 direct agent grants are refused for everyone ("GovernanceActive"). Skip this step to keep the judge path.
 Phantom: owner. Inbox -> Governance -> Set up signers -> Sign setup (init_governance, 1-5 signers + threshold;
@@ -362,7 +362,7 @@ At threshold -> Execute (execute_withdraw_proposal; destination must be a signer
 Write-Host ""
 Write-Host "Smoke finished. Money loop: academy + settle fee -> treasury PDA -> owner withdraw;" -ForegroundColor Green
 Write-Host "settle pool -> vault -> members by weight -> claim. AI digest summarizes the day." -ForegroundColor Green
-Write-Host "venue escrow settle, subscriptions with expiry, per-song pools + sync 80/20," -ForegroundColor Green
+Write-Host "Epics 40-47: venue escrow settle, subscriptions with expiry, per-song pools + sync 80/20," -ForegroundColor Green
 Write-Host "NEXUS / HARMONY / ATLAS, Slack approvals, optional multisig." -ForegroundColor Green
-Write-Host "owner video courses, students watch with progress, level-5 instructors teach after owner review." -ForegroundColor Green
+Write-Host "Epics 50-51: owner video courses, students watch with progress, level-5 instructors teach after owner review." -ForegroundColor Green
 Write-Host "Show Explorer for academy, band vault, settle, each claim, escrow settle, song deposit, sync license and the treasury withdraw."

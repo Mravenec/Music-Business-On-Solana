@@ -1,4 +1,4 @@
-### Ensure applicant wallet session exists
+### Ensure applicant wallet session exists (needs wallet signature challenge in live UI)
 POST http://127.0.0.1:8080/api/session/wallet
 Content-Type: application/json
 
@@ -8,8 +8,9 @@ Content-Type: application/json
   "role": "musician"
 }
 
-### Apply for venue role (pending)
+### Apply for venue role (pending) — Bearer = applicant JWT
 POST http://127.0.0.1:8080/api/role-applications
+Authorization: Bearer {{applicantToken}}
 Content-Type: application/json
 
 {
@@ -19,31 +20,43 @@ Content-Type: application/json
 
 ### List pending applications (owner queue)
 GET http://127.0.0.1:8080/api/role-applications?status=pending
+Authorization: Bearer {{ownerToken}}
 
-### Forbid self-assign owner
-POST http://127.0.0.1:8080/api/role-applications
+### Approve without Bearer → 401
+POST http://127.0.0.1:8080/api/role-applications/{{appId}}/approve
 Content-Type: application/json
 
 {
-  "walletPubkey": "Eh8sRoleApplyTest1111111111111111111111111",
-  "role": "owner"
+  "reason": "no token"
 }
 
-### Approve pending venue application (replace {{appId}} after list)
-# @name approve
-POST http://127.0.0.1:8080/api/role-applications/1/approve
+### Spoof body owner wallet with non-reviewer JWT → 403
+POST http://127.0.0.1:8080/api/role-applications/{{appId}}/approve
+Authorization: Bearer {{spoofToken}}
 Content-Type: application/json
 
 {
   "reviewedByWallet": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
+  "reason": "spoof"
+}
+
+### Approve with real principal JWT → 2xx (body wallet ignored for authz; audit = session wallet)
+POST http://127.0.0.1:8080/api/role-applications/{{appId}}/approve
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "reviewedByWallet": "SpoofIgnoredWallet",
   "reason": "Smoke approve venue"
 }
 
 ### List memberships for applicant
 GET http://127.0.0.1:8080/api/roles/memberships?walletPubkey=Eh8sRoleApplyTest1111111111111111111111111
+Authorization: Bearer {{ownerToken}}
 
-### Reject a fresh instructor application setup
+### Reject with principal JWT (fresh instructor application first)
 POST http://127.0.0.1:8080/api/role-applications
+Authorization: Bearer {{applicantToken}}
 Content-Type: application/json
 
 {
@@ -51,11 +64,21 @@ Content-Type: application/json
   "role": "instructor"
 }
 
-### Reject instructor (replace id after apply — default next id may vary)
-POST http://127.0.0.1:8080/api/role-applications/2/reject
+### Reject instructor → 2xx
+POST http://127.0.0.1:8080/api/role-applications/{{rejectAppId}}/reject
+Authorization: Bearer {{ownerToken}}
 Content-Type: application/json
 
 {
-  "reviewedByWallet": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC",
   "reason": "Smoke reject instructor"
+}
+
+### Grant partner still works (principal JWT)
+POST http://127.0.0.1:8080/api/role-grants
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sRoleApplyTest1111111111111111111111111",
+  "role": "partner"
 }

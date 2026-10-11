@@ -44,6 +44,13 @@ export type LessonInput = {
   resources?: string | null;
   practicePrompt?: string | null;
   isActive?: number;
+  /**
+   * Owner-only official media pin. Omit all three to leave unchanged; send all three blank to clear;
+   * otherwise send all three together (SHA-256 hex, storage object key, key id).
+   */
+  contentHash?: string | null;
+  storageRef?: string | null;
+  keyId?: string | null;
 };
 
 /** course_access_grant POJO keys; expiresAt is a LocalDateTime ("YYYY-MM-DDTHH:mm:ss"). */

@@ -29,8 +29,8 @@ import { approveCourse, rejectCourse, submitCourse } from "../services/teachingS
 import { statusText } from "./statusText";
 
 export const AUTHORING_TEXTS = {
-  400: "Check the fields. Video links must be https YouTube, Vimeo, Bunny Stream or Cloudflare Stream links.",
-  403: "Only the platform owner can edit courses.",
+  400: "Check the fields. Video links must be https YouTube, Vimeo, Bunny Stream or Cloudflare Stream links. Official media needs contentHash, storageRef and keyId together.",
+  403: "Only the platform owner can edit courses or pin official media.",
   404: "That course was not found.",
   409: "Add at least one visible lesson before publishing.",
 };

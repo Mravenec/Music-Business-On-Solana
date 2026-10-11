@@ -10,7 +10,7 @@ import com.eh8s.eh8s.service.interfaces.JwtPrincipal;
 import java.util.List;
 
 /**
- * HTTP for each signed-in wallet's earnings and a books editor's partner books.
+ * HTTP for each signed-in wallet's earnings, books readers' partner books, and principal-only partner mutate.
  */
 public interface IStudioLedgerController {
 
@@ -65,7 +65,7 @@ public interface IStudioLedgerController {
   List<StudioPartnerAllocation> myAllocations(JwtPrincipal principal, int year, int month);
 
   /**
-   * Active partners. A non-owner receives 403.
+   * Active partners. Principal or studio admin may read; others receive 403.
    *
    * @param principal signed-in account
    * @return partner rows
@@ -73,7 +73,7 @@ public interface IStudioLedgerController {
   List<StudioPartner> partners(JwtPrincipal principal);
 
   /**
-   * Adds or updates a partner. A non-owner receives 403.
+   * Adds or updates a partner. Only the principal wallet may mutate; studio admin receives 403.
    *
    * @param principal signed-in account
    * @param draft wallet, name, and shareBps
@@ -82,7 +82,7 @@ public interface IStudioLedgerController {
   StudioPartner savePartner(JwtPrincipal principal, StudioPartner draft);
 
   /**
-   * Marks a partner inactive. A non-owner receives 403.
+   * Marks a partner inactive. Only the principal wallet may mutate; studio admin receives 403.
    *
    * @param principal signed-in account
    * @param partnerId partner id
@@ -91,7 +91,7 @@ public interface IStudioLedgerController {
   StudioPartner deactivatePartner(JwtPrincipal principal, Long partnerId);
 
   /**
-   * Confirmed show fees for one month. A non-owner receives 403.
+   * Confirmed show fees for one month. Principal or studio admin may read; others receive 403.
    *
    * @param principal signed-in account
    * @param year calendar year
@@ -101,7 +101,7 @@ public interface IStudioLedgerController {
   List<ConcertSettlement> showFees(JwtPrincipal principal, int year, int month);
 
   /**
-   * Confirmed academy treasury rows for one month. A non-owner receives 403.
+   * Confirmed academy treasury rows for one month. Principal or studio admin may read; others receive 403.
    *
    * @param principal signed-in account
    * @param year calendar year
@@ -111,7 +111,7 @@ public interface IStudioLedgerController {
   List<AcademySubscription> academyFees(JwtPrincipal principal, int year, int month);
 
   /**
-   * Confirmed sync studio cuts for one month. A non-owner receives 403.
+   * Confirmed sync studio cuts for one month. Principal or studio admin may read; others receive 403.
    *
    * @param principal signed-in account
    * @param year calendar year
@@ -121,7 +121,7 @@ public interface IStudioLedgerController {
   List<SyncLicenseDeal> syncFees(JwtPrincipal principal, int year, int month);
 
   /**
-   * Every partner's allocation for one month. A non-owner receives 403.
+   * Every partner's allocation for one month. Principal or studio admin may read; others receive 403.
    *
    * @param principal signed-in account
    * @param year calendar year

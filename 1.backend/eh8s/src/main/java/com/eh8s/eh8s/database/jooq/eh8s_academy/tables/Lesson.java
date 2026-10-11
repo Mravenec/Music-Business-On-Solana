@@ -96,6 +96,21 @@ public class Lesson extends TableImpl<LessonRecord> {
     public final TableField<LessonRecord, String> VIDEO_URL = createField(DSL.name("video_url"), SQLDataType.VARCHAR(600).nullable(false), this, "");
 
     /**
+     * The column <code>eh8s_academy.lesson.content_hash</code>.
+     */
+    public final TableField<LessonRecord, String> CONTENT_HASH = createField(DSL.name("content_hash"), SQLDataType.CHAR(64).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.CHAR)), this, "");
+
+    /**
+     * The column <code>eh8s_academy.lesson.storage_ref</code>.
+     */
+    public final TableField<LessonRecord, String> STORAGE_REF = createField(DSL.name("storage_ref"), SQLDataType.VARCHAR(600).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
+
+    /**
+     * The column <code>eh8s_academy.lesson.key_id</code>.
+     */
+    public final TableField<LessonRecord, String> KEY_ID = createField(DSL.name("key_id"), SQLDataType.VARCHAR(64).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
+
+    /**
      * The column <code>eh8s_academy.lesson.embed_url</code>.
      */
     public final TableField<LessonRecord, String> EMBED_URL = createField(DSL.name("embed_url"), SQLDataType.VARCHAR(600).nullable(false), this, "");

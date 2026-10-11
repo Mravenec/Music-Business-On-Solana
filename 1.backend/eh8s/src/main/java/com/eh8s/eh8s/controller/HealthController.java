@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Serves {@code GET /health} for monitoring and the Vite shell.
+ * Serves {@code GET /health} for GATE_HTTP and the Vite shell.
  */
 @RestController
 public class HealthController implements IHealthController {

@@ -147,20 +147,20 @@ export function RolesProvider({ children }: { children: ReactNode }) {
 
   const approve = useCallback(
     async (id: number, reason?: string) => {
-      if (!wallet) throw new Error("Owner wallet required");
-      await approveRoleApplication(id, wallet, reason);
+      if (!session) throw new Error("Sign in required to review roles");
+      await approveRoleApplication(id, reason);
       await refresh();
     },
-    [wallet, refresh]
+    [session, refresh]
   );
 
   const reject = useCallback(
     async (id: number, reason?: string) => {
-      if (!wallet) throw new Error("Owner wallet required");
-      await rejectRoleApplication(id, wallet, reason);
+      if (!session) throw new Error("Sign in required to review roles");
+      await rejectRoleApplication(id, reason);
       await refresh();
     },
-    [wallet, refresh]
+    [session, refresh]
   );
 
   const grant = useCallback(
@@ -173,11 +173,11 @@ export function RolesProvider({ children }: { children: ReactNode }) {
 
   const revoke = useCallback(
     async (id: number, reason?: string) => {
-      if (!wallet) throw new Error("Owner wallet required");
-      await revokeRoleApplication(id, wallet, reason);
+      if (!session) throw new Error("Sign in required to review roles");
+      await revokeRoleApplication(id, reason);
       await refresh();
     },
-    [wallet, refresh]
+    [session, refresh]
   );
 
   const value = useMemo(

@@ -93,6 +93,10 @@ import { BandToursPage } from "./pages/BandToursPage";
 import { BandTourNewPage } from "./pages/BandTourNewPage";
 import { BandTourPage } from "./pages/BandTourPage";
 import { MyEarningsPage, StudioLedgerPage } from "./pages/StudioLedgerPage";
+import { StudioPowerPage } from "./pages/StudioPowerPage";
+import { StudioPowerGrantPage } from "./pages/StudioPowerGrantPage";
+import { StudioPowerRevokePage } from "./pages/StudioPowerRevokePage";
+import { StudioPowerPartnerSharePage } from "./pages/StudioPowerPartnerSharePage";
 
 export function App() {
   return (
@@ -203,6 +207,13 @@ export function App() {
                 <Route path="/owner/digest" element={<OwnerDigestPage />} />
                 <Route path="/owner/agents" element={<OwnerAgentsPage />} />
                 <Route path="/owner/agents/:code" element={<OwnerAgentAuthorizePage />} />
+                <Route path="/owner/studio-power" element={<StudioPowerPage />} />
+                <Route path="/owner/studio-power/grant" element={<StudioPowerGrantPage />} />
+                <Route path="/owner/studio-power/revoke" element={<StudioPowerRevokePage />} />
+                <Route
+                  path="/owner/studio-power/partner-share"
+                  element={<StudioPowerPartnerSharePage />}
+                />
                 <Route path="/owner/governance" element={<GovernancePage />} />
                 <Route path="/owner/governance/setup" element={<GovernanceSetupPage />} />
                 <Route path="/owner/governance/new" element={<GovernanceNewPage />} />

@@ -1,93 +1,67 @@
 # EH8S — Enigma H8 Studios
 
-**A music studio network on Solana.** One app takes a musician from the first lesson to a paid show: the academy, the band, the venue and the payout all settle in USDC through one Anchor program. Every payment is signed in the user's own wallet (Phantom or Solflare). There are no custodial balances and no demo data.
+Music studio network on **Solana DevNet**: academy tuition, venue settlement, and royalties move **real DevNet USDC** (faucet money). Phantom or Solflare signs every payment. There are no pretend balances and no SQL demo users for the judge path.
 
-| | |
-|---|---|
-| Network | Solana **DevNet** (faucet USDC, not Mainnet) |
-| Program | [`GUY7oRUUFHdiNHqoJgUSBv6anqaftAdfhrTbaD5nMgzG`](https://explorer.solana.com/address/GUY7oRUUFHdiNHqoJgUSBv6anqaftAdfhrTbaD5nMgzG?cluster=devnet) · v0.10.0 · 27 instructions |
-| USDC mint (Circle DevNet) | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` |
-| Platform owner | `7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC` |
-| Hackathon | Colosseum Crypto World's Fair, 14 Sep – 12 Oct 2026 · [disclosure of prior work](4.anchor/eh8s-devnet/COLOSSEUM_DISCLOSURE.md) |
+Program (DevNet): `GUY7oRUUFHdiNHqoJgUSBv6anqaftAdfhrTbaD5nMgzG`  
+USDC mint: `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`
 
-## The problem
+## What judges should run
 
-Independent musicians are paid last and paid least: a band plays on Friday and waits weeks for a bank transfer that someone splits by hand. Learning, forming a band, booking venues and collecting royalties live in separate worlds, so nobody can pay the musician instantly and fairly.
+Deliverable folders: `0.database/` · `1.backend/eh8s/` · `2.frontend/eh8s/` · `3.diagrams/` · `4.anchor/eh8s-devnet/` · `5.submission/`
 
-## What EH8S does
-
-| Role | What they do in the app | What happens on-chain |
-|---|---|---|
-| **Student** | Picks a plan ($30 / $55 / $90 a month, 1–12 months) and studies the *Enigma Method* video courses | `subscribe_academy`: 85% to the studio treasury PDA, 15% straight to the instructor; `expires_at` stored on-chain |
-| **Musician** | Rises through Enigma levels 0–5, forms a band or plays solo, requests a slot at a venue | `update_musician_level` (only the owner or the NEXUS agent can sign it); `create_band` + `update_spp_weights` |
-| **Venue** | Lists itself (capacity, ticket price, contract type), opens dates on the Stage Map, escrows each show | `register_venue`, `propose_booking` (gross into escrow), `confirm_booking` pins the SHA-256 of the contract |
-| **Band** | Gets paid the night of the show; each member claims their own share | `settle_booking`: expenses back to the venue, 15% fee to the treasury PDA, the rest to the band vault, split by each member's **Shared Participation (SPP)** score; `claim_royalties` |
-| **Artist** | Earns per-song royalties and sync licenses | `create_royalty_pool`, `deposit_royalties`, `pay_sync_license` (80% artists / 20% studio) |
-| **Touring band** | Plans a tour through the zones it subscribes to (Local $5 → Global $99 a month) | `subscribe_geographic` with on-chain expiry; the ATLAS agent routes approved venues |
-| **Owner** | Approves roles, courses and agent decisions (web or Slack); withdraws the treasury | `withdraw_treasury` (owner only), `authorize_agent` (bit-scoped `AgentAuthority` PDAs), optional native multisig (`init_governance`, `propose`, `approve_proposal`, `execute_*`) |
-
-**AI agents.** Twelve agents support the studio's operations. NEXUS scores practice and recommends levels (Claude), HARMONY matches musicians to bands, ATLAS plans tour routes, and a Claude digest summarises the day for the owner. An agent can act on-chain only with the permission bits the owner signs into its `AgentAuthority` PDA.
-
-## Repository map
-
-```text
-0.database/             MariaDB schema: one idempotent SQL file per schema (6 schemas) + setup scripts
-1.backend/eh8s/         Spring Boot 3.5 · Java 21 · JOOQ · JWT: 32 controllers, 33 services, 28 repositories
-                        service/solana/: instruction builders, PDA derivation, RPC client, transaction verifier
-2.frontend/eh8s/        React 18 · Vite 5 · TypeScript · Solana wallet adapter: services → hooks → pages
-3.diagrams/             Visual twins: dbdiagram.io (DBML), PlantUML (backend layers), Mermaid (frontend + money loop)
-4.anchor/eh8s-devnet/   Anchor program (Rust), program tests, judge smoke script, DevNet addresses, disclosure
-5.submission/           Logo (PNG + SVG)
-```
-
-## Architecture
-
-```text
-Phantom / Solflare ──signs──▶ Anchor program (DevNet) ──▶ USDC token accounts (treasury PDA, vault, escrow)
-        │                                  ▲
-        │ signed login (nonce)             │ the backend re-reads every signature from RPC and checks
-        ▼                                  │ program id, accounts and amounts before recording it
-React (services → hooks → pages) ──JWT──▶ Spring Boot (controller → service → repository) ──JOOQ──▶ MariaDB
-```
-
-Layers are never inverted: MariaDB → generated JOOQ POJOs (no hand-written DTOs) → repository → service → controller → React services → hooks → pages. Every layer is injected through its interface and documented with Javadoc.
-
-## Security decisions
-
-- **Wallet-signed login.** The server issues a one-time nonce; the wallet signs `Sign in to EH8S`; only a valid ed25519 signature returns a session. No signature, a reused nonce or another wallet's signature → 401.
-- **JWT on every private API.** Only health, the sign-in endpoints and the Slack callback (checked with Slack's signature) are public. The preflight proves 14 protected routes return 401 without a token.
-- **The server never moves money.** Every payment is a transaction the user signs. The backend verifies each confirmed signature against the program, accounts and amounts before it writes a row.
-- **Owner-only and agent-scoped powers on-chain.** Treasury withdrawals, agent permissions and level changes are enforced by the program, not by the UI. An optional native multisig replaces the single owner once enabled.
-
-## Verify it yourself
+Guided money smoke (three wallets — owner, musician, venue):
 
 ```powershell
-# 1. Database (Docker) and schema
-python 0.database/scripts/setup_db.py
-
-# 2. Backend (http://127.0.0.1:8080)
-cd 1.backend/eh8s; mvn test; mvn spring-boot:run
-
-# 3. Frontend (http://127.0.0.1:5173)
-cd 2.frontend/eh8s; npm install; npm run dev
-
-# 4. Judge preflight: 25 automated checks (stack, JWT gates, Slack signature gate, program, config, treasury, vault, governance, agent PDAs)
-cd 4.anchor/eh8s-devnet; .\hackathon-smoke.ps1 -Preflight
-
-# 5. Guided money run with three DevNet wallets (owner, musician, venue); pauses for each signature
-.\hackathon-smoke.ps1
+cd 4.anchor/eh8s-devnet
+.\hackathon-smoke.ps1 -Preflight   # 25 automated checks: stack, JWT 401 gates (incl. courses + teaching), Slack signature gate, program, config, treasury PDA ATA, vault, governance PDA, agent authority PDAs
+.\hackathon-smoke.ps1              # preflight + guided wallet steps
 ```
 
-| Test suite | Where | Count |
+The guided run **pauses** and tells you which wallet to connect. It does not send fake transactions. Path: academy pay → owner activates the band vault → venue listing + booking escrow → **settle from escrow** (the only show-settle path) → each member claims → owner withdraws the treasury → owner AI digest → subscriptions with expiry → per-song royalty pool + sync license → NEXUS / HARMONY / ATLAS → Slack approvals → owner publishes a video course, a student watches → a level-5 instructor drafts a course and the owner reviews it → (optional, last) owner multisig. Steps and Explorer checks: [`4.anchor/eh8s-devnet/HACKATHON_SMOKE.md`](4.anchor/eh8s-devnet/HACKATHON_SMOKE.md).
+
+**One settle path:** confirmed booking escrow → wallet signs `settle_booking` → `POST /api/bookings/{id}/settle/confirm` (UI: Inbox / Escrows to settle). There is no MariaDB-only invent-settle (`POST /api/concerts/{id}/settle` is removed).
+
+Program tests (WSL, loads the built `.so`): `cd 4.anchor/eh8s-devnet/tests-program && SBF_OUT_DIR=$PWD/../target/deploy cargo test`.
+
+## Money loops (DevNet only)
+
+| Flow | Who pays | Who receives |
 |---|---|---|
-| Backend unit tests | `1.backend/eh8s/src/test/java/com/eh8s/eh8s/service` | 164 |
-| HTTP contract files (401 without a token, 2xx with a signed session) | `1.backend/eh8s/src/test/java/com/eh8s/eh8s/http` | 34 |
-| Program tests (load the built `.so`) | `4.anchor/eh8s-devnet/tests-program` | 59 |
+| Academy subscribe | Musician wallet | 85% treasury PDA / 15% instructor |
+| Booking escrow + settle (only show settle) | Venue wallet escrows the gross; owner or VAULT agent settles `settle_booking` | Expenses → venue; fee → treasury PDA; pool → vault, split by SPP weight; members **claim** next |
+| Treasury withdraw | Owner wallet signs | Treasury PDA → owner USDC ATA (`/owner/treasury`) |
+| Per-song royalty deposit | Owner or WAVE agent | Vault, credited to each song member by the song's splits |
+| Sync license | Licensee wallet | 20% treasury PDA / 80% song members |
+| Academy plan / zone access | Musician wallet, 1–12 months | Treasury PDA (academy 85% / 15% instructor); on-chain `expires_at` |
 
-Program tests: `cd 4.anchor/eh8s-devnet/tests-program && SBF_OUT_DIR=$PWD/../target/deploy cargo test` (Linux / WSL).
+Owner AI digest (`/owner/digest`): Claude summarizes the day's loop metrics and treasury balance when `ANTHROPIC_API_KEY` is set on the backend. The same key powers NEXUS (Score Enigma); HARMONY and ATLAS run without it. Agent decisions can be answered from Slack with signed Approve / Reject buttons when `SLACK_SIGNING_SECRET` is set. An optional native owner multisig (Governance PDA `3ZH4igyjF1jFPhyRTAczh1Za8bgjaTfXe2cB9v2v49XY`) replaces the direct treasury withdraw once it is set up.
 
-Step-by-step wallet walkthrough with Explorer checks: [`4.anchor/eh8s-devnet/HACKATHON_SMOKE.md`](4.anchor/eh8s-devnet/HACKATHON_SMOKE.md). Every instruction, account and error: [`4.anchor/eh8s-devnet/README.md`](4.anchor/eh8s-devnet/README.md).
+Academy video library (`/academy/courses`): the owner builds courses from YouTube / Vimeo / Bunny Stream / Cloudflare Stream links at `/owner/courses`; paid lessons open with an active academy plan plus the course's minimum Enigma level (or an owner grant), and locked lessons never send the video link. Teaching is earned (`/academy/teach`): Enigma level 5 plus an approved instructor role lets a musician draft courses, and the owner approves each one from `/owner/courses/review` before students see it. Lesson practice exercises go to NEXUS.
 
-## Configuration
+Program v0.10.0 (DevNet). Agent wallets get on-chain powers through `AgentAuthority` PDAs (NEXUS levels, HARMONY vaults, STAGE venues, VAULT settlement, WAVE royalties).
 
-Copy `0.database/.env.example` and `1.backend/eh8s/.env.example`. The defaults are for local development only; set your own `JWT_SECRET` and database password anywhere else. Optional: `ANTHROPIC_API_KEY` (NEXUS scoring and the owner digest) and `SLACK_SIGNING_SECRET` (Slack approval buttons).
+Platform owner (bootstrap, not an applyable role): `7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC`
+
+## Stack (never inverted)
+
+MariaDB (`0.database/canonical_sql`) → JOOQ **POJOs** (no Java DTOs) → repository → service → controller → `.http` → React `services` → `hooks` → `pages`.
+
+## Quick start
+
+1. `python 0.database/scripts/setup_db.py` — **do not** run `load_mocks.py`
+2. `cd 1.backend/eh8s` → `mvn spring-boot:run`
+3. `cd 2.frontend/eh8s` → `npm run dev` → http://127.0.0.1:5173
+4. Phantom → DevNet → fund SOL + DevNet USDC → walk the smoke script
+
+Health must not show Network Error from the Vite origin.
+
+## Contest note
+
+Colosseum scores work in the **14 Sep–12 Oct 2026** window. Earlier engine work is pre-existing and **must be disclosed** on the submission form.
+
+Submission kit (pitch and demo video scripts, form answers, weekly updates, logo, checklist): [`5.submission/`](5.submission/SUBMISSION_CHECKLIST.md)
+
+Full timeline (pre-existing vs contest-window, Q&A for the form):  
+[`4.anchor/eh8s-devnet/COLOSSEUM_DISCLOSURE.md`](4.anchor/eh8s-devnet/COLOSSEUM_DISCLOSURE.md)
+
+This product uses DevNet faucet USDC, not Mainnet. Agent board process lives in `AGENTS.md` — not required for the demo.

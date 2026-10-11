@@ -27,32 +27,38 @@ public interface IRoleApplicationService {
   List<AccountRoleApplication> listApplications(String status, String walletPubkey);
 
   /**
-   * Approves a pending application (platform owner wallet only).
+   * Approves a pending application. Authorization uses the signed-in account only.
    *
+   * @param reviewerAccountId JWT session account id
    * @param applicationId application id
-   * @param review application POJO carrying {@code reviewedByWallet} and optional {@code reason}
+   * @param review optional POJO carrying {@code reason} only ({@code reviewedByWallet} is ignored)
    * @return updated application
    */
-  AccountRoleApplication approve(Long applicationId, AccountRoleApplication review);
+  AccountRoleApplication approve(
+      Long reviewerAccountId, Long applicationId, AccountRoleApplication review);
 
   /**
-   * Rejects a pending application (platform owner wallet only).
+   * Rejects a pending application. Authorization uses the signed-in account only.
    *
+   * @param reviewerAccountId JWT session account id
    * @param applicationId application id
-   * @param review application POJO carrying {@code reviewedByWallet} and optional {@code reason}
+   * @param review optional POJO carrying {@code reason} only ({@code reviewedByWallet} is ignored)
    * @return updated application
    */
-  AccountRoleApplication reject(Long applicationId, AccountRoleApplication review);
+  AccountRoleApplication reject(
+      Long reviewerAccountId, Long applicationId, AccountRoleApplication review);
 
   /**
-   * Revokes an approved role (platform owner wallet only). The grant and the application
-   * row are removed so the wallet can apply again.
+   * Revokes an approved role. Authorization uses the signed-in account only. The grant and the
+   * application row are removed so the wallet can apply again.
    *
+   * @param reviewerAccountId JWT session account id
    * @param applicationId approved application id
-   * @param review application POJO carrying {@code reviewedByWallet} and optional {@code reason}
+   * @param review optional POJO carrying {@code reason} only ({@code reviewedByWallet} is ignored)
    * @return the removed application with status {@code revoked}
    */
-  AccountRoleApplication revoke(Long applicationId, AccountRoleApplication review);
+  AccountRoleApplication revoke(
+      Long reviewerAccountId, Long applicationId, AccountRoleApplication review);
 
   /**
    * Lists approved multi-role memberships for a wallet.
@@ -85,4 +91,20 @@ public interface IRoleApplicationService {
    * @param walletPubkey partner wallet
    */
   void clearPartner(String walletPubkey);
+
+  /**
+   * Caches the studio admin role for a wallet whose {@code grant_studio_role} was confirmed
+   * on-chain. No account means nothing is stored (the on-chain mirror still decides books access).
+   *
+   * @param walletPubkey granted wallet
+   */
+  void ensureStudioAdmin(String walletPubkey);
+
+  /**
+   * Removes the cached studio admin role after a confirmed on-chain {@code revoke_studio_role}. The
+   * principal wallet is left alone.
+   *
+   * @param walletPubkey revoked wallet
+   */
+  void clearStudioAdmin(String walletPubkey);
 }

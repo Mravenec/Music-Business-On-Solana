@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * JOOQ reads and writes behind Stage Map pins, venue open dates, and slot requests.
+ * JOOQ reads and writes behind Stage Map pins, venue open dates, and slot requests (Epic 45).
  */
 public interface IStageMapRepository {
 

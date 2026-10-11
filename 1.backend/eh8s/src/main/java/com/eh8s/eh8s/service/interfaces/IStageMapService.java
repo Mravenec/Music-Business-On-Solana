@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Stage Map pins derived from real data: purple partner, yellow upcoming confirmed
+ * Stage Map pins derived from real data (Epic 45): purple partner, yellow upcoming confirmed
  * booking, green approved venue with open dates, red no availability that month. Also venue open
  * dates and the musician "Request slot" action.
  */

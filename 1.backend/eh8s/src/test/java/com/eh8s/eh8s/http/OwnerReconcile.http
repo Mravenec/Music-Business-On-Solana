@@ -1,0 +1,36 @@
+### Login (JWT for the protected /api/** calls below)
+POST http://127.0.0.1:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jwt.gate@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Reconcile without Bearer must be 401
+POST http://127.0.0.1:8080/api/owner/reconcile
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"
+}
+
+### Reconcile for a non-owner wallet must be 403
+POST http://127.0.0.1:8080/api/owner/reconcile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "YmTYQJifjP2DawdxDUYuNCZJ5to9ge5nNGaWGW2ozJU"
+}
+
+### Owner reconcile: scans confirmed money rows vs RPC; demotes orphans; never invents USDC
+POST http://127.0.0.1:8080/api/owner/reconcile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC"
+}

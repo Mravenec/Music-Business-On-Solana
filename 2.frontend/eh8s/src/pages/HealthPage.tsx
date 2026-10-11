@@ -3,7 +3,7 @@ import { useHealth } from "../hooks/useHealth";
 
 /**
  * Quiet "studio availability" page (footer only) — not a primary marketing nav item.
- * Still proves Vite can reach Spring.
+ * Still proves Vite can reach Spring (GATE_HTTP / frontend-api-reach).
  */
 export function HealthPage() {
   const { loading, error, data } = useHealth();

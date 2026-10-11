@@ -3,14 +3,21 @@ import {
   fetchCourse,
   fetchCourses,
   fetchLesson,
+  fetchLessonWatch,
   saveLessonProgress,
   type CatalogRow,
   type CourseOutline,
   type LessonView,
+  type LessonWatch,
   type LockReason,
   type ProgressResult,
 } from "../services/courseService";
 import { statusText } from "./statusText";
+
+const WATCH_TEXTS = {
+  403: "This lesson is locked for your account.",
+  409: "Official media is not ready yet.",
+};
 
 /** Plain words for a locked lesson or course. */
 export function lockText(reason: LockReason, minLevel: number): string {
@@ -93,27 +100,52 @@ export type LessonState = {
   loading: boolean;
   error: string | null;
   view: LessonView | null;
+  /** Playback from GET /watch when the lesson is unlocked; null while locked or still loading. */
+  watch: LessonWatch | null;
+  watchError: string | null;
+  /** Re-fetch a fresh temporary link (official signed URLs expire). */
+  refreshWatch: () => Promise<void>;
   complete: () => Promise<ProgressResult>;
 };
 
-/** One lesson for the player, plus "mark complete". */
+/** One lesson for the player, plus temporary watch URL and "mark complete". */
 export function useLesson(lessonId: number): LessonState {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<LessonView | null>(null);
+  const [watch, setWatch] = useState<LessonWatch | null>(null);
+  const [watchError, setWatchError] = useState<string | null>(null);
+
+  const loadWatch = useCallback(async () => {
+    if (!Number.isFinite(lessonId)) return;
+    try {
+      setWatch(await fetchLessonWatch(lessonId));
+      setWatchError(null);
+    } catch (err) {
+      setWatch(null);
+      setWatchError(statusText(err, WATCH_TEXTS, "Could not load the video."));
+    }
+  }, [lessonId]);
 
   const load = useCallback(async () => {
     if (!Number.isFinite(lessonId)) return;
     setLoading(true);
+    setWatch(null);
+    setWatchError(null);
     try {
-      setView(await fetchLesson(lessonId));
+      const next = await fetchLesson(lessonId);
+      setView(next);
       setError(null);
+      if (!next.locked) {
+        await loadWatch();
+      }
     } catch (err) {
+      setView(null);
       setError(statusText(err, { 404: "That lesson is not available." }, "Could not load the lesson."));
     } finally {
       setLoading(false);
     }
-  }, [lessonId]);
+  }, [lessonId, loadWatch]);
 
   useEffect(() => {
     void load();
@@ -123,6 +155,9 @@ export function useLesson(lessonId: number): LessonState {
     loading,
     error,
     view,
+    watch,
+    watchError,
+    refreshWatch: loadWatch,
     complete: async () => {
       try {
         const out = await saveLessonProgress(lessonId, view?.lesson.durationSec ?? 0, true);

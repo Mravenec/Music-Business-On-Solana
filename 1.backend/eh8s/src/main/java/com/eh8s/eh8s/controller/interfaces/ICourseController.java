@@ -37,6 +37,15 @@ public interface ICourseController {
   Map<String, Object> lesson(JwtPrincipal principal, Long lessonId);
 
   /**
+   * Signed watch URL (official lessons) or embed URL; 403 when the lesson is locked.
+   *
+   * @param principal JWT principal
+   * @param lessonId lesson id
+   * @return {@code kind}, {@code url}, {@code expiresAt}, {@code contentHash}, {@code keyId}
+   */
+  Map<String, Object> watch(JwtPrincipal principal, Long lessonId);
+
+  /**
    * Saves playback position and optional completion.
    *
    * @param principal JWT principal

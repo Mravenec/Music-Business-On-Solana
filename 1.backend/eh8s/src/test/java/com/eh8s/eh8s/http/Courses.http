@@ -1,8 +1,11 @@
-### Owner session (platform owner wallet) - JWT for the authoring calls below
-POST http://127.0.0.1:8080/api/session/wallet
+### Owner session (owner email login; unsigned wallet sessions are rejected since epic 73) - JWT for the authoring calls below
+POST http://127.0.0.1:8080/api/auth/login
 Content-Type: application/json
 
-{ "walletPubkey": "7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC" }
+{
+  "email": "owner@eh8s.local",
+  "password": "eh8s-dev-pass1"
+}
 
 > {% client.global.set("owner", response.body.accessToken); %}
 
@@ -132,6 +135,72 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "positionSec": 212, "completed": true }
+
+### [Epic 76] Instructor-style non-owner cannot pin official media (403)
+PUT http://127.0.0.1:8080/api/owner/lessons/{{paidId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "title": "x", "videoUrl": "https://vimeo.com/76979871", "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "storageRef": "official/ghost.enc", "keyId": "k-1" }
+
+### [Epic 76] Owner pins an official lesson (all three fields together; bad hash is 400)
+POST http://127.0.0.1:8080/api/owner/sections/{{sectionId}}/lessons
+Authorization: Bearer {{owner}}
+Content-Type: application/json
+
+{
+  "title": "Official: pocket masterclass",
+  "videoUrl": "https://vimeo.com/76979871",
+  "durationSec": 600,
+  "contentHash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "storageRef": "official/pocket-masterclass.enc",
+  "keyId": "k-2026-10"
+}
+
+> {% client.global.set("officialId", response.body.id); %}
+
+### [Epic 76] Bad content hash is 400
+POST http://127.0.0.1:8080/api/owner/sections/{{sectionId}}/lessons
+Authorization: Bearer {{owner}}
+Content-Type: application/json
+
+{ "title": "Bad hash", "videoUrl": "https://vimeo.com/76979871", "contentHash": "abc", "storageRef": "official/x.enc", "keyId": "k-1" }
+
+### [Epic 76] Watch without Bearer is 401
+GET http://127.0.0.1:8080/api/lessons/{{officialId}}/watch
+
+### [Epic 76] Student with no plan / level / grant is 403 on the official lesson
+GET http://127.0.0.1:8080/api/lessons/{{officialId}}/watch
+Authorization: Bearer {{token}}
+
+### [Epic 76] Student lesson view: official=true, no embedUrl / videoUrl / storageRef / keyId / contentHash
+GET http://127.0.0.1:8080/api/lessons/{{officialId}}
+Authorization: Bearer {{token}}
+
+### [Epic 76] Owner (allowed) gets kind=signed with an HMAC URL that expires in minutes (2xx)
+GET http://127.0.0.1:8080/api/lessons/{{officialId}}/watch
+Authorization: Bearer {{owner}}
+
+> {%
+  client.test("signed url", function () {
+    client.assert(response.status === 200, "expected 200");
+    client.assert(response.body.kind === "signed", "kind signed");
+    client.assert(response.body.url.indexOf("sig=") > 0 && response.body.url.indexOf("exp=") > 0, "hmac query");
+    client.assert(response.body.contentHash.length === 64, "content hash");
+  });
+%}
+
+### [Epic 76] Owner view of the official lesson also carries no permanent embed
+GET http://127.0.0.1:8080/api/lessons/{{officialId}}
+Authorization: Bearer {{owner}}
+
+### [Epic 76] Free-preview YouTube path still returns the embed (kind=embed, 200)
+GET http://127.0.0.1:8080/api/lessons/{{previewId}}/watch
+Authorization: Bearer {{token}}
+
+### [Epic 76] Legacy paid lesson without official media is still 403 for the plain student
+GET http://127.0.0.1:8080/api/lessons/{{paidId}}/watch
+Authorization: Bearer {{token}}
 
 ### Non-owner cannot list grants (403)
 GET http://127.0.0.1:8080/api/owner/course-grants

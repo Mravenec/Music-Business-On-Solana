@@ -5,7 +5,7 @@ import java.util.Map;
 
 /**
  * ATLAS tour routes: for a band and a date window, a nearest-neighbour route across approved
- * venues inside the band's active geographic subscriptions, starting at the venue with
+ * venues inside the band's active geographic subscriptions (epic 43), starting at the venue with
  * the highest projected income. Income = capacity x suggested ticket x 60% fill x contract band
  * share.
  */

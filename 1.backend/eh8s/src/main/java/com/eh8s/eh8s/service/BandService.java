@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Off-chain SPP. Close computes the five weighted variables from real inputs.
+ * Off-chain SPP. Close computes the five weighted variables from real inputs (Epic 45).
  */
 @Service
 public class BandService implements IBandService {

@@ -172,8 +172,8 @@ export function StageMapPage() {
         <Link className="eh8s-btn" to="/stage-map/venues/new">
           List a venue
         </Link>
-        <Link className="eh8s-btn" to="/stage-map/settle">
-          Settle a concert
+        <Link className="eh8s-btn" to="/agents/vault">
+          Escrows to settle
         </Link>
         <Link className="eh8s-btn" to="/stage-map/claim">
           Claim royalties

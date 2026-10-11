@@ -85,7 +85,7 @@ export async function fetchGeoOnchainStatus(subscriptionId: number): Promise<Zon
 /**
  * Confirms a wallet-signed claim_royalties DevNet tx against a pending_claim.
  * Backend must refuse blank signatures; FE never calls this without a real sig.
- * Uses the same RPC-verified endpoint as the Stage settle/claim flow —
+ * Uses the same RPC-verified endpoint as the Stage settle/claim flow (Epic 22) —
  * the legacy /devnet-claim marker route now always refuses with a redirect message.
  */
 export async function confirmClaimRoyalties(

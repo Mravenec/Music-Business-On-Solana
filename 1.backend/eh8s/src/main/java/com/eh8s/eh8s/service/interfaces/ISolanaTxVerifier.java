@@ -52,6 +52,20 @@ public interface ISolanaTxVerifier {
       List<String> expectedAccounts);
 
   /**
+   * Reconcile check: the signature must resolve to a successful confirmed transaction. Does not
+   * rebuild instruction data or invent USDC amounts — presence and {@code meta.err == null} only.
+   * Default throws; production {@code SolanaTxVerifier} implements the RPC check.
+   *
+   * @param rpcUrl Solana RPC URL
+   * @param txSignature base58 signature
+   * @throws org.springframework.web.server.ResponseStatusException 400 when missing/failed, 502 when
+   *     RPC fails
+   */
+  default void requireSuccessfulTransaction(String rpcUrl, String txSignature) {
+    throw new UnsupportedOperationException("requireSuccessfulTransaction");
+  }
+
+  /**
    * Builds the positional account list for {@link #verify}: element {@code i} is the pubkey expected at
    * instruction account {@code i}.
    *

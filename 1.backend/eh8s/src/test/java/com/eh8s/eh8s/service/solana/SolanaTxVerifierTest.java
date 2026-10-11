@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.eh8s.eh8s.service.interfaces.ISolanaRpcClient;
 import com.eh8s.eh8s.service.interfaces.ISolanaTxVerifier;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -120,6 +121,56 @@ class SolanaTxVerifierTest {
   void rejectsMissingTransaction() {
     assertReason(
         null, "upsert_musician_profile", UPSERT_HEX, WALLET, List.of(), "not found or not confirmed");
+  }
+
+  @Test
+  void requireSuccessfulTransactionAcceptsConfirmedSuccess() {
+    ISolanaRpcClient rpc =
+        new ISolanaRpcClient() {
+          @Override
+          public JsonNode getTransaction(String rpcUrl, String signature) {
+            return fixture("upsert-musician-profile");
+          }
+
+          @Override
+          public long getTokenAccountBalance(String rpcUrl, String tokenAccount) {
+            return 0L;
+          }
+
+          @Override
+          public byte[] getAccountData(String rpcUrl, String address) {
+            return null;
+          }
+        };
+    assertDoesNotThrow(
+        () -> new SolanaTxVerifier(rpc).requireSuccessfulTransaction("https://rpc", "sig"));
+  }
+
+  @Test
+  void requireSuccessfulTransactionRejectsMissing() {
+    ISolanaRpcClient rpc =
+        new ISolanaRpcClient() {
+          @Override
+          public JsonNode getTransaction(String rpcUrl, String signature) {
+            return null;
+          }
+
+          @Override
+          public long getTokenAccountBalance(String rpcUrl, String tokenAccount) {
+            return 0L;
+          }
+
+          @Override
+          public byte[] getAccountData(String rpcUrl, String address) {
+            return null;
+          }
+        };
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> new SolanaTxVerifier(rpc).requireSuccessfulTransaction("https://rpc", "sig"));
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertTrue(ex.getReason().contains("not found or not confirmed"));
   }
 
   private void assertReason(

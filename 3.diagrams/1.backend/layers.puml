@@ -117,9 +117,11 @@ package "1.backend/eh8s" {
   note right of ROLEC
     POST /api/role-applications
     GET /api/role-applications
-    POST .../approve|reject|revoke (owner wallet)
-    body = AccountRoleApplication POJO
-    (walletPubkey+role | reviewedByWallet+reason)
+    POST .../approve|reject|revoke
+    JWT JwtPrincipal.accountId authorizes review
+    body reason optional; reviewedByWallet ignored for authz
+    session wallet stored as audit after StudioAccess.canReview
+    POST /api/role-grants (JWT reviewerAccountId)
     GET /api/roles/memberships
   end note
   [IAcademyOnchainRepository] as IACADON
@@ -200,6 +202,25 @@ package "1.backend/eh8s" {
     POST /api/agents/level/build|confirm (update_musician_level; agent PDA or program id = None)
     confirm: verifier (ix data, signer, config/agent/musician PDAs); replay -> 409
   end note
+  [IStudioPowerIxBuilder / StudioPowerIxBuilder] as STUDIOIX
+  note right of STUDIOIX
+    Epic 74 (program v0.11.0, source only until a human OKs the upgrade):
+    grant_studio_role / revoke_studio_role (["studio_role", wallet]) and
+    set_partner_share (["partner_share", wallet] + ["partner_book"], sum <= 10000 bps)
+    owner-signed, refused on chain once governance exists
+  end note
+  [IStudioPowerOnchainRepository] as ISPOR
+  [StudioPowerOnchainRepository] as SPOR
+  [IStudioPowerOnchainService] as ISPOS
+  [StudioPowerOnchainService] as SPOS
+  [IStudioPowerOnchainController] as ISPOC
+  [StudioPowerOnchainController] as SPOC
+  note right of SPOS
+    APP-74-3: POST /api/studio-power/(grant|revoke|partner-share)/(build|confirm), GET /console
+    confirm: ISolanaTxVerifier (ix data, owner signer, PDAs) BEFORE the eh8s_onchain mirror write
+    mirrors: studio_role_grant, partner_share (one row per PDA, replaced by the latest confirm)
+    after confirm: role cache (ensure/clearStudioAdmin) + books repair (syncPartnerFromChain)
+  end note
   [IGovernanceRepository] as IGOV
   [GovernanceRepository] as GOV
   [IGovernanceService] as IGOVS
@@ -240,10 +261,23 @@ package "1.backend/eh8s" {
   [IClaudeClient / ClaudeClient] as CLAUDE
   [IOwnerDigestController] as IDIGC
   [OwnerDigestController] as DIGC
+  [IChainReconcileRepository] as IRECON
+  [ChainReconcileRepository] as RECON
+  [IChainReconcileService] as IRECONS
+  [ChainReconcileService] as RECONS
+  [IChainReconcileController] as IRECONC
+  [ChainReconcileController] as RECONC
+  [ChainReconcileScheduler (optional)] as RECONJOB
   note right of DIGC
     GET  /api/owner/digest/latest?walletPubkey= (owner only) -> aiConfigured, model, latest
     POST /api/owner/digest/run -> metrics + treasury balance -> Claude -> owner_digest row -> Slack
     503 without ANTHROPIC_API_KEY (no fake text)
+  end note
+  note right of RECONC
+    POST /api/owner/reconcile {walletPubkey} (owner only)
+    Scans confirmed money rows vs RPC (SolanaTxVerifier.requireSuccessfulTransaction)
+    Demotes orphans to on_chain_status=orphaned; never invents USDC; live confirm paths untouched
+    Optional nightly: eh8s.reconcile.scheduled=true + ChainReconcileScheduler
   end note
   note right of CLAUDE
     RestClient POST {base-url}/v1/messages
@@ -345,7 +379,7 @@ package "1.backend/eh8s" {
   [CourseService] as CRSS
   [ICourseAuthoringService] as ICRSA
   [CourseAuthoringService] as CRSA
-  [CourseRules · VideoLinks] as CRSRULE
+  [CourseRules · VideoLinks · MediaLinks (HMAC signed watch URL)] as CRSRULE
   [ICourseController] as ICRSC
   [CourseController] as CRSC
   [ICourseAuthoringController] as ICRSAC
@@ -730,7 +764,8 @@ note bottom of JOOQ
   /rehearsal-checkins, /spp-cycles,
   GET /bands/{id}/rehearsals, close cycle.
   Stage product: POST /api/venues bookings concerts,
-  settle (off-chain mirror), pending-claims/{id}/claim blocked.
+  show settle only via booking settle/build|confirm (settle_booking),
+  pending-claims/{id}/claim blocked.
   Catalog product: POST royalty-deposits, geo-subscriptions, tour-plans, channel-pieces.
   Epic 43: GET /geo-regions (onchainGeoCode); geo-subscriptions carry geoCode + months 1..12;
   academy-subscriptions carry months 1..12 (amount = plan price x months).
@@ -761,9 +796,10 @@ note bottom of JOOQ
   GET /role-applications?status=pending,
   POST /role-applications/{id}/approve|reject (owner only),
   GET /roles/memberships?walletPubkey=.
-  GATE_HTTP includes RoleApplications.http · AcademyOnchain.http · SettleClaimOnchain.http · BandVault.http · RoyaltyGeoOnchain.http · SongRoyalty.http · TxVerification.http · Treasury.http · OwnerDigest.http · AgentAuthority.http · Governance.http · VenueBooking.http · SppInputs.http · StageMap.http · Nexus.http · Harmony.http · Atlas.http · Courses.http · Teaching.http · Auth.http
+  GATE_HTTP includes RoleApplications.http · AcademyOnchain.http · SettleClaimOnchain.http · BandVault.http · RoyaltyGeoOnchain.http · SongRoyalty.http · TxVerification.http · Treasury.http · OwnerDigest.http · OwnerReconcile.http · AgentAuthority.http · Governance.http · VenueBooking.http · SppInputs.http · StageMap.http · Nexus.http · Harmony.http · Atlas.http · Courses.http · Teaching.http · Auth.http
   JWT: POST /api/auth/register|login public; POST /api/session/challenge public; POST /api/session/wallet requires a signed nonce before accessToken; GET /api/session/current is Bearer and does not ask the wallet to sign again; other /api/** Bearer.
-  Studio ledger: every signed-in wallet reads solo-claims, band-claims, venue-expenses, instructor-shares, and my-allocation for that wallet, including a books editor. A books editor reads partners, show-fees, academy-fees, sync-fees, and allocations. Anyone else receives 403 on those books. Each fee is shared only with partners whose window covers that fee's calendar day. Allocations do not send USDC.
+  Studio ledger: every signed-in wallet reads solo-claims, band-claims, venue-expenses, instructor-shares, and my-allocation for that wallet, including a books reader. A books reader (principal or studio_admin) reads partners, show-fees, academy-fees, sync-fees, and allocations. Only the principal mutates partners (POST/DELETE); studio_admin receives 403 on mutate. Anyone else receives 403 on those books. Each fee is shared only with partners whose window covers that fee's calendar day. Allocations do not send USDC.
+  On-chain wins (APP-74-3): a confirmed partner_share mirror repairs studio_partner and its window is exact ([starts_at, ends_at)); POST/DELETE partners for such a wallet returns 409 (sign set_partner_share); no mirror -> MariaDB fallback. isBooksEditor and the session studioAdmin flag follow a confirmed studio_role_grant (revoke beats a stale cached role).
 end note
 
 JOOQ --> ISLR
@@ -772,5 +808,16 @@ SLR --> ISLS
 ISLS <|.. SLS
 SLS --> ISLC
 ISLC <|.. SLC
+
+JOOQ --> ISPOR
+ISPOR <|.. SPOR
+SPOR --> ISPOS
+ISPOS <|.. SPOS
+STUDIOIX --> SPOS
+SPOS --> ISPOC
+ISPOC <|.. SPOC
+SPOS ..> ISLS : syncPartnerFromChain
+SPOS ..> IROLES : ensure/clearStudioAdmin
+SLS ..> ISPOR : mirrors win
 
 @enduml

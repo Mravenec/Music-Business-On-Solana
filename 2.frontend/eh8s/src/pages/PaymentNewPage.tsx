@@ -22,8 +22,8 @@ export function PaymentNewPage() {
         <Link className="eh8s-btn" to="/catalog">
           Catalog deposit
         </Link>
-        <Link className="eh8s-btn" to="/stage-map/settle">
-          Settle a concert
+        <Link className="eh8s-btn" to="/agents/vault">
+          Escrows to settle
         </Link>
       </div>
     </section>

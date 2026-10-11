@@ -1,3 +1,6 @@
+-- Epic 27: chain_config/devnet_pay_marker live in their own schema (eh8s_onchain),
+-- not the hub eh8s schema — see MIGRATION_MAP.md and
+-- .docs/journey/27-multi-schema-domains.md.
 CREATE DATABASE IF NOT EXISTS eh8s_onchain
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -53,7 +56,14 @@ ON DUPLICATE KEY UPDATE
   is_active = VALUES(is_active);
 
 -- ──────────────────────────────────────────────────────────
--- Seed rows below are product catalog / bootstrap data, not demo data.
+-- From (epic 28 layout): eh8s_onchain/02_wallet_devnet_pay.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 14 wallet DevNet pay: ledger markers + claim signature columns (idempotent).
+-- devnet_pay_marker lives in eh8s_onchain (bootstrapped in 01_solana_config.sql)
+-- — see MIGRATION_MAP.md. Epic 28: relocated from
+-- canonical_sql/11_wallet_devnet_pay.sql into eh8s_onchain's own folder (the
+-- pending_claim ALTER moved to eh8s/06_wallet_devnet_pay_claim.sql, the
+-- academy_subscription ALTER moved to eh8s_academy/03_wallet_devnet_pay.sql).
 CREATE TABLE IF NOT EXISTS devnet_pay_marker (
   id BIGINT NOT NULL AUTO_INCREMENT,
   kind VARCHAR(16) NOT NULL,
@@ -72,6 +82,10 @@ CREATE TABLE IF NOT EXISTS devnet_pay_marker (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s_onchain/03_anchor_devnet.sql
+-- ──────────────────────────────────────────────────────────
+-- chain_config lives in eh8s_onchain (epic 27) — see MIGRATION_MAP.md.
+-- Epic 17 Anchor DevNet: refresh program metadata columns on chain_config (idempotent).
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chain_config' AND COLUMN_NAME = 'anchor_program_name'
@@ -106,6 +120,13 @@ SET anchor_program_name = COALESCE(anchor_program_name, 'eh8s_devnet'),
 WHERE network = 'devnet' AND is_active = 1;
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s_onchain/04_role_platform_chain.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 18: platform owner wallet, protocol fee on chain_config.
+-- chain_config lives in eh8s_onchain (epic 27) — see MIGRATION_MAP.md.
+-- Epic 28: relocated from canonical_sql/16_role_platform_shell.sql into
+-- eh8s_onchain's own folder (the account part of that same ticket moved to
+-- eh8s/07_role_platform_account.sql instead).
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chain_config' AND COLUMN_NAME = 'owner_wallet_pubkey'
@@ -130,6 +151,10 @@ SET owner_wallet_pubkey = '7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC',
 WHERE network = 'devnet' AND is_active = 1;
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s_onchain/05_anchor_program_devnet.sql
+-- ──────────────────────────────────────────────────────────
+-- chain_config lives in eh8s_onchain (epic 27) — see MIGRATION_MAP.md.
+-- Epic 20: live DevNet program metadata — IDL hash, instruction registry, deploy stamp.
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chain_config' AND COLUMN_NAME = 'anchor_idl_hash'
@@ -180,7 +205,7 @@ SET usdc_mint = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
 WHERE network = 'devnet' AND is_active = 1;
 
 -- ──────────────────────────────────────────────────────────
--- hardened program v0.3.0 first deployed to DevNet (slot 504604312),
+-- Epic 34: hardened program v0.3.0 first deployed to DevNet (slot 504604312),
 -- config initialized (owner treasury ATA + vault ATA pinned on-chain).
 -- credit_pending_claim removed; settle_concert(concert_id, gross) computes the fee on-chain.
 -- ──────────────────────────────────────────────────────────
@@ -198,7 +223,7 @@ SET instruction_registry_json = JSON_ARRAY(
     program_deployed_at = COALESCE(program_deployed_at, '2026-09-27 01:10:00')
 WHERE network = 'devnet' AND is_active = 1;
 -- ──────────────────────────────────────────────────────────
--- program v0.4.0 adds BandVault (create_band / update_spp_weights) and splits the
+-- Epic 35: program v0.4.0 adds BandVault (create_band / update_spp_weights) and splits the
 -- settle_concert(concert_id, gross, expenses) pool per member weight on-chain.
 -- ──────────────────────────────────────────────────────────
 UPDATE chain_config
@@ -216,7 +241,7 @@ SET instruction_registry_json = JSON_ARRAY(
     anchor_idl_version = '0.4.0'
 WHERE network = 'devnet' AND is_active = 1;
 -- ──────────────────────────────────────────────────────────
--- program v0.5.0 moves protocol fees into the ["treasury"] PDA USDC ATA
+-- Epic 37: program v0.5.0 moves protocol fees into the ["treasury"] PDA USDC ATA
 -- (init_treasury) and adds owner-only withdraw_treasury. Each verified withdraw is one row.
 -- ──────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS treasury_withdrawal (
@@ -247,7 +272,7 @@ SET instruction_registry_json = JSON_ARRAY(
 WHERE network = 'devnet' AND is_active = 1;
 
 -- ----------------------------------------------------------
--- program v0.6.0 adds authorize_agent (AgentAuthority PDA ["agent", wallet]) and the
+-- Epic 40: program v0.6.0 adds authorize_agent (AgentAuthority PDA ["agent", wallet]) and the
 -- agent-only update_musician_level; upsert_musician_profile(instrument, country) drops the level.
 -- ----------------------------------------------------------
 UPDATE chain_config
@@ -270,7 +295,7 @@ SET instruction_registry_json = JSON_ARRAY(
 WHERE network = 'devnet' AND is_active = 1;
 
 -- ----------------------------------------------------------
--- program v0.7.0 adds VenueListing (register_venue / approve_venue) and the
+-- Epic 41: program v0.7.0 adds VenueListing (register_venue / approve_venue) and the
 -- VenueAccessToken escrow (propose / confirm / cancel / settle_booking). settle_concert stays.
 -- ----------------------------------------------------------
 UPDATE chain_config
@@ -299,7 +324,7 @@ SET instruction_registry_json = JSON_ARRAY(
 WHERE network = 'devnet' AND is_active = 1;
 
 -- ----------------------------------------------------------
--- program v0.8.0 - owner multisig governance. init_governance creates the
+-- Epic 42: program v0.8.0 - owner multisig governance. init_governance creates the
 -- ["governance"] PDA (1..5 signers, threshold); after that withdraw_treasury and authorize_agent
 -- only run through M-of-N proposals (propose -> approve_proposal -> execute_*_proposal).
 -- Each verified transaction is one row; the signer set is replaced when a signer proposal executes.
@@ -422,7 +447,7 @@ SET instruction_registry_json = JSON_ARRAY(
     anchor_idl_version = '0.8.0'
 WHERE network = 'devnet' AND is_active = 1;
 
--- an authorize_agent proposal names the ops_agent it targets (agent_authority needs it).
+-- Epic 42: an authorize_agent proposal names the ops_agent it targets (agent_authority needs it).
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'governance_proposal' AND COLUMN_NAME = 'agent_code'
@@ -433,7 +458,7 @@ SET @ddl := IF(@col = 0,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ----------------------------------------------------------
--- program v0.9.0 (DevNet slot 504852204) - subscribe_academy(plan_type, months) on
+-- Epic 43: program v0.9.0 (DevNet slot 504852204) - subscribe_academy(plan_type, months) on
 -- ["academy_sub", wallet] and subscribe_geographic(geo_code, tier, months) on
 -- ["geo_sub", wallet, geo_code]. Price x months is checked on-chain; renewals extend expires_at.
 -- ----------------------------------------------------------
@@ -441,7 +466,7 @@ UPDATE chain_config
 SET anchor_idl_version = '0.9.0'
 WHERE network = 'devnet' AND is_active = 1;
 -- ----------------------------------------------------------
--- program v0.10.0 (DevNet slot 504863281) - create_royalty_pool, per-song
+-- Epic 44: program v0.10.0 (DevNet slot 504863281) - create_royalty_pool, per-song
 -- deposit_royalties(track_id, amount), pay_sync_license(track_id, deal_id, amount) 80/20.
 -- ----------------------------------------------------------
 UPDATE chain_config

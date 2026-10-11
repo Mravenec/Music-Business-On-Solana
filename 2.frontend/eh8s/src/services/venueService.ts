@@ -102,16 +102,6 @@ export async function createConcert(input: {
   return data;
 }
 
-export async function settleConcert(
-  concertId: number,
-  grossUsdc: number,
-): Promise<ConcertSettlement> {
-  const { data } = await client.post<ConcertSettlement>(`/api/concerts/${concertId}/settle`, {
-    grossUsdc,
-  });
-  return data;
-}
-
 export async function fetchClaims(settlementId: number): Promise<PendingClaim[]> {
   const { data } = await client.get<PendingClaim[]>(`/api/settlements/${settlementId}/claims`);
   return data;

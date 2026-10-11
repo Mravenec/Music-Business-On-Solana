@@ -7,9 +7,9 @@ import { useSession } from "../hooks/useSession";
  * Job: see what needs the owner.
  * Primary: open the next queue.
  * Next: /owner/roles, /owner/decisions, /owner/treasury, /owner/digest, /owner/courses, /owner/agents,
- *   /owner/governance, /agents/levels,
+ *   /owner/studio-power (principal), /owner/governance, /agents/levels,
  *   /agents/stage, /agents/vault
- * Hidden: Slack, agent status editor, full history, treasury activity.
+ * Hidden: Slack, agent status editor, full history, treasury activity; treasury for studio admin.
  */
 export function OwnerPage() {
   const ops = useOps();
@@ -44,6 +44,11 @@ export function OwnerPage() {
         {principal ? (
           <Link className="eh8s-btn" to="/owner/treasury">
             Treasury
+          </Link>
+        ) : null}
+        {principal ? (
+          <Link className="eh8s-btn" to="/owner/studio-power">
+            Studio power
           </Link>
         ) : null}
         <Link className="eh8s-btn" to="/owner/digest">

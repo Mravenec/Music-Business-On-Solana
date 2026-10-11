@@ -1,4 +1,10 @@
--- Seed rows below are product catalog / bootstrap data, not demo data.
+-- Epic 27: instructor_profile/academy_plan/academy_subscription/enigma_evaluation
+-- live in their own schema (eh8s_academy), not the hub eh8s schema — see
+-- MIGRATION_MAP.md and .docs/journey/27-multi-schema-domains.md.
+-- Epic 28: relocated from canonical_sql/02_academy.sql into eh8s_academy's
+-- own folder (the hub-schema part of that same ticket moved to
+-- eh8s/02_academy_core.sql instead). No mock/demo data here — academy_plan
+-- is real product catalog (pricing plans). See MIGRATION_MAP.md.
 CREATE DATABASE IF NOT EXISTS eh8s_academy
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -57,6 +63,10 @@ INSERT INTO academy_plan (code, name, usdc_monthly, description) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name), usdc_monthly = VALUES(usdc_monthly), description = VALUES(description);
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s_academy/02_academy_product.sql
+-- ──────────────────────────────────────────────────────────
+-- academy_subscription lives in eh8s_academy (epic 27) — see MIGRATION_MAP.md.
+-- Epic 9 academy product: intended_instruction default on academy_subscription (idempotent).
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'academy_subscription' AND COLUMN_NAME = 'intended_instruction'
@@ -67,6 +77,13 @@ SET @ddl := IF(@col = 0,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s_academy/03_wallet_devnet_pay.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 14 wallet DevNet pay: academy_subscription pay signature columns (idempotent).
+-- Epic 28: relocated from canonical_sql/11_wallet_devnet_pay.sql into
+-- eh8s_academy's own folder (the devnet_pay_marker CREATE + pending_claim
+-- ALTER from that same ticket moved to eh8s_onchain/02_wallet_devnet_pay.sql
+-- and eh8s/06_wallet_devnet_pay_claim.sql respectively).
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'academy_subscription' AND COLUMN_NAME = 'pay_tx_signature'
@@ -86,6 +103,10 @@ SET @ddl := IF(@col = 0,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s_academy/04_academy_onchain_devnet.sql
+-- ──────────────────────────────────────────────────────────
+-- academy_subscription lives in eh8s_academy (epic 27) — see MIGRATION_MAP.md.
+-- Epic 21: link academy_subscription rows to confirmed DevNet subscribe_academy tx + PDA.
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'academy_subscription' AND COLUMN_NAME = 'payer_wallet_pubkey'
@@ -123,7 +144,7 @@ SET @ddl := IF(@idx = 0,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ----------------------------------------------------------
--- program v0.9.0 subscribe_academy(plan_type, months). One AcademySubscription PDA
+-- Epic 43: program v0.9.0 subscribe_academy(plan_type, months). One AcademySubscription PDA
 -- ["academy_sub", wallet] per payer is renewed in place, so several rows share a PDA.
 -- onchain_plan_type is the u8 the program prices (1 basic 30 · 2 band 55 · 3 pro 90 USDC).
 -- months = months bought by this row; onchain_expires_at = expires_at read from the PDA after confirm.
@@ -178,10 +199,10 @@ SET @ddl := IF(@idx = 0,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ----------------------------------------------------------
--- NEXUS Score Enigma. A teacher or musician submits a recording link, rubric scores
+-- Epic 46: NEXUS Score Enigma. A teacher or musician submits a recording link, rubric scores
 -- (0..10 each) and notes; Claude returns score 0..100, strengths, errors, exercises and a
 -- recommended level. source = manual (legacy weekly rows) or nexus_ai. applied_at is set once the
--- level recommendation was applied on-chain through the NEXUS level page.
+-- level recommendation was applied on-chain through the NEXUS level page (epic 40).
 -- ----------------------------------------------------------
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
@@ -283,7 +304,7 @@ SET @ddl := IF(@fk = 0,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ----------------------------------------------------------
--- academy video library. The owner publishes courses (course -> course_section ->
+-- Epic 50: academy video library. The owner publishes courses (course -> course_section ->
 -- lesson). Lessons are links to hosted video (youtube | vimeo | bunny | cloudflare), stored as
 -- the original URL plus the normalized embed URL; there is no upload. The API returns embed_url
 -- only when the caller may watch (free preview, owner, active grant, or active paid plan with
@@ -376,7 +397,7 @@ CREATE TABLE IF NOT EXISTS course_access_grant (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------
--- teaching path. A level-5 instructor (or the owner) authors a course; instructors
+-- Epic 51: teaching path. A level-5 instructor (or the owner) authors a course; instructors
 -- cannot publish. course.review_status tracks the owner review: draft -> submitted ->
 -- approved (published) or rejected (back to draft editing, review_note says why).
 -- Owner-authored courses become 'approved' when the owner publishes them.

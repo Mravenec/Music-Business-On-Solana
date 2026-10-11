@@ -1,4 +1,12 @@
--- Seed rows below are product catalog / bootstrap data, not demo data.
+-- Epic 27: royalty/catalog/geo tables live in their own schema (eh8s_catalog),
+-- not the hub eh8s schema — see MIGRATION_MAP.md and
+-- .docs/journey/27-multi-schema-domains.md.
+-- Epic 28: relocated from canonical_sql/05_catalog_geo.sql into this schema's
+-- own folder; mock seed rows (track/royalty_split/channel_piece/
+-- geographic_subscription/tour_plan — all tied to the demo "Noche Oscura"
+-- band) moved to 0.database/mocks/eh8s_catalog.sql. Catalog rows below
+-- (royalty_type/channel_format/geo_tier/geo_region) stay — real product
+-- taxonomy, not demo data. See MIGRATION_MAP.md.
 CREATE DATABASE IF NOT EXISTS eh8s_catalog
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -139,8 +147,11 @@ INSERT INTO geo_region (code, name) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- ──────────────────────────────────────────────────────────
--- Seed rows below are product catalog / bootstrap data, not demo data.
--- royalty pool + geographic subscription on-chain linkage (idempotent).
+-- From (epic 28 layout): eh8s_catalog/02_royalty_geo_onchain_devnet.sql
+-- ──────────────────────────────────────────────────────────
+-- royalty_deposit/geographic_subscription live in eh8s_catalog (epic 27) — see
+-- MIGRATION_MAP.md.
+-- Epic 23: royalty pool + geographic subscription on-chain linkage (idempotent).
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'royalty_deposit' AND COLUMN_NAME = 'royalty_pool_pda'
@@ -259,7 +270,7 @@ SET @ddl := IF(@idx = 0,
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ----------------------------------------------------------
--- program v0.9.0 subscribe_geographic(geo_code, tier, months). One GeographicSubscription
+-- Epic 43: program v0.9.0 subscribe_geographic(geo_code, tier, months). One GeographicSubscription
 -- PDA ["geo_sub", wallet, geo_code] per payer and zone is renewed in place (rows share a PDA).
 -- onchain_tier is the u8 the program prices (1 local 5 · 2 city 15 · 3 country 35 · 4 regional 65 ·
 -- 5 global 99 USDC). onchain_geo_code is the zone seed (2..24 of A-Z 0-9 _, starts with two letters).
@@ -335,7 +346,7 @@ SET @ddl := IF(@idx = 0,
   'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 -- ----------------------------------------------------------
--- program v0.10.0 per-song RoyaltyPool ["royalty", track_id LE] with member splits
+-- Epic 44: program v0.10.0 per-song RoyaltyPool ["royalty", track_id LE] with member splits
 -- (create_royalty_pool), per-song deposit_royalties(track_id, amount) by the owner or the WAVE
 -- agent, and pay_sync_license(track_id, deal_id, amount): 20% treasury / 80% song splits, one
 -- SyncLicense PDA ["sync", track_id LE, deal_id LE] per deal. Deposits of one song share its
@@ -417,7 +428,7 @@ CREATE TABLE IF NOT EXISTS sync_license_deal (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------
--- ATLAS tour routes. A geo_region covers venues by country_code (and city when set), so
+-- Epic 46: ATLAS tour routes. A geo_region covers venues by country_code (and city when set), so
 -- only venues inside the band's active geographic subscriptions are routed. ATLAS writes one
 -- tour_plan (generated_by = atlas) plus ordered tour_plan_stop rows (nearest-neighbour legs).
 -- ----------------------------------------------------------

@@ -57,6 +57,14 @@ public class CourseController implements ICourseController {
 
   /** {@inheritDoc} */
   @Override
+  @GetMapping("/lessons/{lessonId}/watch")
+  public Map<String, Object> watch(
+      @AuthenticationPrincipal JwtPrincipal principal, @PathVariable Long lessonId) {
+    return courseService.watch(accountId(principal), lessonId);
+  }
+
+  /** {@inheritDoc} */
+  @Override
   @PutMapping("/lessons/{lessonId}/progress")
   public Map<String, Object> saveProgress(
       @AuthenticationPrincipal JwtPrincipal principal,

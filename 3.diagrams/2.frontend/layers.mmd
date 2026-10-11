@@ -10,9 +10,23 @@ flowchart TD
   AppShell -->|role-gated| AcademyPage
   AppShell -->|signed-in rail| WalletRail
   WalletRail -->|partner: own share| StudioLedgerPage
-  WalletRail -->|principal or studio admin: partner books| StudioLedgerPage
+  WalletRail -->|principal or studio admin: partner books read| StudioLedgerPage
+  StudioLedgerPage -->|principal: Studio power CTA| StudioPowerPage
+  StudioLedgerPage -->|principal MariaDB partner mutate 409| StudioPowerPartnerSharePage
   StudioLedgerPage -->|your earnings| MyEarningsPage
   MyEarningsPage -->|back to partner books| StudioLedgerPage
+  OwnerPage -->|principal only| StudioPowerPage
+  StudioPowerPage -->|grant studio_admin| StudioPowerGrantPage
+  StudioPowerPage -->|revoke studio_admin| StudioPowerRevokePage
+  StudioPowerPage -->|set partner share| StudioPowerPartnerSharePage
+  StudioPowerGrantPage --> useStudioPower
+  StudioPowerRevokePage --> useStudioPower
+  StudioPowerPartnerSharePage --> useStudioPower
+  StudioPowerPage --> useStudioPower
+  useStudioPower --> studioPowerService
+  useStudioPower --> sendBuiltIx
+  studioPowerService --> StudioPowerAPI["GET /api/studio-power/console<br/>POST /api/studio-power/grant/build|confirm<br/>POST /api/studio-power/revoke/build|confirm<br/>POST /api/studio-power/partner-share/build|confirm"]
+  sendBuiltIx -->|principal signs grant_studio_role · revoke_studio_role · set_partner_share| DevNetProgram
   AcademyPage -->|one plan, includes listed| AcademyPlanPage
   AcademyPage -->|enroll| AcademyEnrollPage
   AcademyPage -->|score| AcademyEvaluatePage
@@ -28,12 +42,14 @@ flowchart TD
   BandDetailPage -->|activate vault| BandVaultActivatePage
   BandDetailPage -->|on-chain weights| BandVaultSyncPage
   BandVaultActivatePage -->|next| BandVaultSyncPage
-  BandVaultSyncPage -->|settle| StageSettlePage
+  BandVaultSyncPage -->|escrows to settle| VaultQueuePage
   AppShell -->|role-gated| StageMapPage
   StageMapPage -->|venue| StageVenuePage
   StageMapPage -->|list venue| StageVenueNewPage
   StageMapPage -->|book| StageBookPage
-  StageMapPage -->|settle wallet| StageSettlePage
+  StageMapPage -->|escrows to settle| VaultQueuePage
+  StageMapPage -->|legacy settle URL| StageSettlePage
+  StageSettlePage -->|one settle path| VaultQueuePage
   StageMapPage -->|claim wallet| StageClaimPage
   StageMapPage -->|pin popup: request slot| StageSlotRequestPage
   StageVenuePage -->|request slot| StageSlotRequestPage
@@ -150,7 +166,7 @@ flowchart TD
   useVenueSlot --> stageMapService
   useVenueSlot --> bandService
   stageMapService --> httpClient
-  stageMapService --> StageMapAPI["GET /api/stage-map/pins?month · GET stage-map/venues/:id<br/>POST venues/:id/availability · POST venues/:id/slot-requests (requested)<br/>Leaflet CircleMarker: purple partner > yellow confirmed > green open > red"]
+  stageMapService --> StageMapAPI["GET /api/stage-map/pins?month ┬╖ GET stage-map/venues/:id<br/>POST venues/:id/availability ┬╖ POST venues/:id/slot-requests (requested)<br/>Leaflet CircleMarker: purple partner > yellow confirmed > green open > red"]
   BandRatePage --> useCreativeRatings
   useCreativeRatings --> sppInputsService
   useCreativeRatings --> bandService
@@ -159,22 +175,21 @@ flowchart TD
   useSetCheckin --> sppInputsService
   BandCyclePage --> useBands
   sppInputsService --> httpClient
-  sppInputsService --> SppInputsAPI["GET|POST rehearsal-sessions/:id/creative-ratings (rater = JWT)<br/>GET concerts/:id/set-checkins · POST set-checkins/start|end"]
+  sppInputsService --> SppInputsAPI["GET|POST rehearsal-sessions/:id/creative-ratings (rater = JWT)<br/>GET concerts/:id/set-checkins ┬╖ POST set-checkins/start|end"]
   useStageMap --> venueService
-  venueService --> VenueAPI["POST bookings concerts settle<br/>GET settlements/:id/claims"]
+  venueService --> VenueAPI["POST bookings concerts<br/>GET settlements/:id/claims<br/>(no concerts/:id/settle — booking settle only)"]
   StageMapPage --> settleClaimOnchainService
-  StageSettlePage -->|useSettleConcertTx| useOnchainPayments
   StageClaimPage -->|useClaimRoyaltiesTx| useOnchainPayments
   useOnchainPayments --> settleClaimOnchainService
   settleClaimOnchainService --> ClaimBuildAPI["POST pending-claims/:id/claim-royalties/build|confirm<br/>POST concert-settlements/:id/settle-concert/build|confirm"]
   useOnchainPayments --> settleClaimOnchainTx
-  settleClaimOnchainTx -->|wallet signs, RPC confirms| DevNetProgram["DevNet settle_concert (bandVault + member profiles) + claim_royalties"]
+  settleClaimOnchainTx -->|wallet signs, RPC confirms| DevNetProgram["DevNet claim_royalties; settle via booking settle_booking only"]
   settleClaimOnchainTx --> bandVaultTx
   BandVaultActivatePage --> useBandVault
   BandVaultSyncPage --> useBandVault
   useBandVault --> bandVaultService
   useBandVault --> bandVaultTx
-  bandVaultService --> BandVaultAPI["GET /api/bands/:id/vault<br/>POST vault/build|confirm · vault/weights/build|confirm"]
+  bandVaultService --> BandVaultAPI["GET /api/bands/:id/vault<br/>POST vault/build|confirm ┬╖ vault/weights/build|confirm"]
   bandVaultTx -->|owner wallet signs, RPC confirms| DevNetProgram
   treasuryService --> httpClient
   OwnerTreasuryPage --> useOwnerTreasury
@@ -196,7 +211,7 @@ flowchart TD
   useAgentAuthority --> sendBuiltIx
   useMusicianLevels --> sendBuiltIx
   agentAuthorityService --> AgentAuthAPI["GET /api/owner/agents (owner only)<br/>POST owner/agents/authorize/build|confirm<br/>GET /api/agents/level/musicians (owner or NEXUS 0x01)<br/>POST agents/level/build|confirm"]
-  sendBuiltIx -->|owner signs authorize_agent · owner/NEXUS signs update_musician_level| DevNetProgram
+  sendBuiltIx -->|owner signs authorize_agent ┬╖ owner/NEXUS signs update_musician_level| DevNetProgram
   VenueOnchainPage --> useVenueEscrow
   VenueBookingEscrowPage --> useVenueEscrow
   StageQueuePage --> useStageQueue
@@ -214,7 +229,7 @@ flowchart TD
   useGovernance --> useWalletStep
   useGovernance --> governanceService
   governanceService --> httpClient
-  governanceService --> GovernanceAPI["GET /api/governance?walletPubkey (owner or signer)<br/>POST governance/init build|confirm · proposals build|confirm<br/>POST proposals/:id/approve|execute build|confirm"]
+  governanceService --> GovernanceAPI["GET /api/governance?walletPubkey (owner or signer)<br/>POST governance/init build|confirm ┬╖ proposals build|confirm<br/>POST proposals/:id/approve|execute build|confirm"]
   useWalletStep --> sendBuiltIx
   CatalogSongPoolPage --> useSongPool
   CatalogTrackPage --> useSongPool
@@ -230,14 +245,14 @@ flowchart TD
   useSyncDeals --> songRoyaltyService
   useSongCredits --> songRoyaltyService
   songRoyaltyService --> httpClient
-  songRoyaltyService --> SongRoyaltyAPI["GET tracks/:id/royalty-pool · POST royalty-pool/build|confirm<br/>GET|POST sync-deals · POST sync-deals/:id/pay/build|confirm<br/>GET song-credits"]
+  songRoyaltyService --> SongRoyaltyAPI["GET tracks/:id/royalty-pool ┬╖ POST royalty-pool/build|confirm<br/>GET|POST sync-deals ┬╖ POST sync-deals/:id/pay/build|confirm<br/>GET song-credits"]
   useVenueEscrow --> venueBookingService
   useStageQueue --> venueBookingService
   useVaultQueue --> venueBookingService
   venueBookingService --> httpClient
-  venueBookingService --> VenueBookingAPI["GET /api/venues/:id/onchain · POST venues/:id/register|approve build|confirm<br/>POST bookings/:id/propose|confirm-contract|cancel|settle build|confirm<br/>GET stage/queue (owner or STAGE 0x04) · vault/settle-queue (owner or VAULT 0x08)"]
-  sendBuiltIx -->|venue signs register/propose/cancel · STAGE approve/confirm · VAULT settle_booking| DevNetProgram
-  sendBuiltIx -->|owner signs init_governance · signers propose/approve · anyone execute_*_proposal| DevNetProgram
+  venueBookingService --> VenueBookingAPI["GET /api/venues/:id/onchain ┬╖ POST venues/:id/register|approve build|confirm<br/>POST bookings/:id/propose|confirm-contract|cancel|settle build|confirm<br/>GET stage/queue (owner or STAGE 0x04) ┬╖ vault/settle-queue (owner or VAULT 0x08)"]
+  sendBuiltIx -->|venue signs register/propose/cancel ┬╖ STAGE approve/confirm ┬╖ VAULT settle_booking| DevNetProgram
+  sendBuiltIx -->|owner signs init_governance ┬╖ signers propose/approve ┬╖ anyone execute_*_proposal| DevNetProgram
   AcademyEnrollPage -->|useMusicianProfileTx: musician signs upsert_musician_profile instrument + country; level 0| useOnchainPayments
   CatalogReachPage -->|useGeoSubscribeTx| useOnchainPayments
   useOnchainPayments -->|subscribe_geographic + claim_royalties| royaltyGeoTx
@@ -283,17 +298,17 @@ flowchart TD
   OwnerPage --> useRoles
   AppShell --> useRoles
   useRoles --> roleApplicationService
-  roleApplicationService --> RoleAPI["POST/GET /api/role-applications<br/>POST approve|reject|revoke (reviewedByWallet, reason)<br/>GET /api/roles/memberships"]
+  roleApplicationService --> RoleAPI["POST/GET /api/role-applications<br/>POST approve|reject|revoke (JWT session; reason optional)<br/>GET /api/roles/memberships"]
   NexusPage --> useNexus
   NexusRequestPage --> useNexus
   NexusEvaluationPage --> useNexus
   useNexus --> nexusService
   nexusService --> httpClient
-  nexusService --> NexusAPI["GET /api/nexus/status · POST /api/nexus/evaluations (enigma_evaluation keys, rubricJson; 503 without ANTHROPIC_API_KEY)<br/>GET /api/nexus/evaluations?musicianProfileId · GET evaluations/:id"]
+  nexusService --> NexusAPI["GET /api/nexus/status ┬╖ POST /api/nexus/evaluations (enigma_evaluation keys, rubricJson; 503 without ANTHROPIC_API_KEY)<br/>GET /api/nexus/evaluations?musicianProfileId ┬╖ GET evaluations/:id"]
   BandMatchPage --> useBandMatch
   useBandMatch --> harmonyService
   harmonyService --> httpClient
-  harmonyService --> HarmonyAPI["GET|POST /api/bands/:id/match-suggestions {withAi}<br/>instrument 40 · level 30 · country 15 · genre 15"]
+  harmonyService --> HarmonyAPI["GET|POST /api/bands/:id/match-suggestions {withAi}<br/>instrument 40 ┬╖ level 30 ┬╖ country 15 ┬╖ genre 15"]
   BandToursPage --> useTourRoutes
   BandTourNewPage --> useTourRoutes
   BandTourPage --> useTourRoutes
@@ -312,8 +327,8 @@ flowchart TD
   AcademyLessonPage --> useCourses
   useCourses --> courseService
   courseService --> httpClient
-  courseService --> CourseAPI["GET /api/courses · GET /api/courses/:id (no video links)<br/>GET /api/lessons/:id (embedUrl only when unlocked)<br/>PUT /api/lessons/:id/progress"]
-  AcademyLessonPage --> Player["iframe: youtube-nocookie · player.vimeo · Bunny Stream · Cloudflare Stream<br/>(isSafeEmbed allow-list)"]
+  courseService --> CourseAPI["GET /api/courses ┬╖ GET /api/courses/:id (no video links)<br/>GET /api/lessons/:id (official flag; no permanent embed when official)<br/>GET /api/lessons/:id/watch (kind embed|signed temporary URL)<br/>PUT /api/lessons/:id/progress"]
+  AcademyLessonPage --> Player["watch kind embed → iframe youtube-nocookie / vimeo / Bunny / Cloudflare (isSafeEmbed)<br/>watch kind signed → video element temporary URL (official media)"]
   OwnerPage -->|courses| OwnerCoursesPage
   OwnerCoursesPage -->|new course| OwnerCourseFormPage
   OwnerCoursesPage -->|edit course| OwnerCoursePage
@@ -333,14 +348,14 @@ flowchart TD
   OwnerCourseGrantPage --> useCourseAuthoring
   useCourseAuthoring --> courseAuthoringService
   courseAuthoringService --> httpClient
-  courseAuthoringService --> OwnerCourseAPI["GET|POST /api/owner/courses - GET|PUT /api/owner/courses/:id<br/>POST courses/:id/move|publish|draft|archive (publish 409 without a visible lesson)<br/>POST courses/:id/sections - PUT|move sections/:id - POST sections/:id/lessons - PUT|move lessons/:id<br/>GET|POST /api/owner/course-grants - POST course-grants/:id/revoke<br/>bodies use POJO keys: lesson isFreePreview|isActive 0/1, section isActive 0/1, grant expiresAt LocalDateTime"]
+  courseAuthoringService --> OwnerCourseAPI["GET|POST /api/owner/courses - GET|PUT /api/owner/courses/:id<br/>POST courses/:id/move|publish|draft|archive (publish 409 without a visible lesson)<br/>POST courses/:id/sections - PUT|move sections/:id - POST sections/:id/lessons - PUT|move lessons/:id<br/>lesson body may pin contentHash + storageRef + keyId together (owner only; blank trio clears)<br/>GET|POST /api/owner/course-grants - POST course-grants/:id/revoke<br/>bodies use POJO keys: lesson isFreePreview|isActive 0/1, section isActive 0/1, grant expiresAt LocalDateTime"]
   AcademyPage -->|teach| TeachPage
   AppShell -->|instructor workspace: Teach| TeachPage
   TeachPage -->|can teach: my courses| TeachCoursesPage["OwnerCoursesPage at /academy/teach/courses<br/>(useAuthoringScope: scope teach)"]
   TeachPage -->|missing level| NexusPage
   TeachPage -->|missing role| ApplyPage
   TeachPage -->|owner| OwnerCoursesPage
-  TeachCoursesPage -->|open / new| TeachCoursePage["OwnerCoursePage · OwnerCourseFormPage · OwnerSectionPage · OwnerLessonFormPage<br/>at /academy/teach/courses/* - Submit for review; locked while in review or published"]
+  TeachCoursesPage -->|open / new| TeachCoursePage["OwnerCoursePage ┬╖ OwnerCourseFormPage ┬╖ OwnerSectionPage ┬╖ OwnerLessonFormPage<br/>at /academy/teach/courses/* - Submit for review; locked while in review or published"]
   TeachPage --> useTeaching
   TeachCoursePage --> useCourseAuthoring
   TeachCoursePage -->|submit for review: actions.submit| useCourseAuthoring

@@ -6,6 +6,7 @@ import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.StudioPartner;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.StudioPartnerAllocation;
 import com.eh8s.eh8s.database.jooq.eh8s_academy.tables.pojos.AcademySubscription;
 import com.eh8s.eh8s.database.jooq.eh8s_catalog.tables.pojos.SyncLicenseDeal;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.pojos.PartnerShare;
 import java.util.List;
 
 /**
@@ -22,10 +23,11 @@ public interface IStudioLedgerService {
   boolean isOwner(Long accountId);
 
   /**
-   * Whether this account may edit the partner books: the principal wallet or a studio admin.
+   * Whether this account may read the partner books: the principal wallet or a studio admin.
+   * Mutate of partner shares stays principal-only ({@code isOwner}).
    *
    * @param accountId signed-in account
-   * @return true when the books are theirs to change
+   * @return true when the books are theirs to open
    */
   boolean isBooksEditor(Long accountId);
 
@@ -101,6 +103,16 @@ public interface IStudioLedgerService {
    * @return the stored row
    */
   StudioPartner deactivatePartner(Long partnerId);
+
+  /**
+   * Repairs the MariaDB partner row of a wallet from its confirmed on-chain partner share, so the
+   * books follow the chain. A wallet that left the chain books is deactivated; a wallet with no row
+   * and no share is ignored.
+   *
+   * @param mirror confirmed on-chain share mirror (a 0 bps removal carries its ended window)
+   * @return the repaired partner row, or {@code null} when nothing was stored
+   */
+  StudioPartner syncPartnerFromChain(PartnerShare mirror);
 
   /**
    * Rewrites the month's partner allocations, then returns confirmed show fees.

@@ -11,7 +11,7 @@ function shortWallet(wallet: string): string {
 /**
  * Job: push the latest closed SPP cycle weights into the band vault (update_spp_weights).
  * Primary: Sync with owner wallet.
- * Next: /stage-map/settle
+ * Next: /agents/vault (on-chain booking settle)
  * Hidden: raw scores, instruction bytes, weight history.
  */
 export function BandVaultSyncPage() {
@@ -83,8 +83,8 @@ export function BandVaultSyncPage() {
         </>
       )}
       <div className="eh8s-cta-row">
-        <Link className="eh8s-btn" to="/stage-map/settle">
-          Settle a concert
+        <Link className="eh8s-btn" to="/agents/vault">
+          Escrows to settle
         </Link>
         <Link className="eh8s-btn eh8s-back" to={`/bands/${id}`}>
           Back to band

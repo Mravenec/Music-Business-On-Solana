@@ -22,7 +22,7 @@ def drop_db() -> None:
     password = cfg["MARIADB_ROOT_PASSWORD"]
     database = cfg["MARIADB_DATABASE"]
 
-    # Extra schemas that canonical_sql/ may create (multi-schema:
+    # Extra schemas that canonical_sql/ may create (epics 26-27 multi-schema:
     # each has FKs into `database` or into another extra schema, so drop order
     # matters — a referenced schema must drop after whatever references it, or
     # DROP DATABASE fails with a foreign key constraint error). eh8s_onchain

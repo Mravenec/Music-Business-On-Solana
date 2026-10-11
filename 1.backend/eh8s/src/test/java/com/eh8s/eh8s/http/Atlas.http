@@ -25,7 +25,7 @@ GET http://127.0.0.1:8080/api/bands/1/tour-routes
 Authorization: Bearer {{musician}}
 
 ### Generate a route for October. 409 until the band holds a confirmed, unexpired geographic
-### subscription (Catalog > Geo); 200 afterwards: nearest-neighbour stops across approved
+### subscription (Catalog > Geo, epic 43); 200 afterwards: nearest-neighbour stops across approved
 ### venues in the zone, starting at the highest projected income (capacity x ticket x 60% x share).
 POST http://127.0.0.1:8080/api/bands/1/tour-routes
 Authorization: Bearer {{musician}}

@@ -71,7 +71,7 @@ export function StageClaimPage() {
         </div>
       ) : null}
       {stage.claims.length === 0 ? (
-        <p className="eh8s-empty">No pending claims. Settle a concert first.</p>
+        <p className="eh8s-empty">No pending claims. Settle a confirmed escrow first.</p>
       ) : (
         <form className="eh8s-form eh8s-panel" onSubmit={onClaim}>
           <label>

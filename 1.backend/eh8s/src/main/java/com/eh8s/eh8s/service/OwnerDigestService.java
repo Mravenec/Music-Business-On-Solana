@@ -47,7 +47,7 @@ public class OwnerDigestService implements IOwnerDigestService {
    *
    * @param digestRepository metrics and stored digests
    * @param claudeClient Anthropic Messages API client
-   * @param treasuryService live treasury balance
+   * @param treasuryService live treasury balance (epic 37)
    * @param slackBridgeService owner Slack bridge
    */
   public OwnerDigestService(

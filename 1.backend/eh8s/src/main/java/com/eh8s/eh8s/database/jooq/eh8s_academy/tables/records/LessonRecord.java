@@ -105,129 +105,171 @@ public class LessonRecord extends UpdatableRecordImpl<LessonRecord> {
     }
 
     /**
+     * Setter for <code>eh8s_academy.lesson.content_hash</code>.
+     */
+    public void setContentHash(String value) {
+        set(6, value);
+    }
+
+    /**
+     * Getter for <code>eh8s_academy.lesson.content_hash</code>.
+     */
+    public String getContentHash() {
+        return (String) get(6);
+    }
+
+    /**
+     * Setter for <code>eh8s_academy.lesson.storage_ref</code>.
+     */
+    public void setStorageRef(String value) {
+        set(7, value);
+    }
+
+    /**
+     * Getter for <code>eh8s_academy.lesson.storage_ref</code>.
+     */
+    public String getStorageRef() {
+        return (String) get(7);
+    }
+
+    /**
+     * Setter for <code>eh8s_academy.lesson.key_id</code>.
+     */
+    public void setKeyId(String value) {
+        set(8, value);
+    }
+
+    /**
+     * Getter for <code>eh8s_academy.lesson.key_id</code>.
+     */
+    public String getKeyId() {
+        return (String) get(8);
+    }
+
+    /**
      * Setter for <code>eh8s_academy.lesson.embed_url</code>.
      */
     public void setEmbedUrl(String value) {
-        set(6, value);
+        set(9, value);
     }
 
     /**
      * Getter for <code>eh8s_academy.lesson.embed_url</code>.
      */
     public String getEmbedUrl() {
-        return (String) get(6);
+        return (String) get(9);
     }
 
     /**
      * Setter for <code>eh8s_academy.lesson.duration_sec</code>.
      */
     public void setDurationSec(Integer value) {
-        set(7, value);
+        set(10, value);
     }
 
     /**
      * Getter for <code>eh8s_academy.lesson.duration_sec</code>.
      */
     public Integer getDurationSec() {
-        return (Integer) get(7);
+        return (Integer) get(10);
     }
 
     /**
      * Setter for <code>eh8s_academy.lesson.sort_order</code>.
      */
     public void setSortOrder(Integer value) {
-        set(8, value);
+        set(11, value);
     }
 
     /**
      * Getter for <code>eh8s_academy.lesson.sort_order</code>.
      */
     public Integer getSortOrder() {
-        return (Integer) get(8);
+        return (Integer) get(11);
     }
 
     /**
      * Setter for <code>eh8s_academy.lesson.is_free_preview</code>.
      */
     public void setIsFreePreview(Byte value) {
-        set(9, value);
+        set(12, value);
     }
 
     /**
      * Getter for <code>eh8s_academy.lesson.is_free_preview</code>.
      */
     public Byte getIsFreePreview() {
-        return (Byte) get(9);
+        return (Byte) get(12);
     }
 
     /**
      * Setter for <code>eh8s_academy.lesson.resources</code>.
      */
     public void setResources(String value) {
-        set(10, value);
+        set(13, value);
     }
 
     /**
      * Getter for <code>eh8s_academy.lesson.resources</code>.
      */
     public String getResources() {
-        return (String) get(10);
+        return (String) get(13);
     }
 
     /**
      * Setter for <code>eh8s_academy.lesson.practice_prompt</code>.
      */
     public void setPracticePrompt(String value) {
-        set(11, value);
+        set(14, value);
     }
 
     /**
      * Getter for <code>eh8s_academy.lesson.practice_prompt</code>.
      */
     public String getPracticePrompt() {
-        return (String) get(11);
+        return (String) get(14);
     }
 
     /**
      * Setter for <code>eh8s_academy.lesson.is_active</code>.
      */
     public void setIsActive(Byte value) {
-        set(12, value);
+        set(15, value);
     }
 
     /**
      * Getter for <code>eh8s_academy.lesson.is_active</code>.
      */
     public Byte getIsActive() {
-        return (Byte) get(12);
+        return (Byte) get(15);
     }
 
     /**
      * Setter for <code>eh8s_academy.lesson.created_at</code>.
      */
     public void setCreatedAt(LocalDateTime value) {
-        set(13, value);
+        set(16, value);
     }
 
     /**
      * Getter for <code>eh8s_academy.lesson.created_at</code>.
      */
     public LocalDateTime getCreatedAt() {
-        return (LocalDateTime) get(13);
+        return (LocalDateTime) get(16);
     }
 
     /**
      * Setter for <code>eh8s_academy.lesson.updated_at</code>.
      */
     public void setUpdatedAt(LocalDateTime value) {
-        set(14, value);
+        set(17, value);
     }
 
     /**
      * Getter for <code>eh8s_academy.lesson.updated_at</code>.
      */
     public LocalDateTime getUpdatedAt() {
-        return (LocalDateTime) get(14);
+        return (LocalDateTime) get(17);
     }
 
     // -------------------------------------------------------------------------
@@ -253,7 +295,7 @@ public class LessonRecord extends UpdatableRecordImpl<LessonRecord> {
     /**
      * Create a detached, initialised LessonRecord
      */
-    public LessonRecord(Long id, Long sectionId, String title, String description, String videoProvider, String videoUrl, String embedUrl, Integer durationSec, Integer sortOrder, Byte isFreePreview, String resources, String practicePrompt, Byte isActive, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public LessonRecord(Long id, Long sectionId, String title, String description, String videoProvider, String videoUrl, String contentHash, String storageRef, String keyId, String embedUrl, Integer durationSec, Integer sortOrder, Byte isFreePreview, String resources, String practicePrompt, Byte isActive, LocalDateTime createdAt, LocalDateTime updatedAt) {
         super(Lesson.LESSON);
 
         setId(id);
@@ -262,6 +304,9 @@ public class LessonRecord extends UpdatableRecordImpl<LessonRecord> {
         setDescription(description);
         setVideoProvider(videoProvider);
         setVideoUrl(videoUrl);
+        setContentHash(contentHash);
+        setStorageRef(storageRef);
+        setKeyId(keyId);
         setEmbedUrl(embedUrl);
         setDurationSec(durationSec);
         setSortOrder(sortOrder);
@@ -287,6 +332,9 @@ public class LessonRecord extends UpdatableRecordImpl<LessonRecord> {
             setDescription(value.getDescription());
             setVideoProvider(value.getVideoProvider());
             setVideoUrl(value.getVideoUrl());
+            setContentHash(value.getContentHash());
+            setStorageRef(value.getStorageRef());
+            setKeyId(value.getKeyId());
             setEmbedUrl(value.getEmbedUrl());
             setDurationSec(value.getDurationSec());
             setSortOrder(value.getSortOrder());

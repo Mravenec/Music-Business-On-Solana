@@ -8,9 +8,12 @@ import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.StudioPartnerAllocation;
 import com.eh8s.eh8s.database.jooq.eh8s_academy.tables.pojos.AcademySubscription;
 import com.eh8s.eh8s.database.jooq.eh8s_catalog.tables.pojos.SyncLicenseDeal;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.pojos.ChainConfig;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.pojos.PartnerShare;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.pojos.StudioRoleGrant;
 import com.eh8s.eh8s.repository.interfaces.IChainConfigRepository;
 import com.eh8s.eh8s.repository.interfaces.IRoleApplicationRepository;
 import com.eh8s.eh8s.repository.interfaces.IStudioLedgerRepository;
+import com.eh8s.eh8s.repository.interfaces.IStudioPowerOnchainRepository;
 import com.eh8s.eh8s.service.course.CourseRules;
 import com.eh8s.eh8s.service.interfaces.IRoleApplicationService;
 import com.eh8s.eh8s.service.interfaces.IStudioLedgerService;
@@ -18,9 +21,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -39,6 +45,7 @@ public class StudioLedgerService implements IStudioLedgerService {
   private final IChainConfigRepository chainConfigRepository;
   private final IRoleApplicationRepository roleApplicationRepository;
   private final IRoleApplicationService roleApplicationService;
+  private final IStudioPowerOnchainRepository onchainRepository;
 
   /**
    * Creates the service.
@@ -47,16 +54,19 @@ public class StudioLedgerService implements IStudioLedgerService {
    * @param chainConfigRepository active chain config, for the owner wallet
    * @param roleApplicationRepository studio admin membership
    * @param roleApplicationService partner role grant that follows the books
+   * @param onchainRepository confirmed on-chain studio role / partner share mirrors
    */
   public StudioLedgerService(
       IStudioLedgerRepository ledgerRepository,
       IChainConfigRepository chainConfigRepository,
       IRoleApplicationRepository roleApplicationRepository,
-      IRoleApplicationService roleApplicationService) {
+      IRoleApplicationService roleApplicationService,
+      IStudioPowerOnchainRepository onchainRepository) {
     this.ledgerRepository = ledgerRepository;
     this.chainConfigRepository = chainConfigRepository;
     this.roleApplicationRepository = roleApplicationRepository;
     this.roleApplicationService = roleApplicationService;
+    this.onchainRepository = onchainRepository;
   }
 
   /**
@@ -80,6 +90,18 @@ public class StudioLedgerService implements IStudioLedgerService {
   public boolean isBooksEditor(Long accountId) {
     if (isOwner(accountId)) {
       return true;
+    }
+    String wallet = walletOf(accountId);
+    StudioRoleGrant chain =
+        wallet == null ? null : onchainRepository.findRoleGrant(wallet).orElse(null);
+    if (chain != null) {
+      // A confirmed on-chain grant or revoke decides; the MariaDB role is only the fallback.
+      if (chain.getRevokedAt() == null) {
+        roleApplicationService.ensureStudioAdmin(wallet);
+        return true;
+      }
+      roleApplicationService.clearStudioAdmin(wallet);
+      return false;
     }
     return roleApplicationRepository
         .findMembership(accountId, StudioAccess.STUDIO_ADMIN)
@@ -156,6 +178,7 @@ public class StudioLedgerService implements IStudioLedgerService {
    */
   @Override
   public List<StudioPartner> partners() {
+    repairFromChain();
     return ledgerRepository.activePartners();
   }
 
@@ -179,6 +202,11 @@ public class StudioLedgerService implements IStudioLedgerService {
     if (share == null || share < 1 || share > 10000) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Share must be between 0.01% and 100%");
     }
+    if (onchainRepository.findPartnerShare(wallet).isPresent()) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT,
+          "This partner's share is signed on-chain. Sign set_partner_share with the principal wallet to change it.");
+    }
     StudioPartner existing = ledgerRepository.findPartnerByWallet(wallet).orElse(null);
     Long exceptId = existing == null ? null : existing.getId();
     if (ledgerRepository.activeShareBps(exceptId) + share > 10000) {
@@ -197,8 +225,15 @@ public class StudioLedgerService implements IStudioLedgerService {
    */
   @Override
   public StudioPartner deactivatePartner(Long partnerId) {
-    if (ledgerRepository.findPartner(partnerId).isEmpty()) {
+    StudioPartner current = ledgerRepository.findPartner(partnerId).orElse(null);
+    if (current == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "That partner is not on the books");
+    }
+    PartnerShare chain = onchainRepository.findPartnerShare(current.getWalletPubkey()).orElse(null);
+    if (chain != null && isLive(chain, LocalDateTime.now())) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT,
+          "This partner's share is signed on-chain. Sign set_partner_share with 0 bps to remove it.");
     }
     StudioPartner removed = ledgerRepository.deactivatePartner(partnerId);
     roleApplicationService.clearPartner(removed.getWalletPubkey());
@@ -247,10 +282,13 @@ public class StudioLedgerService implements IStudioLedgerService {
   private void refresh(int year, int month) {
     LocalDateTime start = startOfMonth(year, month);
     LocalDateTime end = start.plusMonths(1);
+    repairFromChain();
     List<StudioPartner> partners = ledgerRepository.allPartners();
+    Set<Long> chainIds = chainPartnerIds(partners);
     ledgerRepository.clearAllocations(year, month);
     writeSource(
         partners,
+        chainIds,
         year,
         month,
         "show_fee",
@@ -259,6 +297,7 @@ public class StudioLedgerService implements IStudioLedgerService {
             .toList());
     writeSource(
         partners,
+        chainIds,
         year,
         month,
         "academy",
@@ -267,6 +306,7 @@ public class StudioLedgerService implements IStudioLedgerService {
             .toList());
     writeSource(
         partners,
+        chainIds,
         year,
         month,
         "sync",
@@ -275,9 +315,94 @@ public class StudioLedgerService implements IStudioLedgerService {
             .toList());
   }
 
+  /**
+   * Makes the MariaDB partner rows agree with every confirmed on-chain PartnerShare mirror. The
+   * chain wins: share, window and active flag are copied from the mirror, and a wallet that only
+   * exists on chain gets its row created. Rows already in agreement are not written.
+   */
+  private void repairFromChain() {
+    for (PartnerShare mirror : onchainRepository.findPartnerShares()) {
+      syncPartnerFromChain(mirror);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public StudioPartner syncPartnerFromChain(PartnerShare mirror) {
+    if (mirror == null || mirror.getWalletPubkey() == null) {
+      return null;
+    }
+    String wallet = mirror.getWalletPubkey();
+    StudioPartner existing = ledgerRepository.findPartnerByWallet(wallet).orElse(null);
+    int bps = mirror.getShareBps() == null ? 0 : mirror.getShareBps();
+    if (existing == null && bps == 0) {
+      return null;
+    }
+    boolean live = isLive(mirror, LocalDateTime.now());
+    StudioPartner row = existing;
+    if (existing == null
+        || !Objects.equals(existing.getShareBps(), bps)
+        || !Objects.equals(existing.getStartedAt(), mirror.getStartedAt())
+        || !Objects.equals(existing.getEndedAt(), mirror.getEndedAt())
+        || (existing.getActive() != null && (existing.getActive() == (byte) 1) != live)) {
+      row =
+          ledgerRepository.syncPartnerFromChain(
+              wallet,
+              existing == null ? shortName(wallet) : existing.getDisplayName(),
+              bps,
+              mirror.getStartedAt(),
+              mirror.getEndedAt(),
+              live);
+    }
+    if (live) {
+      roleApplicationService.ensurePartner(wallet);
+    } else {
+      roleApplicationService.clearPartner(wallet);
+    }
+    return row;
+  }
+
+  /**
+   * A mirror window is live until it ends; a window that is scheduled to end later still pays.
+   *
+   * @param mirror on-chain share mirror
+   * @param now current time
+   * @return whether the partner is still on the books
+   */
+  static boolean isLive(PartnerShare mirror, LocalDateTime now) {
+    return mirror.getEndedAt() == null || mirror.getEndedAt().isAfter(now);
+  }
+
+  private Set<Long> chainPartnerIds(List<StudioPartner> partners) {
+    Set<String> wallets = new HashSet<>();
+    for (PartnerShare mirror : onchainRepository.findPartnerShares()) {
+      wallets.add(mirror.getWalletPubkey());
+    }
+    Set<Long> ids = new HashSet<>();
+    for (StudioPartner partner : partners) {
+      if (partner.getId() != null && wallets.contains(partner.getWalletPubkey())) {
+        ids.add(partner.getId());
+      }
+    }
+    return ids;
+  }
+
+  private static String shortName(String wallet) {
+    return wallet.length() <= 10
+        ? wallet
+        : "Partner " + wallet.substring(0, 4) + ".." + wallet.substring(wallet.length() - 4);
+  }
+
   private void writeSource(
-      List<StudioPartner> partners, int year, int month, String source, List<DatedFee> fees) {
-    Map<Long, BigDecimal> totals = shareOf(partners, fees);
+      List<StudioPartner> partners,
+      Set<Long> chainIds,
+      int year,
+      int month,
+      String source,
+      List<DatedFee> fees) {
+    Map<Long, BigDecimal> totals = shareOf(partners, chainIds, fees);
     totals.forEach(
         (partnerId, amount) ->
             ledgerRepository.insertAllocation(partnerId, year, month, source, amount));
@@ -300,6 +425,21 @@ public class StudioLedgerService implements IStudioLedgerService {
    * @return partner id to the summed slice, skipping zero
    */
   static Map<Long, BigDecimal> shareOf(List<StudioPartner> partners, List<DatedFee> fees) {
+    return shareOf(partners, Set.of(), fees);
+  }
+
+  /**
+   * Same as {@link #shareOf(List, List)}, but a partner whose id is in {@code chainIds} follows the
+   * confirmed on-chain window exactly: the fee instant must be at or after the window start and
+   * before the exclusive window end (the program's {@code [starts_at, ends_at)} rule).
+   *
+   * @param partners every partner, including those who have left
+   * @param chainIds ids of partners whose window comes from a confirmed on-chain share
+   * @param fees dated studio amounts
+   * @return partner id to the summed slice, skipping zero
+   */
+  static Map<Long, BigDecimal> shareOf(
+      List<StudioPartner> partners, Set<Long> chainIds, List<DatedFee> fees) {
     Map<Long, BigDecimal> totals = new LinkedHashMap<>();
     if (partners == null || fees == null) {
       return totals;
@@ -309,7 +449,14 @@ public class StudioLedgerService implements IStudioLedgerService {
         continue;
       }
       for (StudioPartner partner : partners) {
-        if (partner.getId() == null || partner.getShareBps() == null || !covers(partner, fee.at)) {
+        if (partner.getId() == null || partner.getShareBps() == null) {
+          continue;
+        }
+        boolean inside =
+            chainIds.contains(partner.getId())
+                ? coversExact(partner, fee.at)
+                : covers(partner, fee.at);
+        if (!inside) {
           continue;
         }
         BigDecimal part =
@@ -344,6 +491,21 @@ public class StudioLedgerService implements IStudioLedgerService {
       return true;
     }
     return !feeDay.isAfter(partner.getEndedAt().toLocalDate());
+  }
+
+  /**
+   * On-chain windows are {@code [starts_at, ends_at)}: the instant counts from the start and stops
+   * at the end, with no calendar-day rounding.
+   *
+   * @param partner partner row copied from the on-chain mirror
+   * @param feeAt fee timestamp
+   * @return whether that fee is inside the on-chain window
+   */
+  static boolean coversExact(StudioPartner partner, LocalDateTime feeAt) {
+    if (partner.getStartedAt() == null || feeAt == null || feeAt.isBefore(partner.getStartedAt())) {
+      return false;
+    }
+    return partner.getEndedAt() == null || feeAt.isBefore(partner.getEndedAt());
   }
 
   private String walletOf(Long accountId) {

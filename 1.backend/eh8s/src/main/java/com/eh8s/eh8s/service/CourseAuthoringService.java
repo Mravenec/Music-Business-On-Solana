@@ -9,6 +9,7 @@ import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.pojos.ChainConfig;
 import com.eh8s.eh8s.repository.interfaces.IChainConfigRepository;
 import com.eh8s.eh8s.repository.interfaces.ICourseRepository;
 import com.eh8s.eh8s.service.course.CourseRules;
+import com.eh8s.eh8s.service.course.MediaLinks;
 import com.eh8s.eh8s.service.course.VideoLinks;
 import com.eh8s.eh8s.service.interfaces.ICourseAuthoringService;
 import java.time.LocalDateTime;
@@ -185,11 +186,13 @@ public class CourseAuthoringService implements ICourseAuthoringService {
   /** {@inheritDoc} */
   @Override
   public Lesson createLesson(Long accountId, Long sectionId, Lesson input) {
-    CourseSection section = requireSection(requireAuthor(accountId), sectionId);
+    Author author = requireAuthor(accountId);
+    CourseSection section = requireSection(author, sectionId);
     Lesson in = input == null ? new Lesson() : input;
     Lesson lesson = new Lesson();
     lesson.setSectionId(section.getId());
     applyLessonFields(lesson, in);
+    applyOfficialMedia(author, lesson, in);
     lesson.setIsFreePreview(in.getIsFreePreview() == null ? (byte) 0 : flagInput(in.getIsFreePreview(), "isFreePreview"));
     lesson.setIsActive((byte) 1);
     lesson.setSortOrder(courseRepository.findLessonsBySection(section.getId()).size() + 1);
@@ -199,9 +202,11 @@ public class CourseAuthoringService implements ICourseAuthoringService {
   /** {@inheritDoc} */
   @Override
   public Lesson updateLesson(Long accountId, Long lessonId, Lesson input) {
-    Lesson lesson = requireLesson(requireAuthor(accountId), lessonId);
+    Author author = requireAuthor(accountId);
+    Lesson lesson = requireLesson(author, lessonId);
     Lesson in = input == null ? new Lesson() : input;
     applyLessonFields(lesson, in);
+    applyOfficialMedia(author, lesson, in);
     if (in.getIsFreePreview() != null) {
       lesson.setIsFreePreview(flagInput(in.getIsFreePreview(), "isFreePreview"));
     }
@@ -535,6 +540,40 @@ public class CourseAuthoringService implements ICourseAuthoringService {
     lesson.setDurationSec(duration(in.getDurationSec()));
     lesson.setResources(text(in.getResources(), "resources", 2000, false));
     lesson.setPracticePrompt(text(in.getPracticePrompt(), "practicePrompt", 1000, false));
+  }
+
+  /**
+   * Owner-only pin of the official media fields. A field left {@code null} is untouched; sending all
+   * three blank clears the pin; otherwise all three must be valid together.
+   */
+  private static void applyOfficialMedia(Author author, Lesson lesson, Lesson in) {
+    if (in.getContentHash() == null && in.getStorageRef() == null && in.getKeyId() == null) {
+      return;
+    }
+    if (!author.owner()) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Only the platform owner can pin official media (contentHash, storageRef, keyId)");
+    }
+    String hash = text(in.getContentHash(), "contentHash", 64, false);
+    String ref = text(in.getStorageRef(), "storageRef", MediaLinks.MAX_STORAGE_REF, false);
+    String key = text(in.getKeyId(), "keyId", MediaLinks.MAX_KEY_ID, false);
+    if (hash == null && ref == null && key == null) {
+      lesson.setContentHash(null);
+      lesson.setStorageRef(null);
+      lesson.setKeyId(null);
+      return;
+    }
+    if (hash == null || ref == null || key == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "contentHash, storageRef and keyId must be sent together");
+    }
+    try {
+      lesson.setContentHash(MediaLinks.contentHash(hash));
+      lesson.setStorageRef(MediaLinks.storageRef(ref));
+      lesson.setKeyId(MediaLinks.keyId(key));
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
   }
 
   private Long instrument(Long id) {

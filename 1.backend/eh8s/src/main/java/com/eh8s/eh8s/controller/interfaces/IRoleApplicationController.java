@@ -28,31 +28,37 @@ public interface IRoleApplicationController {
   List<AccountRoleApplication> listApplications(String status, String walletPubkey);
 
   /**
-   * Approves a pending application.
+   * Approves a pending application. Reviewer is the JWT session; body wallet is not trusted.
    *
+   * @param principal signed-in account
    * @param id application id
-   * @param review application JSON ({@code reviewedByWallet}, optional {@code reason})
+   * @param review optional JSON ({@code reason} only; {@code reviewedByWallet} ignored for authz)
    * @return updated application
    */
-  AccountRoleApplication approve(Long id, AccountRoleApplication review);
+  AccountRoleApplication approve(
+      JwtPrincipal principal, Long id, AccountRoleApplication review);
 
   /**
-   * Rejects a pending application.
+   * Rejects a pending application. Reviewer is the JWT session; body wallet is not trusted.
    *
+   * @param principal signed-in account
    * @param id application id
-   * @param review application JSON ({@code reviewedByWallet}, optional {@code reason})
+   * @param review optional JSON ({@code reason} only; {@code reviewedByWallet} ignored for authz)
    * @return updated application
    */
-  AccountRoleApplication reject(Long id, AccountRoleApplication review);
+  AccountRoleApplication reject(
+      JwtPrincipal principal, Long id, AccountRoleApplication review);
 
   /**
-   * Revokes an approved role.
+   * Revokes an approved role. Reviewer is the JWT session; body wallet is not trusted.
    *
+   * @param principal signed-in account
    * @param id application id
-   * @param review application JSON ({@code reviewedByWallet}, optional {@code reason})
+   * @param review optional JSON ({@code reason} only; {@code reviewedByWallet} ignored for authz)
    * @return removed application
    */
-  AccountRoleApplication revoke(Long id, AccountRoleApplication review);
+  AccountRoleApplication revoke(
+      JwtPrincipal principal, Long id, AccountRoleApplication review);
 
   /**
    * Lists approved memberships for a wallet.

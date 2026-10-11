@@ -8,7 +8,6 @@ import {
   fetchConcerts,
   fetchContractTypes,
   fetchVenues,
-  settleConcert,
   type Booking,
   type Concert,
   type ConcertSettlement,
@@ -40,7 +39,6 @@ export type StageMapState = {
     bandId: number;
     sppCycleId?: number;
   }) => Promise<Concert>;
-  settle: (concertId: number, grossUsdc: number) => Promise<ConcertSettlement>;
   addVenue: (input: {
     code: string;
     name: string;
@@ -52,7 +50,8 @@ export type StageMapState = {
 };
 
 /**
- * Live stage-map data plus book / settle / claim mutations.
+ * Live stage-map data plus book / claim mutations.
+ * Show settle is on-chain booking escrow only (/agents/vault → settle/confirm).
  */
 export function useStageMap(): StageMapState {
   const [loading, setLoading] = useState(true);
@@ -62,7 +61,7 @@ export function useStageMap(): StageMapState {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [concerts, setConcerts] = useState<Concert[]>([]);
   const [claims, setClaims] = useState<PendingClaim[]>([]);
-  const [lastSettlement, setLastSettlement] = useState<ConcertSettlement | null>(null);
+  const [lastSettlement] = useState<ConcertSettlement | null>(null);
   const [settlementId, setSettlementId] = useState<number | null>(1);
 
   const refresh = useCallback(async () => {
@@ -126,13 +125,6 @@ export function useStageMap(): StageMapState {
     },
     scheduleConcert: async (input) => {
       const row = await createConcert(input);
-      await refresh();
-      return row;
-    },
-    settle: async (concertId, grossUsdc) => {
-      const row = await settleConcert(concertId, grossUsdc);
-      setLastSettlement(row);
-      setSettlementId(row.id);
       await refresh();
       return row;
     },

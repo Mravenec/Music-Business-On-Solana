@@ -1,12 +1,8 @@
-### Ensure off-chain settlement exists (seed concert 1) then build settle_concert
-POST http://127.0.0.1:8080/api/concerts/1/settle
-Content-Type: application/json
+### Product show settle is booking escrow only — see VenueBooking.http
+### (POST /api/bookings/{id}/settle/build|confirm → settle_booking → MariaDB mirror)
+### settle_concert build below needs a settlement row already created by that path.
 
-{
-  "grossUsdc": 875.00
-}
-
-### Build settle_concert DevNet instruction (wallet signs next)
+### Build settle_concert DevNet instruction (wallet signs next; legacy wire)
 # 409 until the concert's band vault is active (BandVault.http); then 200 with
 # bandVault + member profile remaining accounts and per-member pendingUsdc
 POST http://127.0.0.1:8080/api/concert-settlements/1/settle-concert/build

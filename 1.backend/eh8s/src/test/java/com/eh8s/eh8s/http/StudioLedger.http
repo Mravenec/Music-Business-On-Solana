@@ -25,10 +25,44 @@ Authorization: Bearer {{accessToken}}
 GET http://127.0.0.1:8080/api/studio-ledger/partners
 Authorization: Bearer {{accessToken}}
 
-### Partner books with the owner Bearer → 2xx
+### Partner books with the principal Bearer → 2xx
 GET http://127.0.0.1:8080/api/studio-ledger/partners
 Authorization: Bearer {{ownerToken}}
 
-### Personal ledger with the owner Bearer → 403
+### Partner books with studio_admin Bearer → 2xx (read kept)
+GET http://127.0.0.1:8080/api/studio-ledger/partners
+Authorization: Bearer {{studioAdminToken}}
+
+### Own earnings with studio_admin Bearer → 2xx (epic 72)
+GET http://127.0.0.1:8080/api/studio-ledger/solo-claims?year=2026&month=10
+Authorization: Bearer {{studioAdminToken}}
+
+### Mutate partner with principal Bearer → 2xx
+POST http://127.0.0.1:8080/api/studio-ledger/partners
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sPartnerMutateTest1111111111111111111111",
+  "displayName": "Smoke Partner",
+  "shareBps": 100
+}
+
+### Mutate partner with studio_admin Bearer → 403
+POST http://127.0.0.1:8080/api/studio-ledger/partners
+Authorization: Bearer {{studioAdminToken}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sPartnerMutateAdmin111111111111111111111",
+  "displayName": "Admin Should Fail",
+  "shareBps": 100
+}
+
+### Deactivate partner with studio_admin Bearer → 403
+DELETE http://127.0.0.1:8080/api/studio-ledger/partners/{{partnerId}}
+Authorization: Bearer {{studioAdminToken}}
+
+### Personal ledger with the principal Bearer → 2xx (own wallet earnings)
 GET http://127.0.0.1:8080/api/studio-ledger/solo-claims?year=2026&month=10
 Authorization: Bearer {{ownerToken}}

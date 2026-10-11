@@ -11,6 +11,8 @@ import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.Governance;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceApproval;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceProposal;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceSigner;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.PartnerShare;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.StudioRoleGrant;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.TreasuryWithdrawal;
 
 import java.util.Arrays;
@@ -65,6 +67,16 @@ public class Eh8sOnchain extends SchemaImpl {
     public final GovernanceSigner GOVERNANCE_SIGNER = GovernanceSigner.GOVERNANCE_SIGNER;
 
     /**
+     * The table <code>eh8s_onchain.partner_share</code>.
+     */
+    public final PartnerShare PARTNER_SHARE = PartnerShare.PARTNER_SHARE;
+
+    /**
+     * The table <code>eh8s_onchain.studio_role_grant</code>.
+     */
+    public final StudioRoleGrant STUDIO_ROLE_GRANT = StudioRoleGrant.STUDIO_ROLE_GRANT;
+
+    /**
      * The table <code>eh8s_onchain.treasury_withdrawal</code>.
      */
     public final TreasuryWithdrawal TREASURY_WITHDRAWAL = TreasuryWithdrawal.TREASURY_WITHDRAWAL;
@@ -91,6 +103,8 @@ public class Eh8sOnchain extends SchemaImpl {
             GovernanceApproval.GOVERNANCE_APPROVAL,
             GovernanceProposal.GOVERNANCE_PROPOSAL,
             GovernanceSigner.GOVERNANCE_SIGNER,
+            PartnerShare.PARTNER_SHARE,
+            StudioRoleGrant.STUDIO_ROLE_GRANT,
             TreasuryWithdrawal.TREASURY_WITHDRAWAL
         );
     }

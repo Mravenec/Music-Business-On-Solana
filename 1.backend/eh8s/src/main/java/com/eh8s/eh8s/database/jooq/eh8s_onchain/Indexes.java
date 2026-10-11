@@ -6,6 +6,8 @@ package com.eh8s.eh8s.database.jooq.eh8s_onchain;
 
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceApproval;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceProposal;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.PartnerShare;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.StudioRoleGrant;
 
 import org.jooq.Index;
 import org.jooq.OrderField;
@@ -25,4 +27,8 @@ public class Indexes {
 
     public static final Index GOVERNANCE_APPROVAL_IDX_GOVERNANCE_APPROVAL_TX = Internal.createIndex(DSL.name("idx_governance_approval_tx"), GovernanceApproval.GOVERNANCE_APPROVAL, new OrderField[] { GovernanceApproval.GOVERNANCE_APPROVAL.TX_SIGNATURE }, false);
     public static final Index GOVERNANCE_PROPOSAL_IDX_GOVERNANCE_PROPOSAL_STATUS = Internal.createIndex(DSL.name("idx_governance_proposal_status"), GovernanceProposal.GOVERNANCE_PROPOSAL, new OrderField[] { GovernanceProposal.GOVERNANCE_PROPOSAL.STATUS }, false);
+    public static final Index PARTNER_SHARE_IDX_PARTNER_SHARE_WALLET = Internal.createIndex(DSL.name("idx_partner_share_wallet"), PartnerShare.PARTNER_SHARE, new OrderField[] { PartnerShare.PARTNER_SHARE.WALLET_PUBKEY }, false);
+    public static final Index PARTNER_SHARE_IDX_PARTNER_SHARE_WINDOW = Internal.createIndex(DSL.name("idx_partner_share_window"), PartnerShare.PARTNER_SHARE, new OrderField[] { PartnerShare.PARTNER_SHARE.WALLET_PUBKEY, PartnerShare.PARTNER_SHARE.STARTED_AT, PartnerShare.PARTNER_SHARE.ENDED_AT }, false);
+    public static final Index STUDIO_ROLE_GRANT_IDX_STUDIO_ROLE_GRANT_ACTIVE = Internal.createIndex(DSL.name("idx_studio_role_grant_active"), StudioRoleGrant.STUDIO_ROLE_GRANT, new OrderField[] { StudioRoleGrant.STUDIO_ROLE_GRANT.WALLET_PUBKEY, StudioRoleGrant.STUDIO_ROLE_GRANT.ROLE, StudioRoleGrant.STUDIO_ROLE_GRANT.REVOKED_AT }, false);
+    public static final Index STUDIO_ROLE_GRANT_IDX_STUDIO_ROLE_GRANT_WALLET = Internal.createIndex(DSL.name("idx_studio_role_grant_wallet"), StudioRoleGrant.STUDIO_ROLE_GRANT, new OrderField[] { StudioRoleGrant.STUDIO_ROLE_GRANT.WALLET_PUBKEY }, false);
 }

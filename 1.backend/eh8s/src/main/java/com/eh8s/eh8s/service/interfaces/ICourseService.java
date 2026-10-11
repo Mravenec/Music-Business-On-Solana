@@ -40,6 +40,19 @@ public interface ICourseService {
   Map<String, Object> lesson(Long accountId, Long lessonId);
 
   /**
+   * Issues the way to play one lesson after the plan + level (or grant / free preview) gates. An
+   * official lesson (content hash, storage ref and key id pinned) gets a short-lived signed URL
+   * bound to the caller; any other lesson returns its embed URL. Official lessons never return a
+   * permanent public link.
+   *
+   * @param accountId caller account id from the JWT
+   * @param lessonId lesson id
+   * @return {@code kind} ({@code signed} or {@code embed}), {@code url}, {@code expiresAt} (signed
+   *     only), {@code contentHash}, {@code keyId}
+   */
+  Map<String, Object> watch(Long accountId, Long lessonId);
+
+  /**
    * Saves the last playback position and, optionally, marks the lesson completed.
    *
    * @param accountId caller account id from the JWT

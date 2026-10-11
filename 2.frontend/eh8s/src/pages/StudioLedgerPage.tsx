@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useSession } from "../hooks/useSession";
+import { studioPowerApiMessage } from "../hooks/useStudioPower";
 import { useOwnerLedger, useStudioLedger } from "../hooks/useStudioLedger";
 
 const MONTHS = [
@@ -155,17 +156,25 @@ function UserLedger({ year, month, years, onMonth, onYear, backTo }: {
 }
 
 /**
- * Job: add partners and see how this month's studio fees split across their wallets.
- * Primary: Add partner.
- * Next: read each source and each partner's share.
- * Hidden: personal musician, venue, and tutor earnings.
+ * Job: read how studio fees split across partner wallets (books only).
+ * Primary: Your earnings (and for principal, Studio power to sign share changes).
+ * Next: month totals per source and partner.
+ * Hidden: treasury; studio-admin mutate; instruction bytes.
  */
-function OwnerLedger({ year, month, years, onMonth, onYear }: {
+function OwnerLedger({
+  year,
+  month,
+  years,
+  onMonth,
+  onYear,
+  canMutatePartners,
+}: {
   year: number;
   month: number;
   years: number[];
   onMonth: (value: number) => void;
   onYear: (value: number) => void;
+  canMutatePartners: boolean;
 }) {
   const [reloadKey, setReloadKey] = useState(0);
   const books = useOwnerLedger(year, month, reloadKey);
@@ -184,6 +193,9 @@ function OwnerLedger({ year, month, years, onMonth, onYear }: {
 
   async function onAdd(ev: React.FormEvent) {
     ev.preventDefault();
+    if (!canMutatePartners) {
+      return;
+    }
     const shareBps = Math.round(Number(percent) * 100);
     if (!name.trim() || !wallet.trim() || !Number.isFinite(shareBps) || shareBps < 1) {
       setFormError("Enter a name, a wallet, and a share greater than zero.");
@@ -201,20 +213,36 @@ function OwnerLedger({ year, month, years, onMonth, onYear }: {
       setWallet("");
       setPercent("");
       setReloadKey((value) => value + 1);
-    } catch {
-      setFormError("Could not add that partner. Check the wallet and that shares stay at or under 100%.");
+    } catch (err) {
+      setFormError(
+        studioPowerApiMessage(
+          err,
+          "Could not add that partner. Check the wallet and that shares stay at or under 100%.",
+        ),
+      );
     } finally {
       setSaving(false);
     }
   }
 
-  async function onRemove(partnerId: number) {
+  async function onRemove(partnerId: number, partnerWallet: string) {
+    if (!canMutatePartners) {
+      return;
+    }
     setFormError(null);
     try {
       await books.deactivatePartner(partnerId);
       setReloadKey((value) => value + 1);
-    } catch {
-      setFormError("Could not remove that partner.");
+    } catch (err) {
+      setFormError(
+        studioPowerApiMessage(
+          err,
+          "Could not remove that partner. Sign set_partner_share with 0 bps on-chain if this share is live.",
+        ),
+      );
+      if (partnerWallet) {
+        setWallet(partnerWallet);
+      }
     }
   }
 
@@ -224,41 +252,78 @@ function OwnerLedger({ year, month, years, onMonth, onYear }: {
         <p className="eh8s-kicker">Studio</p>
         <h1>Partner books</h1>
         <p className="eh8s-lead">
-          Add each partner's wallet and their share of the studio's recorded fees. A partner
-          shares fees recorded on or after the day they are added, through the day they leave.
-          This split is the books. It does not send USDC.
+          {canMutatePartners
+            ? "Read each partner's share of recorded studio fees. Prefer a DevNet set_partner_share signature for live windows. This split is the books. It does not send USDC."
+            : "Read each partner's wallet and share of the studio's recorded fees. This split is the books. It does not send USDC. Only the principal wallet can change partners or shares."}
         </p>
       </header>
       <div className="eh8s-cta-row">
         <Link className="eh8s-btn" to="/studio-ledger/mine">
           Your earnings
         </Link>
+        {canMutatePartners ? (
+          <Link className="eh8s-btn primary" to="/owner/studio-power">
+            Studio power
+          </Link>
+        ) : null}
       </div>
-      <form className="eh8s-form eh8s-panel" onSubmit={onAdd}>
-        <label>
-          Partner name
-          <input value={name} onChange={(ev) => setName(ev.target.value)} maxLength={120} />
-        </label>
-        <label>
-          Wallet
-          <input value={wallet} onChange={(ev) => setWallet(ev.target.value)} spellCheck={false} />
-        </label>
-        <label>
-          Share %
-          <input
-            value={percent}
-            onChange={(ev) => setPercent(ev.target.value)}
-            inputMode="decimal"
-            placeholder="25"
-          />
-        </label>
-        <button className="eh8s-btn primary" type="submit" disabled={saving}>
-          {saving ? "Adding…" : "Add partner"}
-        </button>
-        {formError ? <div className="eh8s-banner bad">{formError}</div> : null}
-      </form>
+      {!canMutatePartners ? (
+        <div className="eh8s-banner ok" data-testid="partner-books-principal-only">
+          Only the principal wallet can change partners or shares. You can still read the books and
+          open Your earnings. Treasury stays closed for studio admin.
+        </div>
+      ) : (
+        <div className="eh8s-banner ok" data-testid="partner-books-sign-onchain">
+          On-chain partner shares need a principal wallet signature. Open Studio power to sign
+          set_partner_share. If MariaDB returns a conflict, sign on-chain instead.
+        </div>
+      )}
+      {canMutatePartners ? (
+        <form className="eh8s-form eh8s-panel" onSubmit={onAdd}>
+          <label>
+            Partner name
+            <input value={name} onChange={(ev) => setName(ev.target.value)} maxLength={120} />
+          </label>
+          <label>
+            Wallet
+            <input value={wallet} onChange={(ev) => setWallet(ev.target.value)} spellCheck={false} />
+          </label>
+          <label>
+            Share %
+            <input
+              value={percent}
+              onChange={(ev) => setPercent(ev.target.value)}
+              inputMode="decimal"
+              placeholder="25"
+            />
+          </label>
+          <button className="eh8s-btn primary" type="submit" disabled={saving}>
+            {saving ? "Adding…" : "Add partner"}
+          </button>
+          {formError ? (
+            <div className="eh8s-banner bad" data-testid="partner-mutate-error">
+              {formError}{" "}
+              {/on-chain|set_partner_share/i.test(formError) ? (
+                <Link
+                  to={`/owner/studio-power/partner-share${
+                    wallet.trim()
+                      ? `?wallet=${encodeURIComponent(wallet.trim())}`
+                      : ""
+                  }`}
+                >
+                  Sign set_partner_share
+                </Link>
+              ) : null}
+            </div>
+          ) : null}
+        </form>
+      ) : null}
       {books.partners.length === 0 && !books.loading ? (
-        <p className="eh8s-empty">No partners yet. Add a wallet and a share.</p>
+        <p className="eh8s-empty">
+          {canMutatePartners
+            ? "No partners yet. Sign a partner share on-chain, or add a books-only row here."
+            : "No partners yet. Ask the principal to sign a partner share."}
+        </p>
       ) : (
         <article className="eh8s-band-card eh8s-plan-includes">
           <h2>Partners · {(assignedBps / 100).toFixed(2)}% assigned</h2>
@@ -268,9 +333,23 @@ function OwnerLedger({ year, month, years, onMonth, onYear }: {
                 {row.displayName} · {row.walletPubkey.slice(0, 4)}..{row.walletPubkey.slice(-4)} ·{" "}
                 {(row.shareBps / 100).toFixed(2)}%
                 {joinLabel(row.startedAt) ? ` · ${joinLabel(row.startedAt)}` : ""}{" "}
-                <button className="eh8s-btn" type="button" onClick={() => onRemove(row.id)}>
-                  Remove
-                </button>
+                {canMutatePartners ? (
+                  <>
+                    <Link
+                      className="eh8s-btn"
+                      to={`/owner/studio-power/partner-share?wallet=${encodeURIComponent(row.walletPubkey)}&bps=${row.shareBps}`}
+                    >
+                      Sign share
+                    </Link>
+                    <button
+                      className="eh8s-btn"
+                      type="button"
+                      onClick={() => void onRemove(row.id, row.walletPubkey)}
+                    >
+                      Remove
+                    </button>
+                  </>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -325,6 +404,7 @@ function OwnerLedger({ year, month, years, onMonth, onYear }: {
 
 /**
  * Picks the owner books or the personal earnings page. The two layouts are not the same.
+ * Principal and studio admin both open the books; only the principal can mutate partners.
  */
 export function StudioLedgerPage() {
   const { session, loading } = useSession();
@@ -342,11 +422,11 @@ export function StudioLedgerPage() {
   if (!session?.account) {
     return <Navigate to="/" replace />;
   }
-  const owner =
-    session.platformOwner ||
-    session.studioAdmin ||
-    session.account.role?.toLowerCase() === "owner";
-  if (owner) {
+  const principal = Boolean(
+    session.platformOwner || session.account.role?.toLowerCase() === "owner"
+  );
+  const booksReader = Boolean(principal || session.studioAdmin);
+  if (booksReader) {
     return (
       <OwnerLedger
         year={year}
@@ -354,6 +434,7 @@ export function StudioLedgerPage() {
         years={years}
         onMonth={setMonth}
         onYear={setYear}
+        canMutatePartners={principal}
       />
     );
   }

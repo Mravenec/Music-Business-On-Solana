@@ -8,6 +8,10 @@
 //! that only the owner or a VAULT agent can settle.
 //! Once the owner runs `init_governance`, treasury withdrawals and agent permissions only move
 //! through M-of-N `Proposal`s (up to 5 signers); the direct owner paths are refused.
+//! Studio powers (v0.11.0): the config owner (principal) grants or revokes the `studio_admin`
+//! role in `StudioRole` PDAs and sets each partner's studio share for a time window in
+//! `PartnerShare` PDAs plus the `PartnerBook` aggregate (overlapping shares sum <= 10000 bps).
+//! These direct owner paths are refused once governance exists.
 //! Each song has a `RoyaltyPool` (`["royalty", track_id]`) with member splits: WAVE deposits and
 //! sync-license payments (80% artist / 20% EH8S) credit every member's pending claim by split.
 use anchor_lang::prelude::*;
@@ -33,6 +37,13 @@ pub const MAX_GOVERNANCE_SIGNERS: usize = 5;
 pub const PROPOSAL_WITHDRAW: u8 = 0;
 pub const PROPOSAL_AUTHORIZE_AGENT: u8 = 1;
 pub const PROPOSAL_UPDATE_SIGNERS: u8 = 2;
+pub const STUDIO_ROLE_SEED: &[u8] = b"studio_role";
+pub const PARTNER_SHARE_SEED: &[u8] = b"partner_share";
+pub const PARTNER_BOOK_SEED: &[u8] = b"partner_book";
+/// `StudioRole.role` value for a studio admin; `0` means the role was revoked.
+pub const STUDIO_ROLE_ADMIN: u8 = 1;
+/// Most partner windows the `["partner_book"]` aggregate can hold.
+pub const MAX_PARTNERS: usize = 16;
 pub const ACADEMY_SUB_SEED: &[u8] = b"academy_sub";
 pub const GEO_SUB_SEED: &[u8] = b"geo_sub";
 pub const ROYALTY_SEED: &[u8] = b"royalty";
@@ -120,6 +131,67 @@ pub mod eh8s_devnet {
         set_agent(&mut ctx.accounts.agent_authority, agent_wallet, permissions, ctx.bumps.agent_authority)
     }
 
+    /// Config owner (the principal) grants the `studio_admin` role to a wallet. The role lives in
+    /// the `["studio_role", wallet]` PDA; re-granting a revoked wallet reuses the account.
+    /// Refused once governance exists, like `authorize_agent`.
+    pub fn grant_studio_role(ctx: Context<GrantStudioRole>, wallet: Pubkey) -> Result<()> {
+        require!(ctx.accounts.governance.data_is_empty(), Eh8sError::GovernanceActive);
+        require!(wallet != Pubkey::default(), Eh8sError::InvalidStudioWallet);
+        let now = Clock::get()?.unix_timestamp;
+        let role = &mut ctx.accounts.studio_role;
+        role.wallet = wallet;
+        role.role = STUDIO_ROLE_ADMIN;
+        role.granted_by = ctx.accounts.owner.key();
+        role.updated_at = now;
+        role.bump = ctx.bumps.studio_role;
+        Ok(())
+    }
+
+    /// Config owner revokes the `studio_admin` role: the PDA stays (role `0`) so the history of
+    /// who granted it is kept. Fails when the wallet never held the role. Refused under governance.
+    pub fn revoke_studio_role(ctx: Context<RevokeStudioRole>, wallet: Pubkey) -> Result<()> {
+        require!(ctx.accounts.governance.data_is_empty(), Eh8sError::GovernanceActive);
+        require_keys_eq!(ctx.accounts.studio_role.wallet, wallet, Eh8sError::InvalidStudioWallet);
+        let role = &mut ctx.accounts.studio_role;
+        role.role = 0;
+        role.granted_by = ctx.accounts.owner.key();
+        role.updated_at = Clock::get()?.unix_timestamp;
+        Ok(())
+    }
+
+    /// Config owner (the principal) sets one partner's studio share for a time window.
+    /// `share_bps` is 1..=10000 of the studio side; `0` removes the partner. The window is
+    /// `[starts_at, ends_at)` in unix seconds (`ends_at = 0` means open ended). The shares of
+    /// partners whose windows overlap must never sum above 10000 bps, at any moment.
+    /// A studio admin cannot call this. Refused once governance exists.
+    pub fn set_partner_share(
+        ctx: Context<SetPartnerShare>,
+        wallet: Pubkey,
+        share_bps: u16,
+        starts_at: i64,
+        ends_at: i64,
+    ) -> Result<()> {
+        require!(ctx.accounts.governance.data_is_empty(), Eh8sError::GovernanceActive);
+        let now = Clock::get()?.unix_timestamp;
+        let book = &mut ctx.accounts.partner_book;
+        book.bump = ctx.bumps.partner_book;
+        let (share, start, end) = if share_bps == 0 {
+            (0u16, 0i64, 0i64)
+        } else {
+            (share_bps, starts_at, ends_at)
+        };
+        apply_partner_share(&mut book.entries, wallet, share, start, end)?;
+
+        let row = &mut ctx.accounts.partner_share;
+        row.wallet = wallet;
+        row.share_bps = share;
+        row.starts_at = start;
+        row.ends_at = end;
+        row.set_by = ctx.accounts.owner.key();
+        row.updated_at = now;
+        row.bump = ctx.bumps.partner_share;
+        Ok(())
+    }
     /// Config owner creates the `["governance"]` PDA once: 1..5 distinct signers and
     /// 1 ≤ threshold ≤ signers. Signer changes afterwards go through proposals.
     pub fn init_governance(
@@ -1004,6 +1076,74 @@ fn ready_to_execute(gov: &Governance, p: &Proposal, kind: u8) -> Result<()> {
     Ok(())
 }
 
+/// End of a window as an exclusive bound: `ends_at = 0` means open ended.
+pub fn window_end(ends_at: i64) -> i64 {
+    if ends_at == 0 {
+        i64::MAX
+    } else {
+        ends_at
+    }
+}
+
+/// True when the window covers `at` (`starts_at <= at < end`).
+pub fn window_active_at(entry: &PartnerWindow, at: i64) -> bool {
+    entry.starts_at <= at && at < window_end(entry.ends_at)
+}
+
+/// Highest sum of `share_bps` over any moment in time. The sum only grows when a window opens,
+/// so checking every window start covers the whole timeline.
+pub fn max_concurrent_bps(entries: &[PartnerWindow]) -> u64 {
+    entries
+        .iter()
+        .map(|probe| {
+            entries
+                .iter()
+                .filter(|e| window_active_at(e, probe.starts_at))
+                .map(|e| u64::from(e.share_bps))
+                .sum::<u64>()
+        })
+        .max()
+        .unwrap_or(0)
+}
+
+/// Inserts, replaces, or (with `share_bps = 0`) removes the partner `wallet` in `entries` and
+/// refuses a result whose overlapping shares exceed 10000 bps at any moment.
+/// On error the caller's instruction fails, so no partial book is ever stored.
+pub fn apply_partner_share(
+    entries: &mut Vec<PartnerWindow>,
+    wallet: Pubkey,
+    share_bps: u16,
+    starts_at: i64,
+    ends_at: i64,
+) -> Result<()> {
+    require!(wallet != Pubkey::default(), Eh8sError::InvalidPartnerShare);
+    let existing = entries.iter().position(|e| e.wallet == wallet);
+    if share_bps == 0 {
+        if let Some(i) = existing {
+            entries.remove(i);
+        }
+        return Ok(());
+    }
+    require!(
+        u64::from(share_bps) <= BPS_DENOMINATOR && starts_at >= 0,
+        Eh8sError::InvalidPartnerShare
+    );
+    require!(ends_at == 0 || ends_at > starts_at, Eh8sError::InvalidPartnerShare);
+    let row = PartnerWindow { wallet, share_bps, starts_at, ends_at };
+    match existing {
+        Some(i) => entries[i] = row,
+        None => {
+            require!(entries.len() < MAX_PARTNERS, Eh8sError::PartnerBookFull);
+            entries.push(row);
+        }
+    }
+    require!(
+        max_concurrent_bps(entries) <= BPS_DENOMINATOR,
+        Eh8sError::PartnerSharesExceedTotal
+    );
+    Ok(())
+}
+
 fn set_agent(
     agent: &mut Account<AgentAuthority>,
     agent_wallet: Pubkey,
@@ -1221,6 +1361,49 @@ pub struct MusicianProfile {
 pub struct AgentAuthority {
     pub agent: Pubkey,
     pub permissions: u8,
+    pub bump: u8,
+}
+
+/// Studio role of one wallet (`["studio_role", wallet]`); `role` 1 = studio admin, 0 = revoked.
+#[account]
+#[derive(InitSpace)]
+pub struct StudioRole {
+    pub wallet: Pubkey,
+    pub role: u8,
+    pub granted_by: Pubkey,
+    pub updated_at: i64,
+    pub bump: u8,
+}
+
+/// One partner's studio share (`["partner_share", wallet]`) for `[starts_at, ends_at)`;
+/// `ends_at = 0` is open ended and `share_bps = 0` means the partner was removed.
+#[account]
+#[derive(InitSpace)]
+pub struct PartnerShare {
+    pub wallet: Pubkey,
+    pub share_bps: u16,
+    pub starts_at: i64,
+    pub ends_at: i64,
+    pub set_by: Pubkey,
+    pub updated_at: i64,
+    pub bump: u8,
+}
+
+/// One window inside the `PartnerBook` aggregate.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq, Eq, InitSpace)]
+pub struct PartnerWindow {
+    pub wallet: Pubkey,
+    pub share_bps: u16,
+    pub starts_at: i64,
+    pub ends_at: i64,
+}
+
+/// Every live partner window (`["partner_book"]`); the sum of overlapping shares stays <= 10000.
+#[account]
+#[derive(InitSpace)]
+pub struct PartnerBook {
+    #[max_len(16)]
+    pub entries: Vec<PartnerWindow>,
     pub bump: u8,
 }
 
@@ -1487,6 +1670,74 @@ pub struct AuthorizeAgent<'info> {
         bump
     )]
     pub agent_authority: Account<'info, AgentAuthority>,
+    pub system_program: Program<'info, System>,
+    /// CHECK: `["governance"]` PDA; this direct path only runs while it is still empty.
+    #[account(seeds = [GOVERNANCE_SEED], bump)]
+    pub governance: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+#[instruction(wallet: Pubkey)]
+pub struct GrantStudioRole<'info> {
+    #[account(mut, address = config.owner @ Eh8sError::Unauthorized)]
+    pub owner: Signer<'info>,
+    #[account(seeds = [b"eh8s".as_ref(), CONFIG_SEED], bump = config.bump)]
+    pub config: Account<'info, Eh8sConfig>,
+    #[account(
+        init_if_needed,
+        payer = owner,
+        space = 8 + StudioRole::INIT_SPACE,
+        seeds = [STUDIO_ROLE_SEED, wallet.as_ref()],
+        bump
+    )]
+    pub studio_role: Account<'info, StudioRole>,
+    pub system_program: Program<'info, System>,
+    /// CHECK: `["governance"]` PDA; this direct path only runs while it is still empty.
+    #[account(seeds = [GOVERNANCE_SEED], bump)]
+    pub governance: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+#[instruction(wallet: Pubkey)]
+pub struct RevokeStudioRole<'info> {
+    #[account(mut, address = config.owner @ Eh8sError::Unauthorized)]
+    pub owner: Signer<'info>,
+    #[account(seeds = [b"eh8s".as_ref(), CONFIG_SEED], bump = config.bump)]
+    pub config: Account<'info, Eh8sConfig>,
+    #[account(
+        mut,
+        seeds = [STUDIO_ROLE_SEED, wallet.as_ref()],
+        bump = studio_role.bump
+    )]
+    pub studio_role: Account<'info, StudioRole>,
+    /// CHECK: `["governance"]` PDA; this direct path only runs while it is still empty.
+    #[account(seeds = [GOVERNANCE_SEED], bump)]
+    pub governance: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+#[instruction(wallet: Pubkey)]
+pub struct SetPartnerShare<'info> {
+    #[account(mut, address = config.owner @ Eh8sError::Unauthorized)]
+    pub owner: Signer<'info>,
+    #[account(seeds = [b"eh8s".as_ref(), CONFIG_SEED], bump = config.bump)]
+    pub config: Account<'info, Eh8sConfig>,
+    #[account(
+        init_if_needed,
+        payer = owner,
+        space = 8 + PartnerShare::INIT_SPACE,
+        seeds = [PARTNER_SHARE_SEED, wallet.as_ref()],
+        bump
+    )]
+    pub partner_share: Account<'info, PartnerShare>,
+    #[account(
+        init_if_needed,
+        payer = owner,
+        space = 8 + PartnerBook::INIT_SPACE,
+        seeds = [PARTNER_BOOK_SEED],
+        bump
+    )]
+    pub partner_book: Box<Account<'info, PartnerBook>>,
     pub system_program: Program<'info, System>,
     /// CHECK: `["governance"]` PDA; this direct path only runs while it is still empty.
     #[account(seeds = [GOVERNANCE_SEED], bump)]
@@ -2074,4 +2325,12 @@ pub enum Eh8sError {
     InvalidPlan,
     #[msg("Geo tier must be 1..5, months 1..12, and the geo code 2..24 of A-Z 0-9 _")]
     InvalidGeoSubscription,
+    #[msg("Partner share must be 0..10000 bps with a window where ends_at is 0 or after starts_at")]
+    InvalidPartnerShare,
+    #[msg("Overlapping partner shares would sum above 10000 bps")]
+    PartnerSharesExceedTotal,
+    #[msg("Partner book already holds the maximum number of partners")]
+    PartnerBookFull,
+    #[msg("Studio role wallet is empty or does not match the role account")]
+    InvalidStudioWallet,
 }

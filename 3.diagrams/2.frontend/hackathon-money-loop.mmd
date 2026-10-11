@@ -12,12 +12,12 @@ flowchart LR
     Inbox["Owner inbox approve"]
     Academy["Academy plan Months + Pay with wallet"]
     BandVaultUi["Band vault activate / sync weights (owner)"]
-    StageSettle["Settle Pay with wallet (legacy venue-funded)"]
+    StageSettle["Settle URL → Escrows to settle (booking settle_booking only)"]
     StageClaim["Claim Pay with wallet + Song credits"]
     ReachUi["Catalog Region access Months + Pay with wallet"]
     VenueUi["Venue On-chain listing and escrow: Register on-chain / Escrow with wallet"]
     StageAgentUi["Venues and bookings: Approve venue / Confirm and pin contract"]
-    VaultAgentUi["Escrows to settle: Settle from escrow"]
+    VaultAgentUi["Escrows to settle: Settle from escrow (only settle path)"]
     SongPoolUi["Track Activate song pool / Deposit royalties"]
     SyncUi["Sync licenses New sync deal / Pay with wallet"]
     AgentPowersUi["Agent powers / Enigma levels"]
@@ -25,19 +25,18 @@ flowchart LR
     GovUi["Governance (optional, last): Sign setup / proposal Approve / Execute"]
     DigestUi["Owner AI digest Generate today's digest"]
     DecisionsUi["Agent decisions / Answered decisions / Slack approvals"]
-    CoursesUi["Video courses: lesson player + Mark complete"]
-    OwnerCoursesUi["Owner Courses: publish, Course access, Review queue Approve"]
-    TeachUi["Teach: level 5 + instructor role -> My courses -> Submit for review"]
+    CoursesUi["Video courses: lesson player + Mark complete (epic 50)"]
+    OwnerCoursesUi["Owner Courses: publish, Course access, Review queue Approve (epics 50-51)"]
+    TeachUi["Teach: level 5 + instructor role -> My courses -> Submit for review (epic 51)"]
   end
   subgraph chain [Program GUY7o. v0.10.0 DevNet USDC]
     Config["Eh8sConfig PDA eh8s,config: mint, treasury ATA, vault ATA, fee bps"]
     AcademyIx["subscribe_academy(plan, months) 85 treasury / 15 instructor; AcademySubscription expires_at"]
     GeoIx["subscribe_geographic(geo_code, tier, months) 100 treasury; GeographicSubscription expires_at"]
     BandVaultIx["create_band / update_spp_weights: BandVault PDA band,id (members + weights bps)"]
-    SettleIx["settle_concert(concert_id, gross, expenses): net fee by config bps to treasury + pool to vault + split pending by weight; PDA concert,venue,id once"]
     VenueIx["register_venue / approve_venue: VenueListing PDA venue,wallet,id"]
     EscrowIx["propose_booking: gross to escrow of VenueAccessToken access,wallet,band,date; confirm_booking pins contract SHA-256; cancel_booking refunds"]
-    SettleBookingIx["settle_booking(gross, expenses): expenses to venue, fee to treasury, pool to vault, pending by weight"]
+    SettleBookingIx["settle_booking(gross, expenses): only FE settle path — expenses to venue, fee to treasury, pool to vault, pending by weight"]
     PoolIx["create_royalty_pool / deposit_royalties: RoyaltyPool royalty,track splits bps"]
     SyncIx["pay_sync_license: 20 treasury / 80 vault by song splits; SyncLicense sync,track,deal once"]
     AgentAuth["authorize_agent: AgentAuthority PDA agent,wallet permission bits"]
@@ -67,10 +66,8 @@ flowchart LR
   GeoIx -.->|"paid zones"| AgentsLive
   Owner --> BandVaultUi
   BandVaultUi --> BandVaultIx
-  BandVaultIx -.->|"members + weights"| SettleIx
   BandVaultIx -.->|"members + weights"| SettleBookingIx
-  Venue --> StageSettle
-  StageSettle --> SettleIx
+  StageSettle -->|"UI only → VaultAgentUi"| VaultAgentUi
   Venue --> VenueUi
   VenueUi --> VenueIx
   VenueUi --> EscrowIx
@@ -83,16 +80,13 @@ flowchart LR
   SettleBookingIx -->|"fee"| Treasury
   SettleBookingIx -->|"pool"| Vault
   SettleBookingIx -->|"expenses"| Venue
+  SettleBookingIx -->|"pending_claims by weight"| Musician
   Config -.->|"pins accounts"| AcademyIx
-  Config -.->|"pins accounts"| SettleIx
   Config -.->|"pins accounts"| SettleBookingIx
   Config -.->|"pins accounts"| ClaimIx
   Config -.->|"pins accounts"| PoolIx
   Config -.->|"pins accounts"| SyncIx
   Config -.->|"pins accounts"| WithdrawIx
-  SettleIx -->|"eh8s_fee_usdc"| Treasury
-  SettleIx -->|"band_pool_usdc"| Vault
-  SettleIx -->|"pending_claims_usdc += pool x weight (each member)"| Musician
   Musician --> StageClaim
   StageClaim --> ClaimIx
   Vault --> ClaimIx
@@ -120,7 +114,6 @@ flowchart LR
   Treasury --> GovIx
   GovIx -->|"to a signer USDC ATA"| Owner
   AcademyIx -.->|"signature"| Verifier
-  SettleIx -.->|"signature"| Verifier
   SettleBookingIx -.->|"signature"| Verifier
   SyncIx -.->|"signature"| Verifier
   WithdrawIx -.->|"signature"| Verifier

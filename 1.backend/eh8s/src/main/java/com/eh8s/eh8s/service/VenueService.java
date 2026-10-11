@@ -20,7 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Off-chain settle_concert mirror. On-chain confirm via SettleClaimOnchain.
+ * Stage-map venues/bookings/concerts and MariaDB settlement mirror after booking
+ * {@code settle/confirm} (on-chain {@code settle_booking}). Not an HTTP settle endpoint.
  */
 @Service
 public class VenueService implements IVenueService {

@@ -1,4 +1,4 @@
-### Slack Interactivity. Public endpoint: authenticated by the Slack request signature,
+### Slack Interactivity (epic 47). Public endpoint: authenticated by the Slack request signature,
 ### not by a Bearer token. Point the Slack app's Interactivity Request URL at
 ### https://<public tunnel>/api/slack/interactions and set SLACK_SIGNING_SECRET in the Spring env.
 

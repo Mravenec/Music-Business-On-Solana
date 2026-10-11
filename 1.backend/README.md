@@ -1,35 +1,38 @@
-# 1.backend — Spring Boot API
+# 1.backend
 
-`eh8s/` is a Maven project: Spring Boot 3.5 · Java 21 · JOOQ · MariaDB · JWT (HS256). No JPA.
-
-## Layers
+Day zero: **no** module folder yet. Set `module_name` in `.ai/project.yaml`, then scaffold a **[start.spring.io](https://start.spring.io/)** Maven project into:
 
 ```text
-database/jooq/      generated JOOQ tables and POJOs (one package per MariaDB schema); POJOs are the only data types
-repository/         I*Repository interfaces + JOOQ implementations
-service/            I*Service interfaces + implementations
-  solana/           instruction builders, PDA derivation, RPC client, transaction verifier
-  claude/           Claude client (NEXUS scoring, owner digest)
-  course/           course access rules and video-link parsing (YouTube, Vimeo, Bunny, Cloudflare)
-controller/         I*Controller interfaces + REST controllers
-config/             security (JWT filter, public routes), CORS
+1.backend/<module_name>/
 ```
 
-Every layer depends on the interface of the next one, and every public type and method has Javadoc.
+That folder **is** the Initializr unzip (`pom.xml` lives here). Never create a permanent `appProject` directory.
 
-## Run and test
+Settings: Maven · Java **21** · Spring Boot **3.5.x** · Jar. Dependencies: **web**, **jooq**, **mariadb**, **jdbc**. No JPA. Add **CORS** for Vite `5173`/`4173` with the first controller (`.ai/rules/frontend-api-reach.md`).
 
-```bash
-cd 1.backend/eh8s
-cp .env.example .env          # JWT_SECRET, optional ANTHROPIC_API_KEY and Slack settings
-mvn test                      # 164 unit tests
-mvn spring-boot:run           # http://127.0.0.1:8080  (GET /health is public)
+Full tree, `.http` path, and Javadoc: `.ai/rules/spring-initializr.md`.
+
+## Mandatory layer order
+
+```
+JOOQ POJOs (generated …database.jooq)
+  → I*Repository → *Repository
+  → I*Service → *Service
+  → I*Controller → *Controller
+     (English /** */ on every public type and method)
+  → STOP old spring-boot:run (if any) → START fresh
+  → src/test/java/<package>/http/*.http          ← GATE_HTTP for frontend
+     (if not 2xx: mvn test / unit tests → fix → restart → retry .http)
 ```
 
-`src/test/java/com/eh8s/eh8s/http/` holds 34 `.http` contract files (IntelliJ / VS Code REST Client): each protected route returns 401 without a token and 2xx with a wallet-signed session.
+Inject **interfaces** across layers. **No Java DTOs** — use generated JOOQ POJOs only (`.ai/rules/jooq-pojos-no-dto.md`).
 
-Sign-in: `POST /api/session/challenge` returns a one-time nonce; the wallet signs `Sign in to EH8S`; `POST /api/session/wallet` verifies the ed25519 signature and returns the JWT.
+`.http` files do **not** sit next to `pom.xml`. They sit under `src/test/java/<package>/http/` (same as the example apps).
 
-Payments are never sent by the server. The client signs each transaction; the backend re-reads the confirmed signature from DevNet RPC and checks the program id, accounts and amounts before recording it.
+Before proving `.http`: see `.ai/rules/backend-http-gate.md`. JOOQ: `.ai/rules/backend-jooq.md`. No DTOs: `.ai/rules/jooq-pojos-no-dto.md`.
 
-Diagram: [`3.diagrams/1.backend/layers.puml`](../3.diagrams/1.backend/layers.puml).
+See `project-commands.txt` and root `AGENTS.md`. Rule: `.ai/rules/module-name.md`.
+
+## Diagram (PlantUML)
+
+Keep **`3.diagrams/1.backend/`** in sync with this tree (same checklist item). Do not put `.puml` here. `.ai/rules/diagrams.md`.

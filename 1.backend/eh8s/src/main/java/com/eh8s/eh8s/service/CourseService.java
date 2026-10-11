@@ -9,7 +9,9 @@ import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.pojos.ChainConfig;
 import com.eh8s.eh8s.repository.interfaces.IChainConfigRepository;
 import com.eh8s.eh8s.repository.interfaces.ICourseRepository;
 import com.eh8s.eh8s.service.course.CourseRules;
+import com.eh8s.eh8s.service.course.MediaLinks;
 import com.eh8s.eh8s.service.interfaces.ICourseService;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,6 +20,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,21 +33,47 @@ import org.springframework.web.server.ResponseStatusException;
 public class CourseService implements ICourseService {
 
   private static final int MAX_POSITION_SEC = 24 * 3600;
+  private static final String DEV_MEDIA_SECRET = "eh8s-dev-media-secret-change-me-32b";
+  private static final String DEV_MEDIA_BASE_URL = "https://media.eh8s.invalid";
 
   private final ICourseRepository courseRepository;
   private final IChainConfigRepository chainConfigRepository;
+  private final String mediaSecret;
+  private final String mediaBaseUrl;
+  private final long mediaTtlSeconds;
+
+  /**
+   * Creates the service with the default (dev) media signing settings. Used by unit tests.
+   *
+   * @param courseRepository course persistence
+   * @param chainConfigRepository chain config (owner wallet)
+   */
+  public CourseService(ICourseRepository courseRepository, IChainConfigRepository chainConfigRepository) {
+    this(courseRepository, chainConfigRepository, DEV_MEDIA_SECRET, DEV_MEDIA_BASE_URL, 300);
+  }
 
   /**
    * Creates the service.
    *
    * @param courseRepository course persistence
    * @param chainConfigRepository chain config (owner wallet)
+   * @param mediaSecret HMAC secret shared with the media host ({@code eh8s.media.signing-secret})
+   * @param mediaBaseUrl media host base URL ({@code eh8s.media.base-url})
+   * @param mediaTtlSeconds signed link lifetime, clamped to 30..900 seconds
    */
-  public CourseService(ICourseRepository courseRepository, IChainConfigRepository chainConfigRepository) {
+  @Autowired
+  public CourseService(
+      ICourseRepository courseRepository,
+      IChainConfigRepository chainConfigRepository,
+      @Value("${eh8s.media.signing-secret}") String mediaSecret,
+      @Value("${eh8s.media.base-url}") String mediaBaseUrl,
+      @Value("${eh8s.media.url-ttl-seconds:300}") long mediaTtlSeconds) {
     this.courseRepository = courseRepository;
     this.chainConfigRepository = chainConfigRepository;
+    this.mediaSecret = mediaSecret;
+    this.mediaBaseUrl = mediaBaseUrl;
+    this.mediaTtlSeconds = MediaLinks.clampTtl(mediaTtlSeconds);
   }
-
   /** {@inheritDoc} */
   @Override
   public List<Map<String, Object>> catalog(Long accountId) {
@@ -121,7 +151,8 @@ public class CourseService implements ICourseService {
             .orElse(null);
 
     Map<String, Object> out = new LinkedHashMap<>();
-    out.put("lesson", canWatch ? lesson : withoutPaidContent(lesson));
+    out.put("lesson", canWatch ? withoutOfficialMedia(lesson) : withoutPaidContent(lesson));
+    out.put("official", MediaLinks.isOfficial(lesson));
     out.put("locked", !canWatch);
     out.put("lockReason", canWatch ? null : CourseRules.lockReason(caller.activePlan(), caller.level(), minLevel(course)));
     out.put("course", course);
@@ -129,6 +160,50 @@ public class CourseService implements ICourseService {
     out.put("progress", progress);
     out.put("previousLessonId", index > 0 ? ordered.get(index - 1).getId() : null);
     out.put("nextLessonId", index < ordered.size() - 1 ? ordered.get(index + 1).getId() : null);
+    return out;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public Map<String, Object> watch(Long accountId, Long lessonId) {
+    Caller caller = caller(accountId);
+    Lesson lesson = courseRepository.findLesson(lessonId).orElseThrow(CourseService::lessonNotFound);
+    CourseSection section =
+        courseRepository.findSection(lesson.getSectionId()).orElseThrow(CourseService::lessonNotFound);
+    Course course = requireVisibleCourse(caller, section.getCourseId());
+    if (indexOf(visibleLessons(course.getId()), lesson.getId()) < 0) {
+      throw lessonNotFound();
+    }
+    if (!watch(caller, course, flag(lesson.getIsFreePreview()))) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This lesson is locked for your account");
+    }
+    Map<String, Object> out = new LinkedHashMap<>();
+    out.put("lessonId", lesson.getId());
+    if (!MediaLinks.isOfficial(lesson)) {
+      out.put("kind", "embed");
+      out.put("url", lesson.getEmbedUrl());
+      out.put("expiresAt", null);
+      out.put("contentHash", null);
+      out.put("keyId", null);
+      return out;
+    }
+    if (!MediaLinks.isFullyPinned(lesson)) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Official media is not fully pinned yet");
+    }
+    long expiresAt = Instant.now().getEpochSecond() + mediaTtlSeconds;
+    out.put("kind", "signed");
+    out.put(
+        "url",
+        MediaLinks.signedUrl(
+            mediaBaseUrl,
+            mediaSecret,
+            lesson.getStorageRef(),
+            lesson.getKeyId(),
+            caller.account().getId(),
+            expiresAt));
+    out.put("expiresAt", Instant.ofEpochSecond(expiresAt).toString());
+    out.put("contentHash", lesson.getContentHash());
+    out.put("keyId", lesson.getKeyId());
     return out;
   }
 
@@ -254,7 +329,26 @@ public class CourseService implements ICourseService {
     copy.setEmbedUrl(null);
     copy.setResources(null);
     copy.setPracticePrompt(null);
+    clearOfficialMedia(copy);
     return copy;
+  }
+
+  /** Official lessons never expose a permanent link or storage detail, even to viewers who may watch. */
+  private static Lesson withoutOfficialMedia(Lesson lesson) {
+    if (!MediaLinks.isOfficial(lesson)) {
+      return lesson;
+    }
+    Lesson copy = new Lesson(lesson);
+    copy.setVideoUrl(null);
+    copy.setEmbedUrl(null);
+    clearOfficialMedia(copy);
+    return copy;
+  }
+
+  private static void clearOfficialMedia(Lesson lesson) {
+    lesson.setContentHash(null);
+    lesson.setStorageRef(null);
+    lesson.setKeyId(null);
   }
 
   private static int indexOf(List<Lesson> lessons, Long lessonId) {

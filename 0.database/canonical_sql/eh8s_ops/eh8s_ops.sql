@@ -1,3 +1,7 @@
+-- Epic 26: ops_agent/owner_decision/agent_event_log/slack_delivery_log live in
+-- their own schema (eh8s_ops), not the core eh8s schema — see MIGRATION_MAP.md
+-- and .docs/journey/26-multi-schema-ops.md for why (odsProject-pattern JOOQ
+-- multi-schema; one outbound cross-schema FK to eh8s.booking below).
 CREATE DATABASE IF NOT EXISTS eh8s_ops
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -30,7 +34,14 @@ CREATE TABLE IF NOT EXISTS owner_decision (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ──────────────────────────────────────────────────────────
--- Seed rows below are product catalog / bootstrap data, not demo data.
+-- From (epic 28 layout): eh8s_ops/02_owner_product.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 13 product: reject reason + resolved_at; agent task_status for semaphore console.
+-- Epic 28: relocated from canonical_sql/07_owner_product.sql into eh8s_ops's
+-- own folder; the owner_decision mock seed row (demo "Foro Disponible"
+-- pending decision) moved to 0.database/mocks/eh8s_ops.sql. ops_agent
+-- catalog INSERT stays — the real 12-agent roster the ops/semaphore console
+-- is built around, not placeholder data. See MIGRATION_MAP.md.
 SET @eh8s_col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ops_agent' AND COLUMN_NAME = 'task_status'
@@ -74,6 +85,10 @@ INSERT INTO ops_agent (code, name, role_summary, semaphore, on_chain_permission,
 ON DUPLICATE KEY UPDATE name = VALUES(name), role_summary = VALUES(role_summary), semaphore = VALUES(semaphore);
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s_ops/03_agent_events.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 15 agent events: append-only event log linked to optional owner decisions.
+-- agent_event_log lives in eh8s_ops (epic 26) — see MIGRATION_MAP.md.
 CREATE TABLE IF NOT EXISTS agent_event_log (
   id BIGINT NOT NULL AUTO_INCREMENT,
   ops_agent_id BIGINT NOT NULL,
@@ -89,6 +104,10 @@ CREATE TABLE IF NOT EXISTS agent_event_log (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s_ops/04_slack_bridge.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 16: Slack bridge delivery log.
+-- slack_delivery_log lives in eh8s_ops (epic 26) — see MIGRATION_MAP.md.
 CREATE TABLE IF NOT EXISTS slack_delivery_log (
   id BIGINT NOT NULL AUTO_INCREMENT,
   owner_decision_id BIGINT NULL,
@@ -105,6 +124,10 @@ CREATE TABLE IF NOT EXISTS slack_delivery_log (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ──────────────────────────────────────────────────────────
+-- From (epic 28 layout): eh8s_ops/05_slack_owner_dirigent.sql
+-- ──────────────────────────────────────────────────────────
+-- Epic 24: scope slack_delivery_log rows to platform owner wallet (idempotent).
+-- slack_delivery_log lives in eh8s_ops (epic 26) — see MIGRATION_MAP.md.
 SET @col := (
   SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'slack_delivery_log' AND COLUMN_NAME = 'owner_wallet_pubkey'
@@ -146,7 +169,7 @@ SET owner_wallet_pubkey = '7QVKJjAD4AwZzgSNuDsF7ZSKS8PpYiRfGSvGu9h1DUuC'
 WHERE owner_wallet_pubkey IS NULL OR owner_wallet_pubkey = '';
 
 -- ----------------------------------------------------------
--- Claude owner digest (one row per owner-triggered run).
+-- Epic 38: Claude owner digest (one row per owner-triggered run).
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS owner_digest (
   id BIGINT NOT NULL AUTO_INCREMENT,
@@ -163,7 +186,7 @@ CREATE TABLE IF NOT EXISTS owner_digest (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------
--- manual agent roster - AGT-01 NEXUS = Pedagogical (Enigma level, bit 0x01),
+-- Epic 40: manual agent roster - AGT-01 NEXUS = Pedagogical (Enigma level, bit 0x01),
 -- AGT-02 GENESIS = Onboarding. permission_bits = default on-chain bits for that agent
 -- (0x01 pedagogical, 0x02 HARMONY, 0x04 STAGE, 0x08 VAULT, 0x10 WAVE).
 -- agent_authority = one row per verified authorize_agent tx (latest row per wallet is live).
@@ -202,7 +225,7 @@ CREATE TABLE IF NOT EXISTS agent_authority (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------
--- two-way Slack approvals. answered_via = where the owner answered
+-- Epic 47: two-way Slack approvals. answered_via = where the owner answered
 -- ('web' inbox or 'slack' button); answered_by = Slack user (id / name) or owner wallet.
 -- ----------------------------------------------------------
 SET @col := (

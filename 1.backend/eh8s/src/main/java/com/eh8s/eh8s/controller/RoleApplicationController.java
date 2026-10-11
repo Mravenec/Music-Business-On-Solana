@@ -6,6 +6,7 @@ import com.eh8s.eh8s.database.jooq.eh8s_role.tables.pojos.AccountRoleApplication
 import com.eh8s.eh8s.service.interfaces.IRoleApplicationService;
 import com.eh8s.eh8s.service.interfaces.JwtPrincipal;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * REST endpoints for role applications and multi-role membership reads.
@@ -53,24 +55,30 @@ public class RoleApplicationController implements IRoleApplicationController {
   @Override
   @PostMapping("/role-applications/{id}/approve")
   public AccountRoleApplication approve(
-      @PathVariable Long id, @RequestBody AccountRoleApplication review) {
-    return roleApplicationService.approve(id, review);
+      @AuthenticationPrincipal JwtPrincipal principal,
+      @PathVariable Long id,
+      @RequestBody(required = false) AccountRoleApplication review) {
+    return roleApplicationService.approve(accountId(principal), id, review);
   }
 
   /** {@inheritDoc} */
   @Override
   @PostMapping("/role-applications/{id}/reject")
   public AccountRoleApplication reject(
-      @PathVariable Long id, @RequestBody AccountRoleApplication review) {
-    return roleApplicationService.reject(id, review);
+      @AuthenticationPrincipal JwtPrincipal principal,
+      @PathVariable Long id,
+      @RequestBody(required = false) AccountRoleApplication review) {
+    return roleApplicationService.reject(accountId(principal), id, review);
   }
 
   /** {@inheritDoc} */
   @Override
   @PostMapping("/role-applications/{id}/revoke")
   public AccountRoleApplication revoke(
-      @PathVariable Long id, @RequestBody AccountRoleApplication review) {
-    return roleApplicationService.revoke(id, review);
+      @AuthenticationPrincipal JwtPrincipal principal,
+      @PathVariable Long id,
+      @RequestBody(required = false) AccountRoleApplication review) {
+    return roleApplicationService.revoke(accountId(principal), id, review);
   }
 
   /** {@inheritDoc} */
@@ -85,10 +93,13 @@ public class RoleApplicationController implements IRoleApplicationController {
   @PostMapping("/role-grants")
   public AccountRoleApplication grant(
       @AuthenticationPrincipal JwtPrincipal principal, @RequestBody AccountRoleApplication request) {
+    return roleApplicationService.grant(accountId(principal), request);
+  }
+
+  private static Long accountId(JwtPrincipal principal) {
     if (principal == null || principal.accountId() == null) {
-      throw new org.springframework.web.server.ResponseStatusException(
-          org.springframework.http.HttpStatus.UNAUTHORIZED, "Sign in first");
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sign in first");
     }
-    return roleApplicationService.grant(principal.accountId(), request);
+    return principal.accountId();
   }
 }

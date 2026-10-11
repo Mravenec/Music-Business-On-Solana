@@ -10,6 +10,7 @@ import com.eh8s.eh8s.repository.interfaces.IChainConfigRepository;
 import com.eh8s.eh8s.repository.interfaces.IEnrollmentRepository;
 import com.eh8s.eh8s.repository.interfaces.IRoleApplicationRepository;
 import com.eh8s.eh8s.repository.interfaces.IStudioLedgerRepository;
+import com.eh8s.eh8s.repository.interfaces.IStudioPowerOnchainRepository;
 import com.eh8s.eh8s.service.interfaces.IEnrollmentService;
 import com.eh8s.eh8s.service.interfaces.IJwtService;
 import com.eh8s.eh8s.service.interfaces.JwtPrincipal;
@@ -51,6 +52,7 @@ public class EnrollmentService implements IEnrollmentService {
   private final IJwtService jwtService;
   private final IRoleApplicationRepository roleApplicationRepository;
   private final IStudioLedgerRepository studioLedgerRepository;
+  private final IStudioPowerOnchainRepository studioPowerOnchainRepository;
 
   /**
    * Creates the service.
@@ -60,18 +62,21 @@ public class EnrollmentService implements IEnrollmentService {
    * @param jwtService issues Bearer tokens after wallet upsert
    * @param roleApplicationRepository granted studio admin and partner roles
    * @param studioLedgerRepository active partner rows
+   * @param studioPowerOnchainRepository confirmed on-chain studio role mirror (wins over the cache)
    */
   public EnrollmentService(
       IEnrollmentRepository enrollmentRepository,
       IChainConfigRepository chainConfigRepository,
       IJwtService jwtService,
       IRoleApplicationRepository roleApplicationRepository,
-      IStudioLedgerRepository studioLedgerRepository) {
+      IStudioLedgerRepository studioLedgerRepository,
+      IStudioPowerOnchainRepository studioPowerOnchainRepository) {
     this.enrollmentRepository = enrollmentRepository;
     this.chainConfigRepository = chainConfigRepository;
     this.jwtService = jwtService;
     this.roleApplicationRepository = roleApplicationRepository;
     this.studioLedgerRepository = studioLedgerRepository;
+    this.studioPowerOnchainRepository = studioPowerOnchainRepository;
   }
 
   /**
@@ -341,6 +346,14 @@ public class EnrollmentService implements IEnrollmentService {
                 && roleApplicationRepository
                     .findMembership(account.getId(), StudioAccess.STUDIO_ADMIN)
                     .isPresent());
+    if (!owner && studioPowerOnchainRepository != null && account.getWalletPubkey() != null) {
+      // A confirmed on-chain grant or revoke wins over the MariaDB role cache.
+      studioAdmin =
+          studioPowerOnchainRepository
+              .findRoleGrant(account.getWalletPubkey())
+              .map(row -> row.getRevokedAt() == null)
+              .orElse(studioAdmin);
+    }
     boolean partner =
         roleApplicationRepository != null
             && roleApplicationRepository

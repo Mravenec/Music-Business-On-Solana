@@ -201,7 +201,7 @@ public class AccountRole extends TableImpl<AccountRoleRecord> {
     @Override
     public List<Check<AccountRoleRecord>> getChecks() {
         return Arrays.asList(
-            Internal.createCheck(this, DSL.name("chk_account_role_role"), "`role` in ('student','musician','instructor','venue')", true)
+            Internal.createCheck(this, DSL.name("chk_account_role_role"), "`role` in ('student','musician','instructor','venue','studio_admin','partner')", true)
         );
     }
 

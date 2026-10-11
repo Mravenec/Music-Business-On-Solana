@@ -231,7 +231,7 @@ public class AccountRoleApplication extends TableImpl<AccountRoleApplicationReco
     @Override
     public List<Check<AccountRoleApplicationRecord>> getChecks() {
         return Arrays.asList(
-            Internal.createCheck(this, DSL.name("chk_role_app_role"), "`role` in ('student','musician','instructor','venue')", true),
+            Internal.createCheck(this, DSL.name("chk_role_app_role"), "`role` in ('student','musician','instructor','venue','studio_admin','partner')", true),
             Internal.createCheck(this, DSL.name("chk_role_app_status"), "`status` in ('pending','approved','rejected')", true)
         );
     }

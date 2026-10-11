@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Serves each signed-in wallet their own earnings, and partner books to a books editor.
+ * Serves each signed-in wallet their own earnings, partner books to readers, and partner mutate to the principal only.
  */
 @RestController
 public class StudioLedgerController implements IStudioLedgerController {
@@ -109,7 +109,7 @@ public class StudioLedgerController implements IStudioLedgerController {
   @Override
   @GetMapping("/api/studio-ledger/partners")
   public List<StudioPartner> partners(@AuthenticationPrincipal JwtPrincipal principal) {
-    requireOwner(principal);
+    requireBooksReader(principal);
     return ledgerService.partners();
   }
 
@@ -120,7 +120,7 @@ public class StudioLedgerController implements IStudioLedgerController {
   @PostMapping("/api/studio-ledger/partners")
   public StudioPartner savePartner(
       @AuthenticationPrincipal JwtPrincipal principal, @RequestBody StudioPartner draft) {
-    requireOwner(principal);
+    requirePrincipal(principal);
     return ledgerService.savePartner(draft);
   }
 
@@ -131,7 +131,7 @@ public class StudioLedgerController implements IStudioLedgerController {
   @DeleteMapping("/api/studio-ledger/partners/{partnerId}")
   public StudioPartner deactivatePartner(
       @AuthenticationPrincipal JwtPrincipal principal, @PathVariable Long partnerId) {
-    requireOwner(principal);
+    requirePrincipal(principal);
     return ledgerService.deactivatePartner(partnerId);
   }
 
@@ -144,7 +144,7 @@ public class StudioLedgerController implements IStudioLedgerController {
       @AuthenticationPrincipal JwtPrincipal principal,
       @RequestParam int year,
       @RequestParam int month) {
-    requireOwnerMonth(principal, year, month);
+    requireBooksReaderMonth(principal, year, month);
     return ledgerService.showFees(year, month);
   }
 
@@ -157,7 +157,7 @@ public class StudioLedgerController implements IStudioLedgerController {
       @AuthenticationPrincipal JwtPrincipal principal,
       @RequestParam int year,
       @RequestParam int month) {
-    requireOwnerMonth(principal, year, month);
+    requireBooksReaderMonth(principal, year, month);
     return ledgerService.academyFees(year, month);
   }
 
@@ -170,7 +170,7 @@ public class StudioLedgerController implements IStudioLedgerController {
       @AuthenticationPrincipal JwtPrincipal principal,
       @RequestParam int year,
       @RequestParam int month) {
-    requireOwnerMonth(principal, year, month);
+    requireBooksReaderMonth(principal, year, month);
     return ledgerService.syncFees(year, month);
   }
 
@@ -183,7 +183,7 @@ public class StudioLedgerController implements IStudioLedgerController {
       @AuthenticationPrincipal JwtPrincipal principal,
       @RequestParam int year,
       @RequestParam int month) {
-    requireOwnerMonth(principal, year, month);
+    requireBooksReaderMonth(principal, year, month);
     return ledgerService.allocations(year, month);
   }
 
@@ -191,19 +191,28 @@ public class StudioLedgerController implements IStudioLedgerController {
     requireMonth(principal, year, month);
   }
 
-  private void requireOwnerMonth(JwtPrincipal principal, int year, int month) {
+  private void requireBooksReaderMonth(JwtPrincipal principal, int year, int month) {
     requireMonth(principal, year, month);
     if (!ledgerService.isBooksEditor(principal.accountId())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the studio can open the partner books");
     }
   }
 
-  private void requireOwner(JwtPrincipal principal) {
+  private void requireBooksReader(JwtPrincipal principal) {
     if (principal == null || principal.accountId() == null) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sign in first");
     }
     if (!ledgerService.isBooksEditor(principal.accountId())) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the studio can open the partner books");
+    }
+  }
+
+  private void requirePrincipal(JwtPrincipal principal) {
+    if (principal == null || principal.accountId() == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sign in first");
+    }
+    if (!ledgerService.isOwner(principal.accountId())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the principal can change partner shares");
     }
   }
 

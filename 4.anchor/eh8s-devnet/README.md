@@ -1,8 +1,11 @@
 # EH8S DevNet Anchor program
 
+Ops practice for 2-of-N treasury and studio power (UI labels, cold keys, no secrets): [`OPS_MULTISIG_2OFN.md`](./OPS_MULTISIG_2OFN.md).  
+Legal entity and key custody checklist (upgrade authority, JWT, storage keys; never commit keypairs): [`OPS_KEY_CUSTODY.md`](./OPS_KEY_CUSTODY.md).
+
 Program id (the program keypair is kept outside the repo; upgrades only need this address plus the upgrade-authority wallet):
 
-`GUY7oRUUFHdiNHqoJgUSBv6anqaftAdfhrTbaD5nMgzG` — **live on DevNet at v0.10.0** (upgradeable; first deployed at slot 504604312; v0.10.0 at slot 504863281).
+`GUY7oRUUFHdiNHqoJgUSBv6anqaftAdfhrTbaD5nMgzG` — **live on DevNet at v0.10.0** (upgradeable; first deployed in epic 34, slot 504604312; v0.10.0 in epic 44, slot 504863281).
 
 ```text
 solana program show GUY7oRUUFHdiNHqoJgUSBv6anqaftAdfhrTbaD5nMgzG --url devnet
@@ -26,6 +29,9 @@ solana program show GUY7oRUUFHdiNHqoJgUSBv6anqaftAdfhrTbaD5nMgzG --url devnet
 - `withdraw_treasury(amount)` — `config.owner` only; treasury PDA signs treasury ATA → owner USDC ATA (mint = config mint, token owner = config owner); `InsufficientTreasury` when amount > balance; trailing `["governance"]` account (v0.8.0) must still be empty, otherwise `GovernanceActive`
 - `authorize_agent(agent_wallet, permissions)` (v0.6.0) — `config.owner` only; creates/updates `AgentAuthority` PDA `["agent", agent_wallet]`; bits `0x01` pedagogical (NEXUS) · `0x02` HARMONY · `0x04` STAGE · `0x08` VAULT · `0x10` WAVE; `0` revokes; unknown bits → `InvalidPermissions`; trailing `["governance"]` account (v0.8.0) must still be empty, otherwise `GovernanceActive`
 - `init_governance(signers, threshold)` (v0.8.0) — `config.owner`, once; `Governance` PDA `["governance"]` with 1..5 distinct signers and 1 ≤ threshold ≤ signers (`InvalidGovernance`); from then on the two direct paths above are refused
+- `grant_studio_role(wallet)` (v0.11.0, **source only — not deployed**) - `config.owner` only; `StudioRole` PDA `["studio_role", wallet]` (`role` 1 = studio_admin); trailing `["governance"]` account must be empty, otherwise `GovernanceActive`; `InvalidStudioWallet` for the empty wallet
+- `revoke_studio_role(wallet)` (v0.11.0) - `config.owner` only; sets `role` 0 and keeps the PDA; a wallet that never held the role has no account and fails; `GovernanceActive` once governance exists
+- `set_partner_share(wallet, share_bps, starts_at, ends_at)` (v0.11.0) - `config.owner` only (a studio admin is refused with `Unauthorized`); `PartnerShare` PDA `["partner_share", wallet]` plus the `PartnerBook` aggregate `["partner_book"]` (up to 16 partners, `PartnerBookFull`); window `[starts_at, ends_at)` with `ends_at = 0` open ended (`InvalidPartnerShare` for share > 10000, negative start, or end <= start); `share_bps = 0` removes the partner; overlapping shares never sum above 10000 bps at any moment (`PartnerSharesExceedTotal`); `GovernanceActive` once governance exists. New error codes append after `InvalidGeoSubscription`: 6032 `InvalidPartnerShare` · 6033 `PartnerSharesExceedTotal` · 6034 `PartnerBookFull` · 6035 `InvalidStudioWallet`
 - `propose(kind, amount, target, permissions, new_signers, new_threshold)` (v0.8.0) — a governance signer (`NotGovernanceSigner`); `Proposal` PDA `["proposal", id LE]` with `id = governance.proposal_count`; the proposer's approval is recorded. Kinds: `0` withdraw (`amount` > 0, `target` = destination USDC account), `1` authorize agent (`target` = agent wallet, `permissions`), `2` update signers (`new_signers`, `new_threshold`)
 - `approve_proposal()` (v0.8.0) — each current signer once (`AlreadyApproved`); not after execute (`ProposalExecuted`) or a signer-set change (`StaleProposal`)
 - `execute_withdraw_proposal()` / `execute_agent_proposal()` / `execute_signers_proposal()` (v0.8.0) — anyone, once, when approvals from current signers ≥ threshold (`ThresholdNotMet`); the kind must match the instruction (`InvalidProposal`). Withdraw destination must be the proposal target, a config-mint USDC account owned by a governance signer (`DestinationNotSigner`). A signer-set change bumps `governance.epoch`, so older open proposals go stale
@@ -71,6 +77,8 @@ Keep the default release `opt-level`: `"s"` / `"z"` shrink the `.so` ~12% but cr
 
 ## Deploy / upgrade + one-time config
 
+**v0.11.0 (APP-74-2) is built and tested but NOT deployed.** The release `.so` is about 946,904 bytes, larger than the 900,000-byte program data account, so an upgrade needs `solana program extend GUY7o… 100000 --url devnet` first. Both the extend and the upgrade need the human's explicit OK and the upgrade-authority keypair. DevNet keeps running v0.10.0 (no studio role or partner share instructions) until then.
+
 When the new `.so` is larger than the program data account, extend it first (v0.7.0: 600000 → 750000 bytes; v0.8.0: 750000 → 830000 bytes, slot 504844157; v0.10.0: 830000 → 900000 bytes, slot 504863281):
 
 ```bash
@@ -93,6 +101,6 @@ DevNet USDC mint used by the stack: `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncD
 .\hackathon-smoke.ps1              # preflight + guided wallet steps
 ```
 
-Judge path: academy pay (85% → treasury PDA) → owner activates the band vault (sync SPP weights) → venue settles with expenses (fee → treasury PDA, pool → vault, split by weight) → each member claims → owner withdraws the treasury at `/owner/treasury` → owner AI digest at `/owner/digest`. Steps 12–20 add `register_venue` / `approve_venue`, the booking escrow (`propose_booking` → `confirm_booking` → `settle_booking`), subscriptions with expiry, `create_royalty_pool` / `deposit_royalties` / `pay_sync_license`, NEXUS / HARMONY / ATLAS, Slack approvals, the academy video library and the earned teaching path (off-chain, gated by the academy subscription and the musician's Enigma level) and, last and optional, the multisig (`init_governance` disables the direct withdraw).
+Judge path: academy pay (85% → treasury PDA) → owner activates the band vault (sync SPP weights) → venue listing + booking escrow → **`settle_booking` (only show settle)** → each member claims → owner withdraws the treasury at `/owner/treasury` → owner AI digest at `/owner/digest`. Guided steps in [`HACKATHON_SMOKE.md`](./HACKATHON_SMOKE.md) cover `register_venue` / `approve_venue`, escrow (`propose_booking` → `confirm_booking` → `settle_booking`), subscriptions with expiry, `create_royalty_pool` / `deposit_royalties` / `pay_sync_license`, NEXUS / HARMONY / ATLAS, Slack approvals, the academy video library and the earned teaching path (off-chain, gated by the academy subscription and the musician's Enigma level) and, last and optional, the multisig (`init_governance` disables the direct withdraw).
 
-See `HACKATHON_SMOKE.md`.
+See `HACKATHON_SMOKE.md`. Never run `0.database/scripts/load_mocks.py`.

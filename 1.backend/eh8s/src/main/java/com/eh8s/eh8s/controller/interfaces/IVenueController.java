@@ -2,7 +2,6 @@ package com.eh8s.eh8s.controller.interfaces;
 
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.Booking;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.Concert;
-import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.ConcertSettlement;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.ContractType;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.PendingClaim;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.Venue;
@@ -56,13 +55,6 @@ public interface IVenueController {
    * @return stored concert
    */
   Concert createConcert(Concert concert);
-
-  /**
-   * @param concertId concert to settle
-   * @param input settlement POJO carrying grossUsdc (optional; defaults to 875.00)
-   * @return settlement
-   */
-  ConcertSettlement settle(Long concertId, ConcertSettlement input);
 
   /**
    * @param settlementId settlement primary key

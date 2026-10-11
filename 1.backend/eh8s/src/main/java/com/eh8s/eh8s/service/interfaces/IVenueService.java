@@ -59,7 +59,9 @@ public interface IVenueService {
   Concert createConcert(Concert concert);
 
   /**
-   * Settles a concert: gross minus expenses, 15% EH8S fee, SPP pending claims.
+   * Builds MariaDB settlement + pending claims after booking {@code settle/confirm} verified a
+   * {@code settle_booking} signature via {@code SolanaTxVerifier}. Not an HTTP endpoint — the only
+   * product settle path is on-chain booking escrow.
    *
    * @param concertId concert primary key
    * @param grossUsdc venue deposit

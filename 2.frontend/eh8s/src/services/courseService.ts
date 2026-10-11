@@ -42,6 +42,12 @@ export type Lesson = {
   videoProvider: "youtube" | "vimeo" | "bunny" | "cloudflare";
   videoUrl: string | null;
   embedUrl: string | null;
+  /** SHA-256 hex of the official object; owner outline only (stripped for students). */
+  contentHash?: string | null;
+  /** Relative storage object key; owner outline only. */
+  storageRef?: string | null;
+  /** Encryption key id; owner outline only. */
+  keyId?: string | null;
   durationSec: number | null;
   sortOrder: number;
   isFreePreview: number;
@@ -95,11 +101,23 @@ export type LessonView = {
   lesson: Lesson;
   locked: boolean;
   lockReason: LockReason;
+  /** True when any official media field is pinned (student GET never returns those fields). */
+  official?: boolean;
   course: Course;
   section: CourseSection;
   progress: LessonProgress | null;
   previousLessonId: number | null;
   nextLessonId: number | null;
+};
+
+/** GET /api/lessons/:id/watch — embed (YouTube free preview / legacy) or short-lived signed URL. */
+export type LessonWatch = {
+  lessonId: number;
+  kind: "embed" | "signed";
+  url: string;
+  expiresAt: string | null;
+  contentHash: string | null;
+  keyId: string | null;
 };
 
 export type ProgressResult = { progress: LessonProgress; percent: number };
@@ -116,6 +134,16 @@ export async function fetchCourse(courseId: number): Promise<CourseOutline> {
 
 export async function fetchLesson(lessonId: number): Promise<LessonView> {
   const { data } = await client.get<LessonView>(`/api/lessons/${lessonId}`);
+  return data;
+}
+
+/**
+ * Playback URL after plan/level gates.
+ * Official media → kind signed (temporary); free preview / legacy → kind embed (YouTube etc.).
+ * 403 locked · 409 official but half-pinned.
+ */
+export async function fetchLessonWatch(lessonId: number): Promise<LessonWatch> {
+  const { data } = await client.get<LessonWatch>(`/api/lessons/${lessonId}/watch`);
   return data;
 }
 

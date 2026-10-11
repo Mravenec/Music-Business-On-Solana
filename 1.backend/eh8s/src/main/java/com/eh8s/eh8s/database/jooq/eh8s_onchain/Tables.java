@@ -10,6 +10,8 @@ import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.Governance;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceApproval;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceProposal;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.GovernanceSigner;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.PartnerShare;
+import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.StudioRoleGrant;
 import com.eh8s.eh8s.database.jooq.eh8s_onchain.tables.TreasuryWithdrawal;
 
 
@@ -48,6 +50,16 @@ public class Tables {
      * The table <code>eh8s_onchain.governance_signer</code>.
      */
     public static final GovernanceSigner GOVERNANCE_SIGNER = GovernanceSigner.GOVERNANCE_SIGNER;
+
+    /**
+     * The table <code>eh8s_onchain.partner_share</code>.
+     */
+    public static final PartnerShare PARTNER_SHARE = PartnerShare.PARTNER_SHARE;
+
+    /**
+     * The table <code>eh8s_onchain.studio_role_grant</code>.
+     */
+    public static final StudioRoleGrant STUDIO_ROLE_GRANT = StudioRoleGrant.STUDIO_ROLE_GRANT;
 
     /**
      * The table <code>eh8s_onchain.treasury_withdrawal</code>.

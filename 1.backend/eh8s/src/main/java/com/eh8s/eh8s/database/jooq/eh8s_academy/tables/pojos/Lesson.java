@@ -22,6 +22,9 @@ public class Lesson implements Serializable {
     private String description;
     private String videoProvider;
     private String videoUrl;
+    private String contentHash;
+    private String storageRef;
+    private String keyId;
     private String embedUrl;
     private Integer durationSec;
     private Integer sortOrder;
@@ -41,6 +44,9 @@ public class Lesson implements Serializable {
         this.description = value.description;
         this.videoProvider = value.videoProvider;
         this.videoUrl = value.videoUrl;
+        this.contentHash = value.contentHash;
+        this.storageRef = value.storageRef;
+        this.keyId = value.keyId;
         this.embedUrl = value.embedUrl;
         this.durationSec = value.durationSec;
         this.sortOrder = value.sortOrder;
@@ -59,6 +65,9 @@ public class Lesson implements Serializable {
         String description,
         String videoProvider,
         String videoUrl,
+        String contentHash,
+        String storageRef,
+        String keyId,
         String embedUrl,
         Integer durationSec,
         Integer sortOrder,
@@ -75,6 +84,9 @@ public class Lesson implements Serializable {
         this.description = description;
         this.videoProvider = videoProvider;
         this.videoUrl = videoUrl;
+        this.contentHash = contentHash;
+        this.storageRef = storageRef;
+        this.keyId = keyId;
         this.embedUrl = embedUrl;
         this.durationSec = durationSec;
         this.sortOrder = sortOrder;
@@ -168,6 +180,48 @@ public class Lesson implements Serializable {
      */
     public void setVideoUrl(String videoUrl) {
         this.videoUrl = videoUrl;
+    }
+
+    /**
+     * Getter for <code>eh8s_academy.lesson.content_hash</code>.
+     */
+    public String getContentHash() {
+        return this.contentHash;
+    }
+
+    /**
+     * Setter for <code>eh8s_academy.lesson.content_hash</code>.
+     */
+    public void setContentHash(String contentHash) {
+        this.contentHash = contentHash;
+    }
+
+    /**
+     * Getter for <code>eh8s_academy.lesson.storage_ref</code>.
+     */
+    public String getStorageRef() {
+        return this.storageRef;
+    }
+
+    /**
+     * Setter for <code>eh8s_academy.lesson.storage_ref</code>.
+     */
+    public void setStorageRef(String storageRef) {
+        this.storageRef = storageRef;
+    }
+
+    /**
+     * Getter for <code>eh8s_academy.lesson.key_id</code>.
+     */
+    public String getKeyId() {
+        return this.keyId;
+    }
+
+    /**
+     * Setter for <code>eh8s_academy.lesson.key_id</code>.
+     */
+    public void setKeyId(String keyId) {
+        this.keyId = keyId;
     }
 
     /**
@@ -341,6 +395,24 @@ public class Lesson implements Serializable {
         }
         else if (!this.videoUrl.equals(other.videoUrl))
             return false;
+        if (this.contentHash == null) {
+            if (other.contentHash != null)
+                return false;
+        }
+        else if (!this.contentHash.equals(other.contentHash))
+            return false;
+        if (this.storageRef == null) {
+            if (other.storageRef != null)
+                return false;
+        }
+        else if (!this.storageRef.equals(other.storageRef))
+            return false;
+        if (this.keyId == null) {
+            if (other.keyId != null)
+                return false;
+        }
+        else if (!this.keyId.equals(other.keyId))
+            return false;
         if (this.embedUrl == null) {
             if (other.embedUrl != null)
                 return false;
@@ -408,6 +480,9 @@ public class Lesson implements Serializable {
         result = prime * result + ((this.description == null) ? 0 : this.description.hashCode());
         result = prime * result + ((this.videoProvider == null) ? 0 : this.videoProvider.hashCode());
         result = prime * result + ((this.videoUrl == null) ? 0 : this.videoUrl.hashCode());
+        result = prime * result + ((this.contentHash == null) ? 0 : this.contentHash.hashCode());
+        result = prime * result + ((this.storageRef == null) ? 0 : this.storageRef.hashCode());
+        result = prime * result + ((this.keyId == null) ? 0 : this.keyId.hashCode());
         result = prime * result + ((this.embedUrl == null) ? 0 : this.embedUrl.hashCode());
         result = prime * result + ((this.durationSec == null) ? 0 : this.durationSec.hashCode());
         result = prime * result + ((this.sortOrder == null) ? 0 : this.sortOrder.hashCode());
@@ -430,6 +505,9 @@ public class Lesson implements Serializable {
         sb.append(", ").append(description);
         sb.append(", ").append(videoProvider);
         sb.append(", ").append(videoUrl);
+        sb.append(", ").append(contentHash);
+        sb.append(", ").append(storageRef);
+        sb.append(", ").append(keyId);
         sb.append(", ").append(embedUrl);
         sb.append(", ").append(durationSec);
         sb.append(", ").append(sortOrder);

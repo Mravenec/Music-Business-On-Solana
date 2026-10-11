@@ -1,23 +1,31 @@
-# 0.database — MariaDB schema
+# 0.database
 
-Six MariaDB schemas, one idempotent SQL file each. `canonical_sql/00_run_all.sql` loads them in foreign-key order.
-
-| Schema | Owns |
-|---|---|
-| `eh8s` (hub) | accounts, musician profiles, Enigma levels, bands, SPP cycles and scores, venues, bookings, concerts, settlements, claims |
-| `eh8s_academy` | academy plans and subscriptions, courses, sections, lessons, progress, instructors, evaluations |
-| `eh8s_catalog` | tracks, royalty splits and deposits, sync licenses, geo tiers and regions, zone subscriptions, tour plans |
-| `eh8s_onchain` | chain config, treasury withdrawals, governance, payment markers (every row carries its DevNet signature) |
-| `eh8s_ops` | the 12 ops agents, agent events, owner decisions, Slack delivery log, agent authorities |
-| `eh8s_role` | role grants and role applications (student, musician, instructor, venue) |
+Day zero: no domain yet. Set real names in `.env` when you know them (copy from `.env.example`).
 
 ```bash
-cp 0.database/.env.example 0.database/.env      # container name, port, database name
-python 0.database/scripts/ensure_db.py          # create or start the MariaDB container (Docker)
-python 0.database/scripts/setup_db.py           # ensure + load canonical_sql/00_run_all.sql
-python 0.database/scripts/drop_db.py            # wipe the database (destructive)
+python 0.database/scripts/ensure_db.py   # create container if missing, start if stopped
+python 0.database/scripts/setup_db.py    # ensure + load canonical_sql/  (judge / live demo path)
+python 0.database/scripts/drop_db.py     # wipe DB — only with human OK
 ```
 
-There is no demo data. Seed rows are product catalog only (instruments, Enigma levels, academy plans, contract types, SPP weights, geo tiers, the ops agents and the platform owner). Users, bands, venues and payments are created in the app with DevNet wallets.
+**Hackathon / production demo:** run `setup_db.py` only. **Never** run `scripts/load_mocks.py`. Demo users, bands, and payments are created in the app with **DevNet wallets**. `mocks/` is leftover fixture SQL and is not part of the judge path.
 
-The JOOQ code in `1.backend/eh8s` is generated from this schema. The paste-ready diagram is [`3.diagrams/0.database/dbdiagram/schema.dbml`](../3.diagrams/0.database/dbdiagram/schema.dbml) (open it at [dbdiagram.io](https://dbdiagram.io)).
+Lookup rows in `canonical_sql` (instruments, academy plans, geo tiers, owner bootstrap wallet) are product config, not fake money.
+
+| Config (`.env`) | Role |
+|---|---|
+| `MARIADB_DATABASE` | Real database name |
+| `CONTAINER_NAME` | Docker container name |
+| `HOST_PORT` | Host port (default **3306**) |
+
+Put DDL in `canonical_sql/` — one new numbered file per DB ticket (`NN_<slug>.sql`), never pasted into `00_run_all.sql` directly. `00_run_all.sql` is a thin `SOURCE` list, not the DDL itself — it only ever gains one new `SOURCE NN_<slug>.sql;` line per ticket (`.ai/rules/database-ddl-files.md`). JOOQ reads the **live** DB after setup. Do **not** treat `1.backend/.../src/main/resources` as the schema source of truth.
+
+## Visual schema (dbdiagram.io)
+
+DBML lives under **`3.diagrams/0.database/dbdiagram/`** (moved — not duplicated here).
+
+| File | Purpose |
+|---|---|
+| [`../3.diagrams/0.database/dbdiagram/schema.dbml`](../3.diagrams/0.database/dbdiagram/schema.dbml) | Paste-ready DBML for [dbdiagram.io](https://dbdiagram.io) |
+
+**Rule:** every `canonical_sql/` change updates that `schema.dbml` in the same checklist item (`.ai/rules/dbdiagram.md` · `.ai/rules/diagrams.md`).
