@@ -116,9 +116,14 @@ function collectLogs(err: unknown): string[] {
   return [];
 }
 
-/** web3.js often appends `Logs: \n[...].` inside Error.message when `.logs` is missing. */
+/**
+ * web3.js often appends `Logs: \n[...].` inside Error.message when `.logs` is missing.
+ * Pretty-print uses `JSON.stringify(logs, undefined, 2)`, so the closing `]` is alone on
+ * its line. A lazy `\[[\s\S]*?\]` stops at `invoke [1]` and breaks JSON.parse.
+ */
 function logsFromMessage(message: string): string[] {
-  const m = message.match(/Logs:\s*(\[[\s\S]*?\])/);
+  const m =
+    message.match(/Logs:\s*(\[[\s\S]*?\n\])/) ?? message.match(/Logs:\s*(\[[\s\S]*\])/);
   if (!m?.[1]) return [];
   try {
     const parsed = JSON.parse(m[1]) as unknown;
