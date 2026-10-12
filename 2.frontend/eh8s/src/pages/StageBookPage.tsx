@@ -1,8 +1,8 @@
 import { FormEvent, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import axios from "axios";
 import { useStageMap } from "../hooks/useStageMap";
 import { useBands } from "../hooks/useBands";
+import { statusText } from "../hooks/statusText";
 
 /**
  * Job: book one show.
@@ -17,7 +17,7 @@ export function StageBookPage() {
   const [venueId, setVenueId] = useState(params.get("venue") || "");
   const [bandId, setBandId] = useState("");
   const [showDate, setShowDate] = useState("2026-11-15");
-  const [msg, setMsg] = useState<string | null>(null);
+  const [banner, setBanner] = useState<{ text: string; ok: boolean } | null>(null);
 
   async function onBook(e: FormEvent) {
     e.preventDefault();
@@ -28,18 +28,23 @@ export function StageBookPage() {
         showDate,
         pipelineWeek: 2,
       });
-      setMsg(`Show booked. Concert ${concert.id} is on the calendar.`);
+      setBanner({
+        text: `Show booked. Concert ${concert.id} is on the calendar.`,
+        ok: true,
+      });
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const data = err.response?.data;
-        const apiMsg =
-          data && typeof data === "object" && "message" in data
-            ? String((data as { message?: string }).message)
-            : null;
-        setMsg(apiMsg || err.message || "Could not book");
-      } else {
-        setMsg(err instanceof Error ? err.message : "Could not book");
-      }
+      // Spring often omits reason text; map 409 locally instead of Axios "status code 409".
+      setBanner({
+        text: statusText(
+          err,
+          {
+            409: "That venue, band, and date are already booked.",
+            400: "Check venue, band, and date, then try again.",
+          },
+          "Could not book the show."
+        ),
+        ok: false,
+      });
     }
   }
 
@@ -50,12 +55,8 @@ export function StageBookPage() {
         <h1>Book a show</h1>
         <p className="eh8s-lead">One venue, one band, one date.</p>
       </header>
-      {msg ? (
-        <div
-          className={`eh8s-banner ${msg.toLowerCase().includes("could") ? "bad" : "ok"}`}
-        >
-          {msg}
-        </div>
+      {banner ? (
+        <div className={`eh8s-banner ${banner.ok ? "ok" : "bad"}`}>{banner.text}</div>
       ) : null}
       <form className="eh8s-form eh8s-panel" onSubmit={onBook}>
         <label>
