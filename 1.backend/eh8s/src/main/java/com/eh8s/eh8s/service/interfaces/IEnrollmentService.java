@@ -22,13 +22,37 @@ public interface IEnrollmentService {
 
   /**
    * Creates a musician profile at Enigma level 0; any client-sent level is ignored because only
-   * the owner or a pedagogical agent changes levels (update_musician_level).
+   * the owner or a pedagogical agent changes levels (update_musician_level). Client-sent
+   * {@code musicianProfilePda} is ignored until {@link #confirmMusicianProfile} /
+   * {@link #recoverMusicianProfile}.
    *
    * @param profile incoming profile (accountId, instrumentId, optional countryCode alpha-3)
    * @return stored profile
    * @throws org.springframework.web.server.ResponseStatusException 400 for a malformed countryCode
    */
   MusicianProfile createMusician(MusicianProfile profile);
+
+  /**
+   * Verifies a DevNet {@code upsert_musician_profile} signature and stores the MusicianProfile PDA.
+   *
+   * @param profileId musician_profile id
+   * @param walletPubkey signer wallet (must own the profile account)
+   * @param txSignature confirmed DevNet signature
+   * @param musicianProfilePda base58 PDA from the client (must match derive)
+   * @return updated profile
+   */
+  MusicianProfile confirmMusicianProfile(
+      Long profileId, String walletPubkey, String txSignature, String musicianProfilePda);
+
+  /**
+   * When the PDA already exists on DevNet but MariaDB still has {@code null}, derive + RPC
+   * {@code getAccountData} and persist without a new signature (repair for pre-confirm enrolls).
+   *
+   * @param profileId musician_profile id
+   * @param walletPubkey wallet that owns the profile
+   * @return updated profile
+   */
+  MusicianProfile recoverMusicianProfile(Long profileId, String walletPubkey);
 
   /**
    * @return musician profiles

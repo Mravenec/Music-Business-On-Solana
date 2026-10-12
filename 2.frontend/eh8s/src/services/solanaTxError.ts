@@ -25,6 +25,7 @@ function isOpaque(msg: string): boolean {
   const t = msg.trim();
   if (!t) return true;
   if (/^internal error$/i.test(t)) return true;
+  if (/^simulation failed\.?$/i.test(t)) return true;
   if (/failed to send transaction/i.test(t)) return true;
   if (/^wallet(send|sign)?transactionerror$/i.test(t)) return true;
   return false;
@@ -108,21 +109,24 @@ function collectLogs(err: unknown): string[] {
       }
     }
     if (typeof e.message === "string") {
-      const embedded = e.message.match(/Logs:\s*\n(\[[\s\S]*?\])\./);
-      if (embedded?.[1]) {
-        try {
-          const parsed = JSON.parse(embedded[1]) as unknown;
-          if (Array.isArray(parsed)) {
-            const lines = parsed.filter((x): x is string => typeof x === "string");
-            if (lines.length) return lines;
-          }
-        } catch {
-          /* ignore malformed embed */
-        }
-      }
+      const fromMsg = logsFromMessage(e.message);
+      if (fromMsg.length) return fromMsg;
     }
   }
   return [];
+}
+
+/** web3.js often appends `Logs: \n[...].` inside Error.message when `.logs` is missing. */
+function logsFromMessage(message: string): string[] {
+  const m = message.match(/Logs:\s*(\[[\s\S]*?\])/);
+  if (!m?.[1]) return [];
+  try {
+    const parsed = JSON.parse(m[1]) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x): x is string => typeof x === "string");
+  } catch {
+    return [];
+  }
 }
 
 function bestRawMessage(err: unknown, fallback: string): string {
@@ -135,6 +139,10 @@ function bestRawMessage(err: unknown, fallback: string): string {
       typeof e.message === "string" ? e.message : null,
     ].filter((x): x is string => !!x && x.trim().length > 0);
     for (const raw of candidates) {
+      const msgLine = raw.match(/Message:\s*(.+?)(?:\.\s*$|\.\s*\n|\n)/i);
+      if (msgLine?.[1] && !isOpaque(msgLine[1])) {
+        return msgLine[1].trim();
+      }
       const first = raw.split("\n")[0]?.trim() ?? raw.trim();
       if (!isOpaque(first) && first.length < 280) return first;
       if (isOpaque(first)) opaqueHit = first;

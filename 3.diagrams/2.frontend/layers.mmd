@@ -253,7 +253,7 @@ flowchart TD
   venueBookingService --> VenueBookingAPI["GET /api/venues/:id/onchain ┬╖ POST venues/:id/register|approve build|confirm<br/>POST bookings/:id/propose|confirm-contract|cancel|settle build|confirm<br/>GET stage/queue (owner or STAGE 0x04) ┬╖ vault/settle-queue (owner or VAULT 0x08)"]
   sendBuiltIx -->|venue signs register/propose/cancel ┬╖ STAGE approve/confirm ┬╖ VAULT settle_booking| DevNetProgram
   sendBuiltIx -->|owner signs init_governance ┬╖ signers propose/approve ┬╖ anyone execute_*_proposal| DevNetProgram
-  AcademyEnrollPage -->|useMusicianProfileTx: musician signs upsert_musician_profile instrument + country; level 0| useOnchainPayments
+  AcademyEnrollPage -->|createMusician then upsert TX then profile/confirm; reloadFromToken no login re-sign; recover if PDA on-chain only| useOnchainPayments
   CatalogReachPage -->|useGeoSubscribeTx| useOnchainPayments
   useOnchainPayments -->|subscribe_geographic + claim_royalties| royaltyGeoTx
   ownerDigestService --> DigestAPI["GET /api/owner/digest/latest?walletPubkey (owner only)<br/>POST /api/owner/digest/run (Claude; 503 without key)"]

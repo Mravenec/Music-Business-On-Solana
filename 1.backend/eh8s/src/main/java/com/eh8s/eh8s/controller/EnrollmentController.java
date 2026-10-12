@@ -58,6 +58,30 @@ public class EnrollmentController implements IEnrollmentController {
    * {@inheritDoc}
    */
   @Override
+  @PostMapping("/musicians/{profileId}/profile/confirm")
+  public MusicianProfile confirmMusicianProfile(
+      @PathVariable Long profileId, @RequestBody Map<String, Object> body) {
+    return enrollmentService.confirmMusicianProfile(
+        profileId,
+        HttpBody.text(body, "walletPubkey"),
+        HttpBody.text(body, "txSignature"),
+        HttpBody.text(body, "musicianProfilePda"));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @PostMapping("/musicians/{profileId}/profile/recover")
+  public MusicianProfile recoverMusicianProfile(
+      @PathVariable Long profileId, @RequestBody Map<String, Object> body) {
+    return enrollmentService.recoverMusicianProfile(profileId, HttpBody.text(body, "walletPubkey"));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   @GetMapping("/musicians")
   public List<MusicianProfile> musicians() {
     return enrollmentService.musicians();

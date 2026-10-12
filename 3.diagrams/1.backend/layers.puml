@@ -31,6 +31,11 @@ package "1.backend/eh8s" {
   [EnrollmentService] as ENS
   [IEnrollmentController] as IENC
   [EnrollmentController] as ENC
+  note right of ENS
+    Epic 81: confirmMusicianProfile / recoverMusicianProfile
+    injects ISolanaTxVerifier + ISolanaRpcClient
+    POST /api/musicians/{id}/profile/confirm|recover
+  end note
   [IStudioLedgerRepository] as ISLR
   [StudioLedgerRepository] as SLR
   [IStudioLedgerService] as ISLS

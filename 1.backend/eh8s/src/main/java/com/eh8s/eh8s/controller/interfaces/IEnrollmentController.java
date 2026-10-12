@@ -30,6 +30,24 @@ public interface IEnrollmentController {
   MusicianProfile createMusician(MusicianProfile profile);
 
   /**
+   * Confirms DevNet {@code upsert_musician_profile} and stores {@code musicianProfilePda}.
+   *
+   * @param profileId musician_profile id
+   * @param body {@code walletPubkey}, {@code txSignature}, {@code musicianProfilePda}
+   * @return updated profile
+   */
+  MusicianProfile confirmMusicianProfile(Long profileId, Map<String, Object> body);
+
+  /**
+   * Persists a PDA that already exists on DevNet when MariaDB is still null (no new signature).
+   *
+   * @param profileId musician_profile id
+   * @param body {@code walletPubkey}
+   * @return updated profile
+   */
+  MusicianProfile recoverMusicianProfile(Long profileId, Map<String, Object> body);
+
+  /**
    * @return musicians
    */
   List<MusicianProfile> musicians();

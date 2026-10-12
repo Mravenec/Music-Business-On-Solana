@@ -107,6 +107,31 @@ public interface IEnrollmentRepository {
   Optional<MusicianProfile> findMusicianByAccount(Long accountId);
 
   /**
+   * Loads a musician profile by primary key.
+   *
+   * @param profileId musician_profile id
+   * @return profile if present
+   */
+  Optional<MusicianProfile> findMusician(Long profileId);
+
+  /**
+   * Loads an account by primary key.
+   *
+   * @param accountId account id
+   * @return account if present
+   */
+  Optional<Account> findAccount(Long accountId);
+
+  /**
+   * Persists the on-chain MusicianProfile PDA after DevNet confirm/recover.
+   *
+   * @param profileId musician_profile id
+   * @param musicianProfilePda base58 PDA
+   * @return updated profile
+   */
+  MusicianProfile updateMusicianProfilePda(Long profileId, String musicianProfilePda);
+
+  /**
    * Primary key of an Enigma level by its number (0 = Orientation).
    *
    * @param levelNumber level number 0..5

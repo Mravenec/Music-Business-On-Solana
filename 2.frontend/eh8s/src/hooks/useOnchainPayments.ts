@@ -187,7 +187,7 @@ export function useMusicianProfileTx() {
   return useCallback(
     async (programIdDevnet: string, instrumentCode: number, countryCode: string) => {
       const s = signer();
-      const { signature } = await sendUpsertMusicianProfileTx({
+      return sendUpsertMusicianProfileTx({
         connection: s.connection,
         musician: s.payer,
         programId: new PublicKey(programIdDevnet),
@@ -195,7 +195,6 @@ export function useMusicianProfileTx() {
         countryCode,
         sendTransaction: s.sendTransaction,
       });
-      return signature;
     },
     [signer],
   );

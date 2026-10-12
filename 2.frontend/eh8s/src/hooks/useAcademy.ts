@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  confirmMusicianProfile,
   createEvaluation,
   createMusician,
   createSubscription,
@@ -9,6 +10,7 @@ import {
   fetchMusicians,
   fetchPlans,
   fetchSubscriptions,
+  recoverMusicianProfile,
   type AcademyPlan,
   type AcademySubscription,
   type EnigmaEvaluation,
@@ -27,6 +29,20 @@ export type AcademyState = {
   subscriptions: AcademySubscription[];
   evaluations: EnigmaEvaluation[];
   refresh: () => Promise<void>;
+  /** MariaDB profile only (PDA stays null until confirm/recover). */
+  createMusicianProfile: (input: {
+    accountId: number;
+    instrumentId: number;
+    countryCode: string;
+  }) => Promise<MusicianProfile>;
+  confirmProfileOnchain: (
+    profileId: number,
+    body: { walletPubkey: string; txSignature: string; musicianProfilePda: string },
+  ) => Promise<MusicianProfile>;
+  recoverProfileOnchain: (
+    profileId: number,
+    body: { walletPubkey: string },
+  ) => Promise<MusicianProfile>;
   enrollMusician: (input: {
     accountId: number;
     instrumentId: number;
@@ -100,6 +116,21 @@ export function useAcademy(): AcademyState {
     subscriptions,
     evaluations,
     refresh,
+    createMusicianProfile: async (input) => {
+      const created = await createMusician(input);
+      await refresh();
+      return created;
+    },
+    confirmProfileOnchain: async (profileId, body) => {
+      const updated = await confirmMusicianProfile(profileId, body);
+      await refresh();
+      return updated;
+    },
+    recoverProfileOnchain: async (profileId, body) => {
+      const updated = await recoverMusicianProfile(profileId, body);
+      await refresh();
+      return updated;
+    },
     enrollMusician: async (input) => {
       await createMusician(input);
       await refresh();

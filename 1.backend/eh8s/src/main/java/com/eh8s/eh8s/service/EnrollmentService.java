@@ -13,13 +13,18 @@ import com.eh8s.eh8s.repository.interfaces.IStudioLedgerRepository;
 import com.eh8s.eh8s.repository.interfaces.IStudioPowerOnchainRepository;
 import com.eh8s.eh8s.service.interfaces.IEnrollmentService;
 import com.eh8s.eh8s.service.interfaces.IJwtService;
+import com.eh8s.eh8s.service.interfaces.ISolanaRpcClient;
+import com.eh8s.eh8s.service.interfaces.ISolanaTxVerifier;
 import com.eh8s.eh8s.service.interfaces.JwtPrincipal;
+import com.eh8s.eh8s.service.solana.SettleClaimIxBuilder;
+import com.eh8s.eh8s.service.solana.SolanaPda;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +58,8 @@ public class EnrollmentService implements IEnrollmentService {
   private final IRoleApplicationRepository roleApplicationRepository;
   private final IStudioLedgerRepository studioLedgerRepository;
   private final IStudioPowerOnchainRepository studioPowerOnchainRepository;
+  private final ISolanaTxVerifier txVerifier;
+  private final ISolanaRpcClient solanaRpcClient;
 
   /**
    * Creates the service.
@@ -63,6 +70,8 @@ public class EnrollmentService implements IEnrollmentService {
    * @param roleApplicationRepository granted studio admin and partner roles
    * @param studioLedgerRepository active partner rows
    * @param studioPowerOnchainRepository confirmed on-chain studio role mirror (wins over the cache)
+   * @param txVerifier DevNet upsert_musician_profile verifier
+   * @param solanaRpcClient DevNet account reads for PDA recover
    */
   public EnrollmentService(
       IEnrollmentRepository enrollmentRepository,
@@ -70,13 +79,17 @@ public class EnrollmentService implements IEnrollmentService {
       IJwtService jwtService,
       IRoleApplicationRepository roleApplicationRepository,
       IStudioLedgerRepository studioLedgerRepository,
-      IStudioPowerOnchainRepository studioPowerOnchainRepository) {
+      IStudioPowerOnchainRepository studioPowerOnchainRepository,
+      ISolanaTxVerifier txVerifier,
+      ISolanaRpcClient solanaRpcClient) {
     this.enrollmentRepository = enrollmentRepository;
     this.chainConfigRepository = chainConfigRepository;
     this.jwtService = jwtService;
     this.roleApplicationRepository = roleApplicationRepository;
     this.studioLedgerRepository = studioLedgerRepository;
     this.studioPowerOnchainRepository = studioPowerOnchainRepository;
+    this.txVerifier = txVerifier;
+    this.solanaRpcClient = solanaRpcClient;
   }
 
   /**
@@ -112,6 +125,8 @@ public class EnrollmentService implements IEnrollmentService {
           HttpStatus.BAD_REQUEST, "countryCode must be three uppercase letters (ISO-3166 alpha-3)");
     }
     profile.setCountryCode(country);
+    // PDA only after confirm/recover — never trust a client-supplied value here.
+    profile.setMusicianProfilePda(null);
     profile.setEnigmaLevelId(
         enrollmentRepository
             .findEnigmaLevelId(0)
@@ -126,8 +141,137 @@ public class EnrollmentService implements IEnrollmentService {
    * {@inheritDoc}
    */
   @Override
+  public MusicianProfile confirmMusicianProfile(
+      Long profileId, String walletPubkey, String txSignature, String musicianProfilePda) {
+    MusicianProfile profile = requireOwnedProfile(profileId, walletPubkey);
+    ChainConfig cfg = requireChainConfig();
+    String wallet = requiredString(walletPubkey, "walletPubkey");
+    String tx = requiredString(txSignature, "txSignature");
+    String pda = requiredString(musicianProfilePda, "musicianProfilePda");
+    String derived = SolanaPda.walletPda("musician", wallet, cfg.getProgramIdDevnet());
+    if (!derived.equals(pda)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "musicianProfilePda does not match this wallet");
+    }
+    if (profile.getMusicianProfilePda() != null
+        && !profile.getMusicianProfilePda().isBlank()
+        && profile.getMusicianProfilePda().equals(derived)) {
+      return profile;
+    }
+    String country = requireCountry(profile);
+    int instrumentCode = requireInstrumentCode(profile);
+    String dataHex = upsertMusicianProfileDataHex(instrumentCode, country);
+    txVerifier.verify(
+        cfg.getRpcUrl(),
+        cfg.getProgramIdDevnet(),
+        tx,
+        "upsert_musician_profile",
+        dataHex,
+        wallet,
+        ISolanaTxVerifier.accounts(wallet, derived));
+    return enrollmentRepository.updateMusicianProfilePda(profileId, derived);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public MusicianProfile recoverMusicianProfile(Long profileId, String walletPubkey) {
+    MusicianProfile profile = requireOwnedProfile(profileId, walletPubkey);
+    ChainConfig cfg = requireChainConfig();
+    String wallet = requiredString(walletPubkey, "walletPubkey");
+    String derived = SolanaPda.walletPda("musician", wallet, cfg.getProgramIdDevnet());
+    if (profile.getMusicianProfilePda() != null
+        && !profile.getMusicianProfilePda().isBlank()
+        && profile.getMusicianProfilePda().equals(derived)) {
+      return profile;
+    }
+    byte[] data = solanaRpcClient.getAccountData(cfg.getRpcUrl(), derived);
+    if (data == null || data.length == 0) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT,
+          "MusicianProfile PDA not found on DevNet — sign upsert_musician_profile first");
+    }
+    return enrollmentRepository.updateMusicianProfilePda(profileId, derived);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public List<MusicianProfile> musicians() {
     return enrollmentRepository.findMusicians();
+  }
+
+  /** Anchor data hex for upsert_musician_profile (discriminator + instrument u8 + country[3]). */
+  static String upsertMusicianProfileDataHex(int instrumentCode, String countryAlpha3) {
+    byte[] disc = SettleClaimIxBuilder.anchorDiscriminator("upsert_musician_profile");
+    byte[] all = new byte[disc.length + 4];
+    System.arraycopy(disc, 0, all, 0, disc.length);
+    all[disc.length] = (byte) (instrumentCode & 0xff);
+    all[disc.length + 1] = (byte) countryAlpha3.charAt(0);
+    all[disc.length + 2] = (byte) countryAlpha3.charAt(1);
+    all[disc.length + 3] = (byte) countryAlpha3.charAt(2);
+    return HexFormat.of().formatHex(all);
+  }
+
+  private MusicianProfile requireOwnedProfile(Long profileId, String walletPubkey) {
+    if (profileId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "profileId is required");
+    }
+    MusicianProfile profile =
+        enrollmentRepository
+            .findMusician(profileId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown musician profile"));
+    Account account =
+        enrollmentRepository
+            .findAccount(profile.getAccountId())
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown account"));
+    String wallet = requiredString(walletPubkey, "walletPubkey");
+    if (account.getWalletPubkey() == null || !wallet.equals(account.getWalletPubkey())) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Wallet does not own this musician profile");
+    }
+    return profile;
+  }
+
+  private ChainConfig requireChainConfig() {
+    return chainConfigRepository
+        .findActive()
+        .orElseThrow(
+            () ->
+                new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE, "No active chain_config"));
+  }
+
+  private static String requireCountry(MusicianProfile profile) {
+    String country = profile.getCountryCode() == null ? null : profile.getCountryCode().trim();
+    if (country == null || !country.matches("[A-Z]{3}")) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "Profile countryCode must be set before on-chain confirm");
+    }
+    return country;
+  }
+
+  private static int requireInstrumentCode(MusicianProfile profile) {
+    if (profile.getInstrumentId() == null) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Profile instrumentId is required");
+    }
+    long id = profile.getInstrumentId();
+    if (id < 0 || id > 255) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "instrumentId must fit an on-chain u8 instrument_code");
+    }
+    return (int) id;
+  }
+
+  private static String requiredString(String value, String key) {
+    if (value == null || value.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, key + " is required");
+    }
+    return value.trim();
   }
 
   /**

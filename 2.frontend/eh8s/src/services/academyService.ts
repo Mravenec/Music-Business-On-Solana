@@ -84,13 +84,43 @@ export async function fetchEvaluations(): Promise<EnigmaEvaluation[]> {
   return data;
 }
 
-/** Creates the musician profile; the backend always starts it at Enigma level 0. */
+/** Creates the musician profile; the backend always starts it at Enigma level 0 (PDA null). */
 export async function createMusician(body: {
   accountId: number;
   instrumentId: number;
   countryCode: string;
 }): Promise<MusicianProfile> {
   const { data } = await client.post<MusicianProfile>("/api/musicians", body);
+  return data;
+}
+
+/** Records a DevNet-confirmed upsert_musician_profile (backend verifies the signature). */
+export async function confirmMusicianProfile(
+  profileId: number,
+  body: { walletPubkey: string; txSignature: string; musicianProfilePda: string },
+): Promise<MusicianProfile> {
+  if (!body.txSignature?.trim()) {
+    throw new Error("txSignature is required — refusing to confirm without a DevNet signature");
+  }
+  const { data } = await client.post<MusicianProfile>(
+    `/api/musicians/${profileId}/profile/confirm`,
+    body,
+  );
+  return data;
+}
+
+/**
+ * When the PDA already exists on DevNet but MariaDB is still null, persist the derived PDA
+ * without a new wallet signature.
+ */
+export async function recoverMusicianProfile(
+  profileId: number,
+  body: { walletPubkey: string },
+): Promise<MusicianProfile> {
+  const { data } = await client.post<MusicianProfile>(
+    `/api/musicians/${profileId}/profile/recover`,
+    body,
+  );
   return data;
 }
 

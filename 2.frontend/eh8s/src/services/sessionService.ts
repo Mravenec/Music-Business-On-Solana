@@ -20,6 +20,7 @@ export type MusicianProfile = {
   enigmaLevelId: number;
   enigmaScore: number;
   musicianProfilePda?: string | null;
+  countryCode?: string | null;
 };
 
 export type WalletSession = {

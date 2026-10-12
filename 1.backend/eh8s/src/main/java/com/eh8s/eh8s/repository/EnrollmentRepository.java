@@ -169,6 +169,40 @@ public class EnrollmentRepository implements IEnrollmentRepository {
    * {@inheritDoc}
    */
   @Override
+  public Optional<MusicianProfile> findMusician(Long profileId) {
+    return dsl.selectFrom(MUSICIAN_PROFILE)
+        .where(MUSICIAN_PROFILE.ID.eq(profileId))
+        .fetchOptionalInto(MusicianProfile.class);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Optional<Account> findAccount(Long accountId) {
+    return dsl.selectFrom(ACCOUNT)
+        .where(ACCOUNT.ID.eq(accountId))
+        .fetchOptionalInto(Account.class);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public MusicianProfile updateMusicianProfilePda(Long profileId, String musicianProfilePda) {
+    dsl.update(MUSICIAN_PROFILE)
+        .set(MUSICIAN_PROFILE.MUSICIAN_PROFILE_PDA, musicianProfilePda)
+        .where(MUSICIAN_PROFILE.ID.eq(profileId))
+        .execute();
+    return dsl.selectFrom(MUSICIAN_PROFILE)
+        .where(MUSICIAN_PROFILE.ID.eq(profileId))
+        .fetchOneInto(MusicianProfile.class);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public Optional<Long> findEnigmaLevelId(int levelNumber) {
     return dsl.select(ENIGMA_LEVEL.ID)
         .from(ENIGMA_LEVEL)

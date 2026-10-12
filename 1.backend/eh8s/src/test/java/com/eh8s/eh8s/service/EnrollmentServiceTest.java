@@ -22,7 +22,7 @@ class EnrollmentServiceTest {
 
   @Test
   void unsignedWalletIsRejectedBeforeAnyAccountWrite() {
-    EnrollmentService service = new EnrollmentService(null, null, null, null, null, null);
+    EnrollmentService service = new EnrollmentService(null, null, null, null, null, null, null, null);
     Account request = new Account();
     request.setWalletPubkey("WalletWithoutASignature11111111111111111111");
 
@@ -33,7 +33,7 @@ class EnrollmentServiceTest {
 
   @Test
   void aSignatureWithoutAFreshNonceIsRejected() {
-    EnrollmentService service = new EnrollmentService(null, null, null, null, null, null);
+    EnrollmentService service = new EnrollmentService(null, null, null, null, null, null, null, null);
     Account request = new Account();
     request.setWalletPubkey("WalletWithoutASignature11111111111111111111");
 
@@ -45,11 +45,19 @@ class EnrollmentServiceTest {
 
   @Test
   void currentSessionWithoutAPrincipalIsRejected() {
-    EnrollmentService service = new EnrollmentService(null, null, null, null, null, null);
+    EnrollmentService service = new EnrollmentService(null, null, null, null, null, null, null, null);
 
     ResponseStatusException ex =
         assertThrows(ResponseStatusException.class, () -> service.currentSession(null));
     assertEquals(401, ex.getStatusCode().value());
+  }
+
+  @Test
+  void upsertMusicianProfileDataHexIsDiscriminatorPlusInstrumentAndCountry() {
+    String hex = EnrollmentService.upsertMusicianProfileDataHex(3, "MEX");
+    assertEquals(24, hex.length());
+    assertEquals("03", hex.substring(16, 18));
+    assertEquals("4d4558", hex.substring(18)); // MEX
   }
 
   @Test
@@ -65,7 +73,7 @@ class EnrollmentServiceTest {
     when(accounts.findMusicianByAccount(7L)).thenReturn(Optional.empty());
     when(chain.findActive()).thenReturn(Optional.empty());
     when(jwt.issue(7L, "musician@wallet.eh8s.local")).thenReturn("stored-token");
-    EnrollmentService service = new EnrollmentService(accounts, chain, jwt, null, null, null);
+    EnrollmentService service = new EnrollmentService(accounts, chain, jwt, null, null, null, null, null);
 
     Map<String, Object> session =
         service.currentSession(new JwtPrincipal(7L, "musician@wallet.eh8s.local"));

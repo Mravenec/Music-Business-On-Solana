@@ -22,7 +22,10 @@ type SessionState = {
   loading: boolean;
   error: string | null;
   geoError: string | null;
+  /** Full wallet login (challenge + signMessage). */
   refresh: () => Promise<void>;
+  /** Reloads /session/current with the existing JWT — no wallet prompt. */
+  reloadFromToken: () => Promise<void>;
 };
 
 const SessionContext = createContext<SessionState>({
@@ -31,6 +34,7 @@ const SessionContext = createContext<SessionState>({
   error: null,
   geoError: null,
   refresh: async () => undefined,
+  reloadFromToken: async () => undefined,
 });
 
 function trackGeo(walletPubkey: string): Promise<WalletSession | null> {
@@ -67,6 +71,33 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const wasConnected = useRef(false);
+
+  const reloadFromToken = async () => {
+    const token = getAccessToken();
+    if (!token) {
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const next = await fetchCurrentSession();
+      setSession(next);
+    } catch (e) {
+      const status =
+        typeof e === "object" && e !== null && "response" in e
+          ? (e as { response?: { status?: number } }).response?.status
+          : undefined;
+      if (status === 401) {
+        setAccessToken(null);
+        setSession(null);
+        setError(null);
+        return;
+      }
+      setError(e instanceof Error ? e.message : "session failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const refresh = async () => {
     if (!publicKey || !signMessage) {
@@ -149,7 +180,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   return (
     <SessionContext.Provider
-      value={{ session, loading, error, geoError, refresh }}
+      value={{ session, loading, error, geoError, refresh, reloadFromToken }}
     >
       {children}
     </SessionContext.Provider>

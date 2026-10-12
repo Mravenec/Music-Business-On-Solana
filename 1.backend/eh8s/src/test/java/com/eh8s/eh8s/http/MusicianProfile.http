@@ -1,0 +1,40 @@
+### Create MariaDB musician profile (PDA stays null until confirm/recover)
+POST http://127.0.0.1:8080/api/musicians
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "accountId": 1,
+  "instrumentId": 1,
+  "countryCode": "MEX"
+}
+
+### Confirm DevNet upsert_musician_profile (replace signature + PDA after wallet TX)
+POST http://127.0.0.1:8080/api/musicians/{{profileId}}/profile/confirm
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "{{walletPubkey}}",
+  "txSignature": "{{txSignature}}",
+  "musicianProfilePda": "{{musicianProfilePda}}"
+}
+
+### Recover PDA already on DevNet when MariaDB is still null (no new signature)
+POST http://127.0.0.1:8080/api/musicians/{{profileId}}/profile/recover
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "walletPubkey": "{{walletPubkey}}"
+}
+
+### Confirm without Bearer is 401
+POST http://127.0.0.1:8080/api/musicians/1/profile/confirm
+Content-Type: application/json
+
+{
+  "walletPubkey": "Eh8sSessionTest11111111111111111111111111111",
+  "txSignature": "sig",
+  "musicianProfilePda": "pda"
+}
