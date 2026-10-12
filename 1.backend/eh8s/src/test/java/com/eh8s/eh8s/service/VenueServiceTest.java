@@ -37,7 +37,7 @@ class VenueServiceTest {
 
   @Test
   void createVenueRejectsTheListingFormThatOmitsCapacityTicketAndContract() {
-    VenueService service = new VenueService(null, null);
+    VenueService service = new VenueService(null, null, null);
     Venue venue = new Venue();
     venue.setCode("CUEVA");
     venue.setName("Bar La Cueva");

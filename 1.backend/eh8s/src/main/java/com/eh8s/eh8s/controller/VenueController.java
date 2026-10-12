@@ -100,6 +100,15 @@ public class VenueController implements IVenueController {
    * {@inheritDoc}
    */
   @Override
+  @PostMapping("/bookings/with-concert")
+  public Concert bookShow(@RequestBody Booking booking) {
+    return venueService.bookShow(booking);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   @GetMapping("/settlements/{settlementId}/claims")
   public List<PendingClaim> claims(@PathVariable Long settlementId) {
     return venueService.claims(settlementId);

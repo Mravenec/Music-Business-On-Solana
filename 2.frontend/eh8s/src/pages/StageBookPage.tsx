@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import axios from "axios";
 import { useStageMap } from "../hooks/useStageMap";
 import { useBands } from "../hooks/useBands";
 
@@ -21,21 +22,24 @@ export function StageBookPage() {
   async function onBook(e: FormEvent) {
     e.preventDefault();
     try {
-      const booking = await stage.bookShow({
+      const concert = await stage.bookShow({
         venueId: Number(venueId),
         bandId: Number(bandId),
         showDate,
         pipelineWeek: 2,
       });
-      const concert = await stage.scheduleConcert({
-        bookingId: booking.id,
-        venueId: Number(venueId),
-        bandId: Number(bandId),
-        sppCycleId: undefined,
-      });
       setMsg(`Show booked. Concert ${concert.id} is on the calendar.`);
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Could not book");
+      if (axios.isAxiosError(err)) {
+        const data = err.response?.data;
+        const apiMsg =
+          data && typeof data === "object" && "message" in data
+            ? String((data as { message?: string }).message)
+            : null;
+        setMsg(apiMsg || err.message || "Could not book");
+      } else {
+        setMsg(err instanceof Error ? err.message : "Could not book");
+      }
     }
   }
 

@@ -3,6 +3,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection } from "@solana/web3.js";
 import axios from "axios";
 import { sendBuiltIx, type BuiltIx } from "../services/sendBuiltIx";
+import { formatSolanaTxError } from "../services/solanaTxError";
 
 /** Plain-language text for an API or wallet failure. */
 export function stepMessage(err: unknown, fallback: string): string {
@@ -18,7 +19,7 @@ export function stepMessage(err: unknown, fallback: string): string {
     if (status === 400) return "The transaction could not be verified on DevNet.";
     return err.message || fallback;
   }
-  return err instanceof Error ? err.message : fallback;
+  return formatSolanaTxError(err, fallback);
 }
 
 export type WalletStep = {

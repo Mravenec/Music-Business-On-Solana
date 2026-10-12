@@ -13,6 +13,7 @@ import {
   type BandVaultMember,
 } from "../services/bandVaultService";
 import { sendCreateBandTx, sendUpdateSppWeightsTx } from "../services/bandVaultTx";
+import { formatSolanaTxError } from "../services/solanaTxError";
 
 export type BandVaultState = {
   loading: boolean;
@@ -39,7 +40,7 @@ function apiMessage(err: unknown, fallback: string): string {
     if (status === 409) return "Not possible yet — check the band vault state and member wallets.";
     return err.message || fallback;
   }
-  return err instanceof Error ? err.message : fallback;
+  return formatSolanaTxError(err, fallback);
 }
 
 /**

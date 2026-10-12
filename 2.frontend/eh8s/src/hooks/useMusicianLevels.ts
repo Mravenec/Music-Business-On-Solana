@@ -9,6 +9,7 @@ import {
   type LevelConsole,
 } from "../services/agentAuthorityService";
 import { sendBuiltIx } from "../services/sendBuiltIx";
+import { formatSolanaTxError } from "../services/solanaTxError";
 
 export type MusicianLevelsState = {
   loading: boolean;
@@ -34,7 +35,7 @@ function apiMessage(err: unknown, fallback: string): string {
     if (status === 400) return "The level change could not be verified on DevNet.";
     return err.message || fallback;
   }
-  return err instanceof Error ? err.message : fallback;
+  return formatSolanaTxError(err, fallback);
 }
 
 /**

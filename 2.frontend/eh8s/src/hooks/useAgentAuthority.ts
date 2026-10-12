@@ -10,6 +10,7 @@ import {
   type AgentRoster,
 } from "../services/agentAuthorityService";
 import { sendBuiltIx } from "../services/sendBuiltIx";
+import { formatSolanaTxError } from "../services/solanaTxError";
 
 export type AgentAuthorityState = {
   loading: boolean;
@@ -40,7 +41,7 @@ function apiMessage(err: unknown, fallback: string): string {
     if (status === 400) return "The authorization could not be verified on DevNet.";
     return err.message || fallback;
   }
-  return err instanceof Error ? err.message : fallback;
+  return formatSolanaTxError(err, fallback);
 }
 
 /**

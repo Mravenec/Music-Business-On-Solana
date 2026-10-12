@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  createBooking,
+  bookShowWithConcert,
   createConcert,
   createVenue,
   fetchBookings,
@@ -32,7 +32,7 @@ export type StageMapState = {
     bandId: number;
     showDate: string;
     pipelineWeek?: number;
-  }) => Promise<Booking>;
+  }) => Promise<Concert>;
   scheduleConcert: (input: {
     bookingId: number;
     venueId: number;
@@ -119,7 +119,7 @@ export function useStageMap(): StageMapState {
     setSettlementId,
     refresh,
     bookShow: async (input) => {
-      const row = await createBooking(input);
+      const row = await bookShowWithConcert(input);
       await refresh();
       return row;
     },

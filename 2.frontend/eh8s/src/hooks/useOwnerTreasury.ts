@@ -9,6 +9,7 @@ import {
   type OwnerTreasury,
 } from "../services/treasuryService";
 import { sendWithdrawTreasuryTx } from "../services/withdrawTreasuryTx";
+import { formatSolanaTxError } from "../services/solanaTxError";
 
 export type OwnerTreasuryState = {
   loading: boolean;
@@ -34,7 +35,7 @@ function apiMessage(err: unknown, fallback: string): string {
     if (status === 400) return "The withdrawal could not be verified on DevNet.";
     return err.message || fallback;
   }
-  return err instanceof Error ? err.message : fallback;
+  return formatSolanaTxError(err, fallback);
 }
 
 /**

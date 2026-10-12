@@ -57,6 +57,14 @@ public interface IVenueController {
   Concert createConcert(Concert concert);
 
   /**
+   * Books a show (booking + concert) in one request.
+   *
+   * @param booking venue / band / showDate
+   * @return stored concert
+   */
+  Concert bookShow(Booking booking);
+
+  /**
    * @param settlementId settlement primary key
    * @return claims
    */

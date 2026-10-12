@@ -48,15 +48,21 @@ public class BandVaultIxBuilder implements IBandVaultIxBuilder {
       data.put(decodePubkey(wallet));
     }
     List<Map<String, Object>> accounts = new ArrayList<>();
-    accounts.add(account("owner", ownerWallet, true, true, null));
+    accounts.add(account("authority", ownerWallet, true, true, null));
     accounts.add(account("config", null, false, false, List.of("eh8s", "config")));
     accounts.add(account("bandVault", null, true, false, List.of("band", "u64le:" + bandId)));
     accounts.add(account("systemProgram", SYSTEM_PROGRAM, false, false, null));
+    // Anchor Option<AgentAuthority>: program id means None when the owner signs (not an agent).
+    accounts.add(account("agentAuthority", programId, false, false, null));
     Map<String, Object> body = base("create_band", programId, rpcUrl, ownerWallet, bandId, disc);
     body.put("memberWallets", memberWallets);
     body.put("dataHex", HexFormat.of().formatHex(data.array()));
     body.put("accounts", accounts);
-    body.put("note", "Owner signs create_band: BandVault PDA with equal weights (dust to last).");
+    body.put("agentAuthorityAccount", programId);
+    body.put(
+        "note",
+        "Owner signs create_band: BandVault PDA with equal weights (dust to last). "
+            + "agent_authority is the program id (Anchor None) when no HARMONY agent signs.");
     return body;
   }
 
@@ -82,15 +88,20 @@ public class BandVaultIxBuilder implements IBandVaultIxBuilder {
       data.putShort((short) (int) w);
     }
     List<Map<String, Object>> accounts = new ArrayList<>();
-    accounts.add(account("owner", ownerWallet, false, true, null));
+    accounts.add(account("authority", ownerWallet, false, true, null));
     accounts.add(account("config", null, false, false, List.of("eh8s", "config")));
     accounts.add(account("bandVault", null, true, false, List.of("band", "u64le:" + bandId)));
+    accounts.add(account("agentAuthority", programId, false, false, null));
     Map<String, Object> body =
         base("update_spp_weights", programId, rpcUrl, ownerWallet, bandId, disc);
     body.put("weightsBps", weightsBps);
     body.put("dataHex", HexFormat.of().formatHex(data.array()));
     body.put("accounts", accounts);
-    body.put("note", "Owner signs update_spp_weights: one weight per member, sum 10000 bps.");
+    body.put("agentAuthorityAccount", programId);
+    body.put(
+        "note",
+        "Owner signs update_spp_weights: one weight per member, sum 10000 bps. "
+            + "agent_authority is the program id (Anchor None) when no HARMONY agent signs.");
     return body;
   }
 

@@ -102,6 +102,18 @@ export async function createConcert(input: {
   return data;
 }
 
+/** Atomic booking + concert (resolves/opens SPP cycle server-side). */
+export async function bookShowWithConcert(input: {
+  venueId: number;
+  bandId: number;
+  showDate: string;
+  pipelineWeek?: number;
+  status?: string;
+}): Promise<Concert> {
+  const { data } = await client.post<Concert>("/api/bookings/with-concert", input);
+  return data;
+}
+
 export async function fetchClaims(settlementId: number): Promise<PendingClaim[]> {
   const { data } = await client.get<PendingClaim[]>(`/api/settlements/${settlementId}/claims`);
   return data;

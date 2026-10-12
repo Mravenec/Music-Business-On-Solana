@@ -6,17 +6,22 @@ import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.ConcertExpense;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.ConcertSettlement;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.ContractType;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.PendingClaim;
+import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.SppCycle;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.SppMemberScore;
 import com.eh8s.eh8s.database.jooq.eh8s.tables.pojos.Venue;
 import com.eh8s.eh8s.repository.interfaces.IVenueRepository;
+import com.eh8s.eh8s.service.interfaces.IBandService;
 import com.eh8s.eh8s.service.interfaces.IBandVaultService;
 import com.eh8s.eh8s.service.interfaces.IVenueService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -31,16 +36,22 @@ public class VenueService implements IVenueService {
 
   private final IVenueRepository venueRepository;
   private final IBandVaultService bandVaultService;
+  private final IBandService bandService;
 
   /**
    * Creates the service.
    *
    * @param venueRepository venue persistence
    * @param bandVaultService on-chain BandVault weights (SPP split mirror)
+   * @param bandService open / resolve SPP cycles for concerts
    */
-  public VenueService(IVenueRepository venueRepository, IBandVaultService bandVaultService) {
+  public VenueService(
+      IVenueRepository venueRepository,
+      IBandVaultService bandVaultService,
+      IBandService bandService) {
     this.venueRepository = venueRepository;
     this.bandVaultService = bandVaultService;
+    this.bandService = bandService;
   }
 
   /**
@@ -119,7 +130,11 @@ public class VenueService implements IVenueService {
     if (booking.getPipelineWeek() == null) {
       booking.setPipelineWeek((byte) 1);
     }
-    return venueRepository.insertBooking(booking);
+    try {
+      return venueRepository.insertBooking(booking);
+    } catch (DataIntegrityViolationException ex) {
+      throw duplicateSlot(ex);
+    }
   }
 
   /**
@@ -138,7 +153,71 @@ public class VenueService implements IVenueService {
     if (concert.getStatus() == null || concert.getStatus().isBlank()) {
       concert.setStatus("scheduled");
     }
-    return venueRepository.insertConcert(concert);
+    if (concert.getSppCycleId() == null) {
+      if (concert.getBandId() == null) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "bandId is required");
+      }
+      concert.setSppCycleId(ensureOpenCycleId(concert.getBandId()));
+    }
+    try {
+      return venueRepository.insertConcert(concert);
+    } catch (DataIntegrityViolationException ex) {
+      throw duplicateSlot(ex);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @Transactional
+  public Concert bookShow(Booking booking) {
+    try {
+      Booking stored = createBooking(booking);
+      Concert concert = new Concert();
+      concert.setBookingId(stored.getId());
+      concert.setVenueId(stored.getVenueId());
+      concert.setBandId(stored.getBandId());
+      concert.setSppCycleId(ensureOpenCycleId(stored.getBandId()));
+      concert.setStatus("scheduled");
+      return venueRepository.insertConcert(concert);
+    } catch (ResponseStatusException ex) {
+      throw ex;
+    } catch (DataIntegrityViolationException ex) {
+      throw duplicateSlot(ex);
+    }
+  }
+
+  /**
+   * Returns an open SPP cycle for the band, or opens a new one when none exists.
+   *
+   * @param bandId band primary key
+   * @return cycle id
+   */
+  private Long ensureOpenCycleId(Long bandId) {
+    return bandService.cycles(bandId).stream()
+        .filter(c -> "open".equalsIgnoreCase(c.getStatus()))
+        .map(SppCycle::getId)
+        .findFirst()
+        .orElseGet(
+            () -> {
+              SppCycle cycle = new SppCycle();
+              cycle.setBandId(bandId);
+              cycle.setCode("book-" + LocalDate.now() + "-" + System.currentTimeMillis());
+              cycle.setStatus("open");
+              cycle.setStartedAt(LocalDate.now());
+              cycle.setIntendedInstruction("update_spp_weights");
+              return bandService.openCycle(cycle).getId();
+            });
+  }
+
+  private static ResponseStatusException duplicateSlot(DataIntegrityViolationException ex) {
+    String msg = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : "";
+    if (msg != null && msg.toLowerCase().contains("uk_booking_slot")) {
+      return new ResponseStatusException(
+          HttpStatus.CONFLICT, "That venue, band, and date are already booked");
+    }
+    return new ResponseStatusException(HttpStatus.CONFLICT, "Booking conflicts with an existing row");
   }
 
   /**

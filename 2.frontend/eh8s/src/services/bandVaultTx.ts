@@ -64,7 +64,9 @@ async function sendOwnerIx(
 
 /**
  * Sends create_band on DevNet (owner signs and pays the BandVault rent).
- * Account order mirrors Anchor CreateBand: owner, config, bandVault, systemProgram.
+ * Account order mirrors Anchor CreateBand: authority, config, bandVault, systemProgram,
+ * agent_authority. When the owner signs (no HARMONY agent), agent_authority is the
+ * program id — Anchor Option None. Omitting that slot causes AccountNotEnoughKeys (3005).
  */
 export async function sendCreateBandTx(
   input: BandVaultTxInput,
@@ -75,13 +77,14 @@ export async function sendCreateBandTx(
     { pubkey: deriveConfigPda(input.programId), isSigner: false, isWritable: false },
     { pubkey: bandVault, isSigner: false, isWritable: true },
     { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    { pubkey: input.programId, isSigner: false, isWritable: false },
   ]);
   return { signature, bandVaultPda: bandVault.toBase58() };
 }
 
 /**
  * Sends update_spp_weights on DevNet. Account order mirrors Anchor UpdateSppWeights:
- * owner, config, bandVault.
+ * authority, config, bandVault, agent_authority (program id = None for owner).
  */
 export async function sendUpdateSppWeightsTx(input: BandVaultTxInput): Promise<string> {
   return sendOwnerIx(input, [
@@ -92,5 +95,6 @@ export async function sendUpdateSppWeightsTx(input: BandVaultTxInput): Promise<s
       isSigner: false,
       isWritable: true,
     },
+    { pubkey: input.programId, isSigner: false, isWritable: false },
   ]);
 }

@@ -15,6 +15,7 @@ import {
   type StudioRoleGrant,
 } from "../services/studioPowerService";
 import { sendBuiltIx } from "../services/sendBuiltIx";
+import { formatSolanaTxError } from "../services/solanaTxError";
 
 export type StudioPowerState = {
   loading: boolean;
@@ -50,7 +51,7 @@ function apiMessage(err: unknown, fallback: string): string {
     if (status === 400) return "The instruction could not be verified on DevNet.";
     return err.message || fallback;
   }
-  return err instanceof Error ? err.message : fallback;
+  return formatSolanaTxError(err, fallback);
 }
 
 function isActiveGrant(row: StudioRoleGrant): boolean {

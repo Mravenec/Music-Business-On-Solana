@@ -59,6 +59,15 @@ public interface IVenueService {
   Concert createConcert(Concert concert);
 
   /**
+   * Books a show atomically: inserts {@code booking} then {@code concert} in one transaction,
+   * resolving or opening an SPP cycle when {@code spp_cycle_id} would otherwise be null.
+   *
+   * @param booking venue / band / showDate (and optional pipeline fields)
+   * @return stored concert (with {@code bookingId} set)
+   */
+  Concert bookShow(Booking booking);
+
+  /**
    * Builds MariaDB settlement + pending claims after booking {@code settle/confirm} verified a
    * {@code settle_booking} signature via {@code SolanaTxVerifier}. Not an HTTP endpoint — the only
    * product settle path is on-chain booking escrow.
